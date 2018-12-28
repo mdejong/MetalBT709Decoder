@@ -20,10 +20,16 @@ typedef enum AAPLVertexInputIndex
 
 // Texture index values shared between shader and C code to ensure Metal shader buffer inputs match
 //   Metal API texture set calls
-typedef enum AAPLTextureIndex
+typedef enum
 {
     AAPLTextureIndexBaseColor = 0,
 } AAPLTextureIndex;
+
+typedef enum
+{
+  AAPLTextureIndexYPlane = 0,
+  AAPLTextureIndexCbCrPlane = 1,
+} AAPLTextureYCbCrIndex;
 
 //  This structure defines the layout of each vertex in the array of vertices set as an input to our
 //    Metal vertex shader.  Since this header is shared between our .metal shader and C code,

@@ -31,6 +31,17 @@
 		3AFD65711F71A8A00008A125 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD65691F71A8900008A125 /* main.m */; };
 		3AFD65721F71A8A10008A125 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD65691F71A8900008A125 /* main.m */; };
 		3AFD65731F71A8A10008A125 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD65691F71A8900008A125 /* main.m */; };
+		3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
+		3CB6E80321D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
+		3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */; };
+		3CB6E80621D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */; };
+		3CB6E80721D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */; };
+		3CB6E80A21D6D15F005424E6 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
+		3CB6E80B21D6D15F005424E6 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
+		3CB6E80C21D6D15F005424E6 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
+		3CB6E80F21D6D204005424E6 /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80E21D6D203005424E6 /* CGFrameBuffer.m */; };
+		3CB6E81021D6D204005424E6 /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80E21D6D203005424E6 /* CGFrameBuffer.m */; };
+		3CB6E81121D6D204005424E6 /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80E21D6D203005424E6 /* CGFrameBuffer.m */; };
 		63B42F161ED2063300859D09 /* AAPLShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 3AF7E9C11EB64A46003BB06D /* AAPLShaders.metal */; };
 		63B42F171ED2063800859D09 /* AAPLShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 3AF7E9C11EB64A46003BB06D /* AAPLShaders.metal */; };
 		63B42F181ED2063C00859D09 /* AAPLShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 3AF7E9C11EB64A46003BB06D /* AAPLShaders.metal */; };
@@ -65,6 +76,13 @@
 		3AFD656B1F71A8910008A125 /* AAPLAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AAPLAppDelegate.m; sourceTree = "<group>"; };
 		3AFD65741F71A8A70008A125 /* AAPLAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AAPLAppDelegate.h; sourceTree = "<group>"; };
 		3AFD65751F71A8AB0008A125 /* AAPLViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AAPLViewController.h; sourceTree = "<group>"; };
+		3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalBT709Decoder.m; sourceTree = "<group>"; };
+		3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalBT709Decoder.h; sourceTree = "<group>"; };
+		3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = osxcolor_test_image_24bit_BT709.m4v; sourceTree = "<group>"; };
+		3CB6E80821D6D15F005424E6 /* BGDecodeEncode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGDecodeEncode.h; sourceTree = "<group>"; };
+		3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BGDecodeEncode.m; sourceTree = "<group>"; };
+		3CB6E80D21D6D203005424E6 /* CGFrameBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CGFrameBuffer.h; sourceTree = "<group>"; };
+		3CB6E80E21D6D203005424E6 /* CGFrameBuffer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CGFrameBuffer.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,8 +156,15 @@
 			isa = PBXGroup;
 			children = (
 				3A1857EF1EB7AF9E007D4F50 /* Image.tga */,
+				3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */,
 				3AF7E9BE1EB64A46003BB06D /* AAPLRenderer.h */,
 				3AF7E9BF1EB64A46003BB06D /* AAPLRenderer.m */,
+				3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */,
+				3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */,
+				3CB6E80821D6D15F005424E6 /* BGDecodeEncode.h */,
+				3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */,
+				3CB6E80D21D6D203005424E6 /* CGFrameBuffer.h */,
+				3CB6E80E21D6D203005424E6 /* CGFrameBuffer.m */,
 				3A30EDF71EB67EA800B4FC0B /* AAPLImage.h */,
 				3A30EDF81EB67EA800B4FC0B /* AAPLImage.m */,
 				3AF7E9C01EB64A46003BB06D /* AAPLShaderTypes.h */,
@@ -308,6 +333,7 @@
 				3AFD65641F71A7240008A125 /* Main.storyboard in Resources */,
 				3A1857F01EB7AF9E007D4F50 /* Image.tga in Resources */,
 				3AFD65631F71A7240008A125 /* LaunchScreen.storyboard in Resources */,
+				3CB6E80621D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -317,6 +343,7 @@
 			files = (
 				3A1857F11EB7AF9E007D4F50 /* Image.tga in Resources */,
 				3A06FBA71F730C4000073097 /* Main.storyboard in Resources */,
+				3CB6E80721D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -326,6 +353,7 @@
 			files = (
 				3A1857F21EB7AF9E007D4F50 /* Image.tga in Resources */,
 				3AFD655F1F71A71B0008A125 /* Main.storyboard in Resources */,
+				3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -337,10 +365,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				63B42F161ED2063300859D09 /* AAPLShaders.metal in Sources */,
+				3CB6E80321D6C62A005424E6 /* MetalBT709Decoder.m in Sources */,
 				3AF7EA0A1EB64A46003BB06D /* AAPLRenderer.m in Sources */,
 				3A30EDF91EB67EA800B4FC0B /* AAPLImage.m in Sources */,
 				3AFD656F1F71A89E0008A125 /* AAPLViewController.m in Sources */,
+				3CB6E81021D6D204005424E6 /* CGFrameBuffer.m in Sources */,
 				3AFD65721F71A8A10008A125 /* main.m in Sources */,
+				3CB6E80B21D6D15F005424E6 /* BGDecodeEncode.m in Sources */,
 				3AFD656C1F71A8980008A125 /* AAPLAppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -350,11 +381,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				3AFD65701F71A89E0008A125 /* AAPLViewController.m in Sources */,
+				3CB6E81121D6D204005424E6 /* CGFrameBuffer.m in Sources */,
 				63B42F171ED2063800859D09 /* AAPLShaders.metal in Sources */,
 				3AF7EA0B1EB64A46003BB06D /* AAPLRenderer.m in Sources */,
 				3AFD656D1F71A8980008A125 /* AAPLAppDelegate.m in Sources */,
 				3AFD65731F71A8A10008A125 /* main.m in Sources */,
 				3A30EDFF1EB698AD00B4FC0B /* AAPLImage.m in Sources */,
+				3CB6E80C21D6D15F005424E6 /* BGDecodeEncode.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -363,10 +396,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				3AFD65711F71A8A00008A125 /* main.m in Sources */,
+				3CB6E80F21D6D204005424E6 /* CGFrameBuffer.m in Sources */,
 				3AFD656E1F71A89E0008A125 /* AAPLViewController.m in Sources */,
 				63B42F181ED2063C00859D09 /* AAPLShaders.metal in Sources */,
+				3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */,
 				3A30EDFE1EB698AD00B4FC0B /* AAPLImage.m in Sources */,
 				3AF7EA0C1EB64A46003BB06D /* AAPLRenderer.m in Sources */,
+				3CB6E80A21D6D15F005424E6 /* BGDecodeEncode.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

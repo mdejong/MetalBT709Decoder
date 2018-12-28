@@ -71,18 +71,205 @@ vertexShader(uint vertexID [[ vertex_id ]],
     return out;
 }
 
-// Fragment function
+// Fragment shader that can do simple rescale
+
 fragment float4
 samplingShader(RasterizerData in [[stage_in]],
                texture2d<half> colorTexture [[ texture(AAPLTextureIndexBaseColor) ]])
 {
-    constexpr sampler textureSampler (mag_filter::linear,
-                                      min_filter::linear);
+  constexpr sampler textureSampler (mag_filter::linear,
+                                    min_filter::linear);
+  
+  // Sample the texture to obtain a color
+  const half4 colorSample = colorTexture.sample(textureSampler, in.textureCoordinate);
+  
+  // We return the color of the texture
+  return float4(colorSample);
+}
 
-    // Sample the texture to obtain a color
-    const half4 colorSample = colorTexture.sample(textureSampler, in.textureCoordinate);
+// BT.709 rendering fragment shader
 
-    // We return the color of the texture
-    return float4(colorSample);
+static inline
+float BT709_nonLinearNormToLinear(float normV) {
+  
+  if (normV < 0.081f) {
+    normV *= (1.0f / 4.5f);
+  } else {
+    const float a = 0.099f;
+    const float gamma = 1.0f / 0.45f;
+    normV = (normV + a) * (1.0f / (1.0f + a));
+    normV = pow(normV, gamma);
+  }
+  
+  return normV;
+}
+
+fragment float4
+BT709ToLinearSRGBFragment(RasterizerData in [[stage_in]],
+                          texture2d<half, access::sample>  inYTexture  [[texture(AAPLTextureIndexYPlane)]],
+                          texture2d<half, access::sample>  inUVTexture [[texture(AAPLTextureIndexCbCrPlane)]]
+                          )
+{
+  const bool applyGammaMap = true;
+
+  constexpr sampler textureSampler (mag_filter::linear, min_filter::linear);
+  
+  const half Y = inYTexture.sample(textureSampler, in.textureCoordinate).r;
+  const half2 uvSamples = inUVTexture.sample(textureSampler, in.textureCoordinate).rg;
+
+  // BT.709 (HDTV)
+  // (col0) (col1) (col2)
+  //
+  // 1.1644  0.0000  1.7927
+  // 1.1644 -0.2132 -0.5329
+  // 1.1644  2.1124  0.0000
+  
+  // precise to 4 decimal places
+  
+  const float3x3 kColorConversion709 = float3x3(
+                                                // column 0
+                                                float3(1.1644f, 1.1644f, 1.1644f),
+                                                // column 1
+                                                float3(0.0f, -0.2132f, 2.1124f),
+                                                // column 2
+                                                float3(1.7927f, -0.5329f, 0.0f));
+  
+  half Cb = uvSamples[0];
+  half Cr = uvSamples[1];
+  
+  // Y already normalized to range [0 255]
+  //
+  // Note that the matrix multiply will adjust
+  // this byte normalized range to account for
+  // the limited range [16 235]
+  
+  half Yn = (Y - (16.0h/255.0h));
+  
+  // Normalize Cb and CR with zero at 128 and range [0 255]
+  // Note that matrix will adjust to limited range [16 240]
+  
+  half Cbn = (Cb - (128.0h/255.0h));
+  half Crn = (Cr - (128.0h/255.0h));
+  
+  // Zero out the UV colors
+  //Cbn = 0.0h;
+  //Crn = 0.0h;
+  
+  // Represent half values as full precision float
+  float3 YCbCr = float3(Yn, Cbn, Crn);
+  
+  // matrix to vector mult
+  float3 rgb = kColorConversion709 * YCbCr;
+  
+  //  float Rn = (Yn * BT709Mat[0]) + (Cbn * BT709Mat[1]) + (Crn * BT709Mat[2]);
+  //  float Gn = (Yn * BT709Mat[3]) + (Cbn * BT709Mat[4]) + (Crn * BT709Mat[5]);
+  //  float Bn = (Yn * BT709Mat[6]) + (Cbn * BT709Mat[7]) + (Crn * BT709Mat[8]);
+  
+  //  float3 rgb;
+  //  rgb.r = (YCbCr[0] * kColorConversion709[0][0]) + (YCbCr[1] * kColorConversion709[1][0]) + (YCbCr[2] * kColorConversion709[2][0]);
+  //  rgb.g = (YCbCr[0] * kColorConversion709[0][1]) + (YCbCr[1] * kColorConversion709[1][1]) + (YCbCr[2] * kColorConversion709[2][1]);
+  //  rgb.b = (YCbCr[0] * kColorConversion709[0][2]) + (YCbCr[1] * kColorConversion709[1][2]) + (YCbCr[2] * kColorConversion709[2][2]);
+  
+  rgb = saturate(rgb);
+  
+  if (applyGammaMap) {
+    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
+    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
+    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
+  }
+  
+  float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);
+  return pixel;
+}
+
+// Colorspace conversion compute kernel. Note that inTexture and outTexture
+// must be the same dimensions.
+
+kernel void
+BT709ToLinearSRGBKernel(texture2d<float, access::read>  inYTexture  [[texture(0)]],
+                        texture2d<float, access::read>  inUVTexture [[texture(1)]],
+                        texture2d<float, access::write> outTexture  [[texture(2)]],
+                        ushort2                         gid         [[thread_position_in_grid]])
+{
+  // Check if the pixel is within the bounds of the output texture
+  if((gid.x >= outTexture.get_width()) || (gid.y >= outTexture.get_height()))
+  {
+    // Return early if the pixel is out of bounds
+    return;
+  }
+  
+  // BT.601
+  
+  //  const float3x3 kColorConversion601 = float3x3(
+  //                                                float3(1.164,  1.164, 1.164),
+  //                                                float3(0.000, -0.392, 2.017),
+  //                                                float3(1.596, -0.813, 0.000));
+  
+  // BT.709 (HDTV)
+  // (col0) (col1) (col2)
+  //
+  // 1.1644  0.0000  1.7927
+  // 1.1644 -0.2132 -0.5329
+  // 1.1644  2.1124  0.0000
+  
+  // precise to 4 decimal places
+  
+  const float3x3 kColorConversion709 = float3x3(
+                                                // column 0
+                                                float3(1.1644f, 1.1644f, 1.1644f),
+                                                // column 1
+                                                float3(0.0f, -0.2132f, 2.1124f),
+                                                // column 2
+                                                float3(1.7927f, -0.5329f, 0.0f));
+  
+  float Y = inYTexture.read(gid).r;
+  float2 uvSamples = inUVTexture.read(gid/2).rg;
+  float Cb = uvSamples[0];
+  float Cr = uvSamples[1];
+  
+  const bool applyGammaMap = true;
+  
+  // Y already normalized to range [0 255]
+  //
+  // Note that the matrix multiply will adjust
+  // this byte normalized range to account for
+  // the limited range [16 235]
+  
+  float Yn = (Y - (16.0f/255.0f));
+  
+  // Normalize Cb and CR with zero at 128 and range [0 255]
+  // Note that matrix will adjust to limited range [16 240]
+  
+  float Cbn = (Cb - (128.0f/255.0f));
+  float Crn = (Cr - (128.0f/255.0f));
+  
+  // Zero out the UV colors
+  //Cbn = 0.0;
+  //Crn = 0.0;
+  
+  float3 YCbCr = float3(Yn, Cbn, Crn);
+  
+  // matrix to vector mult
+  float3 rgb = kColorConversion709 * YCbCr;
+  
+  //  float Rn = (Yn * BT709Mat[0]) + (Cbn * BT709Mat[1]) + (Crn * BT709Mat[2]);
+  //  float Gn = (Yn * BT709Mat[3]) + (Cbn * BT709Mat[4]) + (Crn * BT709Mat[5]);
+  //  float Bn = (Yn * BT709Mat[6]) + (Cbn * BT709Mat[7]) + (Crn * BT709Mat[8]);
+  
+  //  float3 rgb;
+  //  rgb.r = (YCbCr[0] * kColorConversion709[0][0]) + (YCbCr[1] * kColorConversion709[1][0]) + (YCbCr[2] * kColorConversion709[2][0]);
+  //  rgb.g = (YCbCr[0] * kColorConversion709[0][1]) + (YCbCr[1] * kColorConversion709[1][1]) + (YCbCr[2] * kColorConversion709[2][1]);
+  //  rgb.b = (YCbCr[0] * kColorConversion709[0][2]) + (YCbCr[1] * kColorConversion709[1][2]) + (YCbCr[2] * kColorConversion709[2][2]);
+  
+  rgb = saturate(rgb);
+  
+  if (applyGammaMap) {
+    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
+    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
+    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
+  }
+  
+  float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);
+  outTexture.write(pixel, gid);
 }
 
