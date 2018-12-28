@@ -67,6 +67,7 @@ vertexShader(uint vertexID [[ vertex_id ]],
     //   interpolated with the other textureCoordinate values in the vertices that make up the
     //   triangle.
     out.textureCoordinate = vertexArray[vertexID].textureCoordinate;
+    out.textureCoordinate.y = 1.0 - out.textureCoordinate.y;
     
     return out;
 }

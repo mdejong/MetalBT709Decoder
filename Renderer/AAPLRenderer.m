@@ -76,7 +76,9 @@ Implementation of renderer class which performs Metal setup and per frame render
     
     // Configure Metal view so that it makes use of native sRGB texture values
     
+#if TARGET_OS_IOS
     mtkView.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
+#endif
     
     {
       // Init sRGB intermediate render texture
@@ -87,7 +89,13 @@ Implementation of renderer class which performs Metal setup and per frame render
       
       // Indicate that each pixel has a blue, green, red, and alpha channel, where each channel is
       // an 8-bit unsigned normalized value (i.e. 0 maps to 0.0 and 255 maps to 1.0)
+      
+      // FIXME: write to sRGB texture seems to require MacOSX 10.14
+#if TARGET_OS_IOS
       textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
+#else
+      textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
+#endif
       
       // Set the pixel dimensions of the texture
       textureDescriptor.width = width;
