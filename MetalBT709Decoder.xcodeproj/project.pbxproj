@@ -289,6 +289,7 @@
 					};
 					3AF7E9E11EB64A46003BB06D = {
 						CreatedOnToolsVersion = 8.3.2;
+						DevelopmentTeam = 9F74CLHA49;
 						ProvisioningStyle = Automatic;
 					};
 					3AF7E9F71EB64A46003BB06D = {
@@ -582,14 +583,14 @@
 			baseConfigurationReference = 25849E602584CC8000000001 /* SampleCode.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 9F74CLHA49;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					TARGET_TVOS,
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Application/tvOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.BasicTexturing${SAMPLE_CODE_DISAMBIGUATOR}";
+				PRODUCT_BUNDLE_IDENTIFIER = com.helpurock.MetalBT709Decoder;
 				PRODUCT_NAME = MetalBT709Decoder;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = appletvos;
@@ -603,11 +604,11 @@
 			baseConfigurationReference = 25849E602584CC8000000001 /* SampleCode.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 9F74CLHA49;
 				GCC_PREPROCESSOR_DEFINITIONS = TARGET_TVOS;
 				INFOPLIST_FILE = Application/tvOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.BasicTexturing${SAMPLE_CODE_DISAMBIGUATOR}";
+				PRODUCT_BUNDLE_IDENTIFIER = com.helpurock.MetalBT709Decoder;
 				PRODUCT_NAME = MetalBT709Decoder;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = appletvos;

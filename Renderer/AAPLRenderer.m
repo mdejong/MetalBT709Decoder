@@ -60,28 +60,22 @@ Implementation of renderer class which performs Metal setup and per frame render
   {
     _device = mtkView.device;
     
-//    NSURL *imageFileLocation = [[NSBundle mainBundle] URLForResource:@"Image"
-//                                                       withExtension:@"tga"];
-//
-//    AAPLImage * image = [[AAPLImage alloc] initWithTGAFileAtLocation:imageFileLocation];
-//
-//    if(!image)
-//    {
-//      NSLog(@"Failed to create the image from %@", imageFileLocation.absoluteString);
-//      return nil;
-//    }
+    // Decode H.264 to CoreVideo pixel buffer
     
-    int width = 256;
-    int height = 256;
+    _yCbCrPixelBuffer = [self decodeH264YCbCr];
+    //CVPixelBufferRetain(_yCbCrPixelBuffer);
     
-    // Configure Metal view so that it makes use of native sRGB texture values
+    int width = (int) CVPixelBufferGetWidth(_yCbCrPixelBuffer);
+    int height = (int) CVPixelBufferGetHeight(_yCbCrPixelBuffer);
     
-#if TARGET_OS_IOS
+    // Configure Metal view so that it treats pixels as sRGB values.
+    // Note that configuring the view
+    
     mtkView.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
-#endif
     
     {
-      // Init sRGB intermediate render texture
+      // Init render texture that will hold resize render intermediate
+      // results. This is typically sRGB, but Mac OSX may not support it.
       
       MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
       
@@ -108,43 +102,6 @@ Implementation of renderer class which performs Metal setup and per frame render
       
       NSAssert(_srgbTexture, @"_srgbTexture");
     }
-    
-    /*
-    // Init _texture
-    
-    {
-      MTLTextureDescriptor *textureDescriptor = [[MTLTextureDescriptor alloc] init];
-      
-      textureDescriptor.textureType = MTLTextureType2D;
-      
-      // Indicate that each pixel has a blue, green, red, and alpha channel, where each channel is
-      // an 8-bit unsigned normalized value (i.e. 0 maps to 0.0 and 255 maps to 1.0)
-      textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
-      
-      // Set the pixel dimensions of the texture
-      textureDescriptor.width = image.width;
-      textureDescriptor.height = image.height;
-      
-      //textureDescriptor.usage = MTLTextureUsageShaderRead;
-      
-      // Create the texture from the device by using the descriptor
-      _texture = [_device newTextureWithDescriptor:textureDescriptor];
-      
-      // Calculate the number of bytes per row of our image.
-      NSUInteger bytesPerRow = 4 * image.width;
-      
-      MTLRegion region = {
-        { 0, 0, 0 },                   // MTLOrigin
-        {image.width, image.height, 1} // MTLSize
-      };
-      
-      // Copy the bytes from our data object into the texture
-      [_texture replaceRegion:region
-                  mipmapLevel:0
-                    withBytes:image.data.bytes
-                  bytesPerRow:bytesPerRow];
-    }
-    */
     
     // Set up a simple MTLBuffer with our vertices which include texture coordinates
     static const AAPLVertex quadVertices[] =
@@ -181,11 +138,6 @@ Implementation of renderer class which performs Metal setup and per frame render
     
     BOOL worked = [self.metalBT709Decoder setupMetal];
     NSAssert(worked, @"worked");
-    
-    // Decode H.264 to CoreVideo pixel buffer
-    
-    _yCbCrPixelBuffer = [self decodeH264YCbCr];
-    //CVPixelBufferRetain(_yCbCrPixelBuffer);
     
     {
       // Load the vertex function from the library
