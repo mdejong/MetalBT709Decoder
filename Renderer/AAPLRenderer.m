@@ -17,6 +17,7 @@ Implementation of renderer class which performs Metal setup and per frame render
 
 #import "MetalBT709Decoder.h"
 #import "BGDecodeEncode.h"
+#import "CGFrameBuffer.h"
 
 @interface AAPLRenderer ()
 
@@ -27,6 +28,12 @@ Implementation of renderer class which performs Metal setup and per frame render
 // Main class performing the rendering
 @implementation AAPLRenderer
 {
+  // If set to 1, then instead of async sending to the GPU,
+  // the render logic will wait for the GPU render to be completed
+  // so that results of the render can be captured. This has performance
+  // implications so it should only be enabled when debuging.
+  int isCaptureRenderedTextureEnabled;
+  
   // The device (aka GPU) we're using to render
   id<MTLDevice> _device;
   
@@ -60,7 +67,13 @@ Implementation of renderer class which performs Metal setup and per frame render
   self = [super init];
   if(self)
   {
+    isCaptureRenderedTextureEnabled = 0;
+    
     _device = mtkView.device;
+    
+    if (isCaptureRenderedTextureEnabled) {
+      mtkView.framebufferOnly = false;
+    }
     
     // Decode H.264 to CoreVideo pixel buffer
     
@@ -71,7 +84,6 @@ Implementation of renderer class which performs Metal setup and per frame render
     int height = (int) CVPixelBufferGetHeight(_yCbCrPixelBuffer);
     
     // Configure Metal view so that it treats pixels as sRGB values.
-    // Note that configuring the view
     
     mtkView.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
     
@@ -93,7 +105,7 @@ Implementation of renderer class which performs Metal setup and per frame render
       textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
       // FIXME: Render to 16 bit float intermediate texture to avoid precision loss
       //textureDescriptor.pixelFormat = MTLPixelFormatRGBA16Float;
-#endif
+#endif // TARGET_OS_IOS
       
       // Set the pixel dimensions of the texture
       textureDescriptor.width = width;
@@ -265,9 +277,48 @@ Implementation of renderer class which performs Metal setup and per frame render
     [commandBuffer presentDrawable:view.currentDrawable];
   }
   
+  if (isCaptureRenderedTextureEnabled) {
+    // Finalize rendering here & push the command buffer to the GPU
+    [commandBuffer commit];
+    // Wait for the GPU to finish rendering
+    [commandBuffer waitUntilCompleted];
+  } else {
+    [commandBuffer commit];
+  }
+
   
-  // Finalize rendering here & push the command buffer to the GPU
-  [commandBuffer commit];
+  if (isCaptureRenderedTextureEnabled && 1) {
+    // Capture results of intermediate render to same size texture
+    
+    int width = (int) _resizeTexture.width;
+    int height = (int) _resizeTexture.height;
+    
+    CGFrameBuffer *renderedFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    // Copy from texture into framebuffer as BGRA pixels
+    
+    [_resizeTexture getBytes:(void*)renderedFB.pixels
+          bytesPerRow:width*sizeof(uint32_t)
+        bytesPerImage:width*height*sizeof(uint32_t)
+           fromRegion:MTLRegionMake2D(0, 0, width, height)
+          mipmapLevel:0
+                slice:0];
+
+    if (_resizeTexture.pixelFormat == MTLPixelFormatBGRA8Unorm) {
+      // Work around linear render issue by explicitly setting colorspace to linear
+      CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
+      renderedFB.colorspace = cs;
+      CGColorSpaceRelease(cs);
+    }
+    
+    NSData *pngData = [renderedFB formatAsPNG];
+    
+    NSString *tmpDir = NSTemporaryDirectory();
+    NSString *path = [tmpDir stringByAppendingPathComponent:@"DUMP_resize_BGRA.png"];
+    BOOL worked = [pngData writeToFile:path atomically:TRUE];
+    assert(worked);
+    NSLog(@"wrote %@ as %d bytes", path, (int)pngData.length);
+  }
 }
 
 @end
