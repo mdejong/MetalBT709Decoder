@@ -39,8 +39,10 @@ Implementation of renderer class which performs Metal setup and per frame render
   // Input to sRGB texture render comes from H.264 source
   CVPixelBufferRef _yCbCrPixelBuffer;
   
-  // BT.709 render to sRGB texture
-  id<MTLTexture> _srgbTexture;
+  // BT.709 render operation must write to an intermediate texture
+  // (because mixing non-linear BT.709 input is not legit)
+  // that can then be sampled to resize render into the view.
+  id<MTLTexture> _resizeTexture;
   
   // The Metal buffer in which we store our vertex data
   id<MTLBuffer> _vertices;
@@ -89,6 +91,8 @@ Implementation of renderer class which performs Metal setup and per frame render
       textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
 #else
       textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
+      // FIXME: Render to 16 bit float intermediate texture to avoid precision loss
+      //textureDescriptor.pixelFormat = MTLPixelFormatRGBA16Float;
 #endif
       
       // Set the pixel dimensions of the texture
@@ -98,9 +102,9 @@ Implementation of renderer class which performs Metal setup and per frame render
       textureDescriptor.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
       
       // Create the texture from the device by using the descriptor
-      _srgbTexture = [_device newTextureWithDescriptor:textureDescriptor];
+      _resizeTexture = [_device newTextureWithDescriptor:textureDescriptor];
       
-      NSAssert(_srgbTexture, @"_srgbTexture");
+      NSAssert(_resizeTexture, @"_resizeTexture");
     }
     
     // Set up a simple MTLBuffer with our vertices which include texture coordinates
@@ -216,7 +220,7 @@ Implementation of renderer class which performs Metal setup and per frame render
   // Obtain a reference to a sRGB intermediate texture
   
   worked = [self.metalBT709Decoder decodeBT709:_yCbCrPixelBuffer
-                      bgraSRGBTexture:_srgbTexture
+                      bgraSRGBTexture:_resizeTexture
                         commandBuffer:commandBuffer
                    waitUntilCompleted:FALSE];
   NSAssert(worked, @"worked");
@@ -247,7 +251,7 @@ Implementation of renderer class which performs Metal setup and per frame render
     // Set the texture object.  The AAPLTextureIndexBaseColor enum value corresponds
     ///  to the 'colorMap' argument in our 'samplingShader' function because its
     //   texture attribute qualifier also uses AAPLTextureIndexBaseColor for its index
-    [renderEncoder setFragmentTexture:_srgbTexture
+    [renderEncoder setFragmentTexture:_resizeTexture
                               atIndex:AAPLTextureIndexBaseColor];
     
     // Draw the vertices of our triangles
