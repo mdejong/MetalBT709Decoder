@@ -166,7 +166,7 @@ Implementation of renderer class which performs Metal setup and per frame render
 
     self.metalBT709Decoder.colorPixelFormat = mtkView.colorPixelFormat;
     
-    self.metalBT709Decoder.useComputeRenderer = TRUE;
+    //self.metalBT709Decoder.useComputeRenderer = TRUE;
     
     BOOL worked = [self.metalBT709Decoder setupMetal];
     NSAssert(worked, @"worked");

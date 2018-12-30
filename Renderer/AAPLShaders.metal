@@ -154,25 +154,31 @@ BT709ToLinearSRGBFragment(RasterizerData in [[stage_in]],
 
   constexpr sampler textureSampler (mag_filter::linear, min_filter::linear);
   
-  const half Y = inYTexture.sample(textureSampler, in.textureCoordinate).r;
-  const half2 uvSamples = inUVTexture.sample(textureSampler, in.textureCoordinate).rg;
+  float Y = float(inYTexture.sample(textureSampler, in.textureCoordinate).r);
+  half2 uvSamples = inUVTexture.sample(textureSampler, in.textureCoordinate).rg;
   
-  half Cb = uvSamples[0];
-  half Cr = uvSamples[1];
+  float Cb = float(uvSamples[0]);
+  float Cr = float(uvSamples[1]);
   
   // Y already normalized to range [0 255]
   //
   // Note that the matrix multiply will adjust
   // this byte normalized range to account for
   // the limited range [16 235]
+  //
+  // Note that while a half float can be read from
+  // the input textures, the values need to be full float
+  // from this point forward since the bias values
+  // need to be precise to avoid togggling blue and green
+  // values depending on rounding.
   
-  half Yn = (Y - (16.0h/255.0h));
+  float Yn = (Y - (16.0f/255.0f));
   
   // Normalize Cb and CR with zero at 128 and range [0 255]
   // Note that matrix will adjust to limited range [16 240]
   
-  half Cbn = (Cb - (128.0h/255.0h));
-  half Crn = (Cr - (128.0h/255.0h));
+  float Cbn = (Cb - (128.0f/255.0f));
+  float Crn = (Cr - (128.0f/255.0f));
   
   // Zero out the UV colors
   //Cbn = 0.0h;
@@ -238,10 +244,10 @@ BT709ToLinearSRGBKernel(texture2d<half, access::read>  inYTexture  [[texture(0)]
     return;
   }
   
-  half Y = inYTexture.read(gid).r;
+  float Y = float(inYTexture.read(gid).r);
   half2 uvSamples = inUVTexture.read(gid/2).rg;
-  half Cb = uvSamples[0];
-  half Cr = uvSamples[1];
+  float Cb = float(uvSamples[0]);
+  float Cr = float(uvSamples[1]);
   
   const bool applyGammaMap = true;
   
@@ -250,14 +256,20 @@ BT709ToLinearSRGBKernel(texture2d<half, access::read>  inYTexture  [[texture(0)]
   // Note that the matrix multiply will adjust
   // this byte normalized range to account for
   // the limited range [16 235]
+  //
+  // Note that while a half float can be read from
+  // the input textures, the values need to be full float
+  // from this point forward since the bias values
+  // need to be precise to avoid togggling blue and green
+  // values depending on rounding.
   
-  half Yn = (Y - (16.0h/255.0h));
+  float Yn = (Y - (16.0f/255.0f));
   
   // Normalize Cb and CR with zero at 128 and range [0 255]
   // Note that matrix will adjust to limited range [16 240]
   
-  half Cbn = (Cb - (128.0h/255.0h));
-  half Crn = (Cr - (128.0h/255.0h));
+  float Cbn = (Cb - (128.0f/255.0f));
+  float Crn = (Cr - (128.0f/255.0f));
   
   // Zero out the UV colors
   //Cbn = 0.0;
