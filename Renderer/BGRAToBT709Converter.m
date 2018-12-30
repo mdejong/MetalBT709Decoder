@@ -195,8 +195,10 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   NSMutableData *Y = [NSMutableData data];
   NSMutableData *Cb = [NSMutableData data];
   NSMutableData *Cr = [NSMutableData data];
+  
+  const BOOL dump = FALSE;
 
-  [self copyYCBCr:cvPixelBuffer Y:Y Cb:Cb Cr:Cr];
+  [self copyYCBCr:cvPixelBuffer Y:Y Cb:Cb Cr:Cr dump:dump];
 
   // Dump (Y Cb Cr) of first pixel
   
@@ -204,7 +206,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   uint8_t *cbPtr = (uint8_t *) Cb.bytes;
   uint8_t *crPtr = (uint8_t *) Cr.bytes;
   
-  if (0) {
+  if ((0)) {
     int Y = yPtr[0];
     int Cb = cbPtr[0];
     int Cr = crPtr[0];
@@ -482,12 +484,14 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   return TRUE;
 }
 
-// Copy Y Cb Cr pixel data from the planes of a CoreVideo pixel buffer
+// Copy Y Cb Cr pixel data from the planes of a CoreVideo pixel buffer.
+// Writes Y Cb Cr values to grayscale PNG if dump flag is TRUE.
 
 + (BOOL) copyYCBCr:(CVPixelBufferRef)cvPixelBuffer
                  Y:(NSMutableData*)Y
                 Cb:(NSMutableData*)Cb
                 Cr:(NSMutableData*)Cr
+              dump:(BOOL)dump
 {
   int width = (int) CVPixelBufferGetWidth(cvPixelBuffer);
   int height = (int) CVPixelBufferGetHeight(cvPixelBuffer);
@@ -528,7 +532,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   const size_t uvBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(cvPixelBuffer, 1);
   
   for (int row = 0; row < hh; row++) {
-    uint16_t *rowPtr = uvPlane + (row * uvBytesPerRow);
+    uint16_t *rowPtr = (uint16_t *) ((uint8_t*)uvPlane + (row * uvBytesPerRow));
     
     for (int col = 0; col < hw; col++) {
       uint16_t bPairs = rowPtr[col];
@@ -547,13 +551,12 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   }
   
 #if defined(DEBUG)
-  const int dump = 0;
-  
   if (dump) {
     NSString *filename = [NSString stringWithFormat:@"dump_Y.png"];
     NSString *tmpDir = NSTemporaryDirectory();
     NSString *path = [tmpDir stringByAppendingPathComponent:filename];
     [self dumpArrayOfGrayscale:(uint8_t*)Y.bytes width:width height:height filename:path];
+    NSLog(@"wrote %@ : %d x %d", path, width, height);
   }
   
   if (dump) {
@@ -561,6 +564,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     NSString *tmpDir = NSTemporaryDirectory();
     NSString *path = [tmpDir stringByAppendingPathComponent:filename];
     [self dumpArrayOfGrayscale:(uint8_t*)Cb.bytes width:hw height:hh filename:path];
+    NSLog(@"wrote %@ : %d x %d", path, hw, hh);
   }
   
   if (dump) {
@@ -568,8 +572,23 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     NSString *tmpDir = NSTemporaryDirectory();
     NSString *path = [tmpDir stringByAppendingPathComponent:filename];
     [self dumpArrayOfGrayscale:(uint8_t*)Cr.bytes width:hw height:hh filename:path];
+    NSLog(@"wrote %@ : %d x %d", path, hw, hh);
   }
 #endif // DEBUG
+  
+  return TRUE;
+}
+
+// Dump the Y Cb Cr elements of a CoreVideo pixel buffer to PNG images
+// in the tmp directory.
+
++ (BOOL) dumpYCBCr:(CVPixelBufferRef)cvPixelBuffer
+{
+  NSMutableData *Y = [NSMutableData data];
+  NSMutableData *Cb = [NSMutableData data];
+  NSMutableData *Cr = [NSMutableData data];
+  
+  [self copyYCBCr:cvPixelBuffer Y:Y Cb:Cb Cr:Cr dump:TRUE];
   
   return TRUE;
 }
@@ -669,7 +688,9 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     NSMutableData *Cb = [NSMutableData data];
     NSMutableData *Cr = [NSMutableData data];
     
-    [self copyYCBCr:cvPixelBuffer Y:Y Cb:Cb Cr:Cr];
+    const BOOL dump = TRUE;
+    
+    [self copyYCBCr:cvPixelBuffer Y:Y Cb:Cb Cr:Cr dump:dump];
     
     if ((1)) {
       // Dump YUV of first pixel

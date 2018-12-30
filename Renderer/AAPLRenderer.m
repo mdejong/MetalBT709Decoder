@@ -17,6 +17,7 @@ Implementation of renderer class which performs Metal setup and per frame render
 
 #import "MetalRenderContext.h"
 #import "MetalBT709Decoder.h"
+#import "BGRAToBT709Converter.h"
 #import "BGDecodeEncode.h"
 #import "CGFrameBuffer.h"
 
@@ -207,11 +208,46 @@ Implementation of renderer class which performs Metal setup and per frame render
 
 - (CVPixelBufferRef) decodeH264YCbCr
 {
+  const BOOL debugDumpYCbCr = TRUE;
+  
+  CVPixelBufferRef cvPixelBufer;
+  
+  cvPixelBufer = [self decodeH264YCbCr_bars256];
+  //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
+
+  if (debugDumpYCbCr) {
+    [BGRAToBT709Converter dumpYCBCr:cvPixelBufer];
+  }
+  
+  return cvPixelBufer;
+}
+
+- (CVPixelBufferRef) decodeH264YCbCr_bars256
+{
   NSString *resFilename = @"osxcolor_test_image_24bit_BT709.m4v";
   
   NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
                                                                     frameDuration:1.0/30
                                                                        renderSize:CGSizeMake(256, 256)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  return cvPixelBuffer;
+}
+
+- (CVPixelBufferRef) decodeH264YCbCr_barsFullscreen
+{
+  NSString *resFilename = @"bars_709_Frame01.m4v";
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(1920, 1080)
                                                                        aveBitrate:0];
   NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
   

@@ -67,12 +67,18 @@ typedef enum {
 + (BOOL) convertFromCoreVideoBuffer:(CVPixelBufferRef)cvPixelBuffer
                           bufferPtr:(vImage_Buffer*)bufferPtr;
 
-// Copy Y Cb Cr pixel data from the planes of a CoreVideo pixel buffer
+// Copy Y Cb Cr pixel data from the planes of a CoreVideo pixel buffer.
+// Writes Y Cb Cr values to grayscale PNG if dump flag is TRUE.
 
 + (BOOL) copyYCBCr:(CVPixelBufferRef)cvPixelBuffer
                  Y:(NSMutableData*)Y
                 Cb:(NSMutableData*)Cb
-                Cr:(NSMutableData*)Cr;
+                Cr:(NSMutableData*)Cr
+              dump:(BOOL)dump;
+
+// Dump Y Cb Cr grayscale images to the tmp dir
+
++ (BOOL) dumpYCBCr:(CVPixelBufferRef)cvPixelBuffer;
 
 // Given a CGImageRef, create a CVPixelBufferRef and render into it,
 // format input BGRA data into BT.709 formatted YCbCr at 4:2:0 subsampling.
