@@ -112,7 +112,7 @@ Implementation of renderer class which performs Metal setup and per frame render
       textureDescriptor.width = width;
       textureDescriptor.height = height;
       
-      textureDescriptor.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+      textureDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
       
       // Create the texture from the device by using the descriptor
       _resizeTexture = [_device newTextureWithDescriptor:textureDescriptor];
@@ -163,6 +163,10 @@ Implementation of renderer class which performs Metal setup and per frame render
     self.metalBT709Decoder = [[MetalBT709Decoder alloc] init];
     
     self.metalBT709Decoder.metalRenderContext = mrc;
+
+    self.metalBT709Decoder.colorPixelFormat = mtkView.colorPixelFormat;
+    
+    self.metalBT709Decoder.useComputeRenderer = TRUE;
     
     BOOL worked = [self.metalBT709Decoder setupMetal];
     NSAssert(worked, @"worked");
@@ -176,7 +180,7 @@ Implementation of renderer class which performs Metal setup and per frame render
       
       // Set up a descriptor for creating a pipeline state object
       MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
-      pipelineStateDescriptor.label = @"Texturing Pipeline";
+      pipelineStateDescriptor.label = @"Rescale Pipeline";
       pipelineStateDescriptor.vertexFunction = vertexFunction;
       pipelineStateDescriptor.fragmentFunction = fragmentFunction;
       pipelineStateDescriptor.colorAttachments[0].pixelFormat = mtkView.colorPixelFormat;

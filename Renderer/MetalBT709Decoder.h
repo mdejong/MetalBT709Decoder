@@ -20,6 +20,13 @@
 
 @property (nonatomic, retain) MetalRenderContext *metalRenderContext;
 
+@property (nonatomic, assign) MTLPixelFormat colorPixelFormat;
+
+// If set to TRUE, a compute kernel will be used to render,
+// otherwise use a fragment shader.
+
+@property (nonatomic, assign) BOOL useComputeRenderer;
+
 // Setup Metal refs for this instance, this is implicitly
 // invoked by decodeBT709 but some test code may want to
 // setup metal before invoking the decode method.

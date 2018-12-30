@@ -28,7 +28,8 @@ typedef struct
 
 } RasterizerData;
 
-// Vertex Function
+// Vertex Function that renders with a specific pixel sizes padding around the viewport
+
 vertex RasterizerData
 vertexShader(uint vertexID [[ vertex_id ]],
              constant AAPLVertex *vertexArray [[ buffer(AAPLVertexInputIndexVertices) ]],
@@ -72,11 +73,49 @@ vertexShader(uint vertexID [[ vertex_id ]],
     return out;
 }
 
+// Vertex Function that renders full screen flipped texture
+
+vertex RasterizerData
+identityVertexShader(uint vertexID [[ vertex_id ]],
+             constant AAPLVertex *vertexArray [[ buffer(AAPLVertexInputIndexVertices) ]])
+{
+  RasterizerData out;
+  
+  // Index into our array of positions to get the current vertex
+  //   Our positons are specified in pixel dimensions (i.e. a value of 100 is 100 pixels from
+  //   the origin)
+  float2 pixelSpacePosition = vertexArray[vertexID].position.xy;
+  
+  // THe output position of every vertex shader is in clip space (also known as normalized device
+  //   coordinate space, or NDC).   A value of (-1.0, -1.0) in clip-space represents the
+  //   lower-left corner of the viewport wheras (1.0, 1.0) represents the upper-right corner of
+  //   the viewport.
+  
+  out.clipSpacePosition.xy = pixelSpacePosition;
+  
+  // Set the z component of our clip space position 0 (since we're only rendering in
+  //   2-Dimensions for this sample)
+  out.clipSpacePosition.z = 0.0;
+  
+  // Set the w component to 1.0 since we don't need a perspective divide, which is also not
+  //   necessary when rendering in 2-Dimensions
+  out.clipSpacePosition.w = 1.0;
+  
+  // Pass our input textureCoordinate straight to our output RasterizerData.  This value will be
+  //   interpolated with the other textureCoordinate values in the vertices that make up the
+  //   triangle.
+  out.textureCoordinate = vertexArray[vertexID].textureCoordinate;
+  out.textureCoordinate.y = 1.0 - out.textureCoordinate.y;
+  
+  return out;
+}
+
+
 // Fragment shader that can do simple rescale
 
 fragment float4
 samplingShader(RasterizerData in [[stage_in]],
-               texture2d<half> colorTexture [[ texture(AAPLTextureIndexBaseColor) ]])
+               texture2d<half, access::sample> colorTexture [[ texture(AAPLTextureIndexBaseColor) ]])
 {
   constexpr sampler textureSampler (mag_filter::linear,
                                     min_filter::linear);
@@ -117,23 +156,6 @@ BT709ToLinearSRGBFragment(RasterizerData in [[stage_in]],
   
   const half Y = inYTexture.sample(textureSampler, in.textureCoordinate).r;
   const half2 uvSamples = inUVTexture.sample(textureSampler, in.textureCoordinate).rg;
-
-  // BT.709 (HDTV)
-  // (col0) (col1) (col2)
-  //
-  // 1.1644  0.0000  1.7927
-  // 1.1644 -0.2132 -0.5329
-  // 1.1644  2.1124  0.0000
-  
-  // precise to 4 decimal places
-  
-  const float3x3 kColorConversion709 = float3x3(
-                                                // column 0
-                                                float3(1.1644f, 1.1644f, 1.1644f),
-                                                // column 1
-                                                float3(0.0f, -0.2132f, 2.1124f),
-                                                // column 2
-                                                float3(1.7927f, -0.5329f, 0.0f));
   
   half Cb = uvSamples[0];
   half Cr = uvSamples[1];
@@ -158,6 +180,23 @@ BT709ToLinearSRGBFragment(RasterizerData in [[stage_in]],
   
   // Represent half values as full precision float
   float3 YCbCr = float3(Yn, Cbn, Crn);
+  
+  // BT.709 (HDTV)
+  // (col0) (col1) (col2)
+  //
+  // 1.1644  0.0000  1.7927
+  // 1.1644 -0.2132 -0.5329
+  // 1.1644  2.1124  0.0000
+  
+  // precise to 4 decimal places
+  
+  const float3x3 kColorConversion709 = float3x3(
+                                                // column 0
+                                                float3(1.1644f, 1.1644f, 1.1644f),
+                                                // column 1
+                                                float3(0.0f, -0.2132f, 2.1124f),
+                                                // column 2
+                                                float3(1.7927f, -0.5329f, 0.0f));
   
   // matrix to vector mult
   float3 rgb = kColorConversion709 * YCbCr;
@@ -187,8 +226,8 @@ BT709ToLinearSRGBFragment(RasterizerData in [[stage_in]],
 // must be the same dimensions.
 
 kernel void
-BT709ToLinearSRGBKernel(texture2d<float, access::read>  inYTexture  [[texture(0)]],
-                        texture2d<float, access::read>  inUVTexture [[texture(1)]],
+BT709ToLinearSRGBKernel(texture2d<half, access::read>  inYTexture  [[texture(0)]],
+                        texture2d<half, access::read>  inUVTexture [[texture(1)]],
                         texture2d<float, access::write> outTexture  [[texture(2)]],
                         ushort2                         gid         [[thread_position_in_grid]])
 {
@@ -198,6 +237,33 @@ BT709ToLinearSRGBKernel(texture2d<float, access::read>  inYTexture  [[texture(0)
     // Return early if the pixel is out of bounds
     return;
   }
+  
+  half Y = inYTexture.read(gid).r;
+  half2 uvSamples = inUVTexture.read(gid/2).rg;
+  half Cb = uvSamples[0];
+  half Cr = uvSamples[1];
+  
+  const bool applyGammaMap = true;
+  
+  // Y already normalized to range [0 255]
+  //
+  // Note that the matrix multiply will adjust
+  // this byte normalized range to account for
+  // the limited range [16 235]
+  
+  half Yn = (Y - (16.0h/255.0h));
+  
+  // Normalize Cb and CR with zero at 128 and range [0 255]
+  // Note that matrix will adjust to limited range [16 240]
+  
+  half Cbn = (Cb - (128.0h/255.0h));
+  half Crn = (Cr - (128.0h/255.0h));
+  
+  // Zero out the UV colors
+  //Cbn = 0.0;
+  //Crn = 0.0;
+  
+  float3 YCbCr = float3(Yn, Cbn, Crn);
   
   // BT.601
   
@@ -222,33 +288,6 @@ BT709ToLinearSRGBKernel(texture2d<float, access::read>  inYTexture  [[texture(0)
                                                 float3(0.0f, -0.2132f, 2.1124f),
                                                 // column 2
                                                 float3(1.7927f, -0.5329f, 0.0f));
-  
-  float Y = inYTexture.read(gid).r;
-  float2 uvSamples = inUVTexture.read(gid/2).rg;
-  float Cb = uvSamples[0];
-  float Cr = uvSamples[1];
-  
-  const bool applyGammaMap = true;
-  
-  // Y already normalized to range [0 255]
-  //
-  // Note that the matrix multiply will adjust
-  // this byte normalized range to account for
-  // the limited range [16 235]
-  
-  float Yn = (Y - (16.0f/255.0f));
-  
-  // Normalize Cb and CR with zero at 128 and range [0 255]
-  // Note that matrix will adjust to limited range [16 240]
-  
-  float Cbn = (Cb - (128.0f/255.0f));
-  float Crn = (Cr - (128.0f/255.0f));
-  
-  // Zero out the UV colors
-  //Cbn = 0.0;
-  //Crn = 0.0;
-  
-  float3 YCbCr = float3(Yn, Cbn, Crn);
   
   // matrix to vector mult
   float3 rgb = kColorConversion709 * YCbCr;
