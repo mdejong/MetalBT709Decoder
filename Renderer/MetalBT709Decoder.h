@@ -10,16 +10,15 @@
 #import <Metal/Metal.h>
 #import <CoreVideo/CoreVideo.h>
 
+@class MetalRenderContext;
+
 @interface MetalBT709Decoder : NSObject
 
-// If an existing Metal ref is provided by the system, set
-// this property before the first call to decode. If not
-// defined by the user then a default system Metal device
-// is allocated.
+// Setup MetalRenderContext instance before the first decode,
+// existing Metal refs will be used if set, otherwise new
+// instance will be allocated.
 
-@property (nonatomic, retain) id<MTLDevice> device;
-
-@property (nonatomic, retain) id<MTLLibrary> defaultLibrary;
+@property (nonatomic, retain) MetalRenderContext *metalRenderContext;
 
 // Setup Metal refs for this instance, this is implicitly
 // invoked by decodeBT709 but some test code may want to

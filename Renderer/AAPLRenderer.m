@@ -15,6 +15,7 @@ Implementation of renderer class which performs Metal setup and per frame render
 //   uses these types as inputs to the shaders
 #import "AAPLShaderTypes.h"
 
+#import "MetalRenderContext.h"
 #import "MetalBT709Decoder.h"
 #import "BGDecodeEncode.h"
 #import "CGFrameBuffer.h"
@@ -142,15 +143,26 @@ Implementation of renderer class which performs Metal setup and per frame render
     
     /// Create render pipeline
     
+    // Create the command queue
+    _commandQueue = [_device newCommandQueue];
+    
     // Load all the shader files with a .metal file extension in the project
     id<MTLLibrary> defaultLibrary = [_device newDefaultLibrary];
+    
+    // Init Metal context, this object contains refs to metal objects
+    // and util functions.
 
-    // Init metalBT709Decoder
+    MetalRenderContext *mrc = [[MetalRenderContext alloc] init];
+    
+    mrc.device = _device;
+    mrc.defaultLibrary = defaultLibrary;
+    mrc.commandQueue = _commandQueue;
+    
+    // Init metalBT709Decoder with MetalRenderContext set as a property
     
     self.metalBT709Decoder = [[MetalBT709Decoder alloc] init];
     
-    self.metalBT709Decoder.device = _device;
-    self.metalBT709Decoder.defaultLibrary = defaultLibrary;
+    self.metalBT709Decoder.metalRenderContext = mrc;
     
     BOOL worked = [self.metalBT709Decoder setupMetal];
     NSAssert(worked, @"worked");
@@ -181,9 +193,6 @@ Implementation of renderer class which performs Metal setup and per frame render
         NSLog(@"Failed to created pipeline state, error %@", error);
       }
     }
-    
-    // Create the command queue
-    _commandQueue = [_device newCommandQueue];
   }
   
   return self;
@@ -235,7 +244,12 @@ Implementation of renderer class which performs Metal setup and per frame render
                       bgraSRGBTexture:_resizeTexture
                         commandBuffer:commandBuffer
                    waitUntilCompleted:FALSE];
-  NSAssert(worked, @"worked");
+#if defined(DEBUG)
+  NSAssert(worked, @"decodeBT709 worked");
+#endif // DEBUG
+  if (!worked) {
+    return;
+  }
 
   // Obtain a renderPassDescriptor generated from the view's drawable textures
   MTLRenderPassDescriptor *renderPassDescriptor = view.currentRenderPassDescriptor;

@@ -6,7 +6,7 @@
 
 #import "MetalBT709Decoder.h"
 
-//#import "MetalRenderContext.h"
+#import "MetalRenderContext.h"
 
 @interface MetalBT709Decoder ()
 {
@@ -40,37 +40,51 @@
 
 - (BOOL) setupMetal
 {
-  if (self.computePipelineState != nil) {
-    return TRUE;
-  }
-  
-  NSError *error = NULL;
+  if (self.metalRenderContext == nil) {
+#if defined(DEBUG)
+    NSAssert(self.metalRenderContext != nil, @"metalRenderContext must be set before invoking setupMetal");
+#endif // DEBUG
 
-  // Caller must set device and defaultLibrary refs before setup
-  
-  NSAssert(self.device, @"device is nil");
-  
-  // Load all the shader files with .metal file extension in the project
-  id<MTLLibrary> defaultLibrary = self.defaultLibrary;
-  NSAssert(defaultLibrary, @"defaultLibrary is nil");
-  
-  // Load the kernel function from the library
-  id<MTLFunction> kernelFunction = [defaultLibrary newFunctionWithName:@"BT709ToLinearSRGBKernel"];
-  if (kernelFunction == nil) {
     return FALSE;
   }
   
+  NSError *error = NULL;
+  
+  MetalRenderContext *metalRenderContext = self.metalRenderContext;
+  
+  // Invoking setupMetal a second time is a nop
+  
+  BOOL worked = [metalRenderContext setupMetal];
+  if (!worked) {
+    return FALSE;
+  }
+  
+  id<MTLLibrary> defaultLibrary = metalRenderContext.defaultLibrary;
+  if (defaultLibrary == nil) {
+#if defined(DEBUG)
+    NSAssert(defaultLibrary, @"metalRenderContext.defaultLibrary is nil");
+#endif // DEBUG
+    return FALSE;
+  }
+  
+  // Load the kernel function from the library
+  id<MTLFunction> kernelFunction = [defaultLibrary newFunctionWithName:@"BT709ToLinearSRGBKernel"];
+  
   // Create a compute pipeline state
-  self.computePipelineState = [self.device newComputePipelineStateWithFunction:kernelFunction
+  self.computePipelineState = [metalRenderContext.device newComputePipelineStateWithFunction:kernelFunction
                                                                          error:&error];
   
-  if(!self.computePipelineState)
+  if (self.computePipelineState == nil)
   {
     // Compute pipeline State creation could fail if kernelFunction failed to load from the
     //   library.  If the Metal API validation is enabled, we automatically be given more
     //   information about what went wrong.  (Metal API validation is enabled by default
     //   when a debug build is run from Xcode)
+#if defined(DEBUG)
+    NSAssert(self.computePipelineState, @"Failed to create compute pipeline state, error %@", error);
+#else
     NSLog(@"Failed to create compute pipeline state, error %@", error);
+#endif // DEBUG
     return FALSE;
   }
   
@@ -80,8 +94,13 @@
                                     (NSString*)kCVMetalTextureCacheMaximumTextureAgeKey: @(0),
                                     };
   
-  CVReturn status = CVMetalTextureCacheCreate(kCFAllocatorDefault, (__bridge CFDictionaryRef)cacheAttributes, self.device, nil, &_textureCache);
+  CVReturn status = CVMetalTextureCacheCreate(kCFAllocatorDefault, (__bridge CFDictionaryRef)cacheAttributes, metalRenderContext.device, nil, &_textureCache);
+  if (status != kCVReturnSuccess || _textureCache == NULL) {
+#if defined(DEBUG)
   NSParameterAssert(status == kCVReturnSuccess && _textureCache != NULL);
+#endif // DEBUG
+    return FALSE;
+  }
   
   return TRUE;
 }
@@ -122,9 +141,6 @@
          waitUntilCompleted:(BOOL)waitUntilCompleted
 {
   const int debug = 0;
-  
-  //id<MTLCommandBuffer> commandBuffer = [self.metalRenderContext.commandQueue commandBuffer];
-  //commandBuffer.label = @"BT709ToLinearSRGBKernel";
   
   // Setup Metal textures for Y and UV input
   
