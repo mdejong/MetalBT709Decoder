@@ -593,9 +593,8 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 #if TARGET_OS_IPHONE
   // No-op
 #else
-  // Do not mark BMP as sRGB colorspace since the output pixels would be modified
   CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-  frameBuffer.colorspace = colorspace;
+  fb.colorspace = colorspace;
   CGColorSpaceRelease(colorspace);
 #endif // TARGET_OS_IPHONE
   
