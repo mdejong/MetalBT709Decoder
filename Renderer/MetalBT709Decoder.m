@@ -282,12 +282,8 @@
       assert(status == kCVReturnSuccess);
     }
     
-    // FIXME: It should be possible to wrap these CoreVideo pixel buffer planes
-    // as Metal textures directly without cistly memcpy()
-    
     uint8_t *yPlane = (uint8_t *) CVPixelBufferGetBaseAddressOfPlane(cvPixelBuffer, 0);
     size_t yBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(cvPixelBuffer, 0);
-    //assert(yBytesPerRow == width);
     
     uint8_t *yPlanePacked = (uint8_t *) malloc(width * height * sizeof(uint8_t));
     
@@ -301,15 +297,15 @@
       }
     }
     
-    uint16_t *uvPlane = (uint16_t *) CVPixelBufferGetBaseAddressOfPlane(cvPixelBuffer, 1);
-    size_t uvBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(cvPixelBuffer, 1);
-    //assert(uvBytesPerRow == (hw * sizeof(uint16_t)));
+    uint16_t *cbcrPlane = (uint16_t *) CVPixelBufferGetBaseAddressOfPlane(cvPixelBuffer, 1);
+    size_t cbcrBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(cvPixelBuffer, 1);
+    const size_t cbcrPixelsPerRow = cbcrBytesPerRow / sizeof(uint16_t);
     
-    uint16_t *uvPlanePacked = (uint16_t *) malloc(hw * hh * sizeof(uint16_t));
+    uint16_t *cbcrPlanePacked = (uint16_t *) malloc(hw * hh * sizeof(uint16_t));
     
     for (int row = 0; row < hh; row++) {
-      uint16_t *inRowPtr = (uint16_t*) (((uint8_t*)uvPlane) + (row * uvBytesPerRow));
-      uint16_t *outRowPtr = (uint16_t*) (((uint8_t*)uvPlanePacked) + (row * (hw * sizeof(uint16_t))));
+      uint16_t *inRowPtr = cbcrPlane + (row * cbcrPixelsPerRow);
+      uint16_t *outRowPtr = cbcrPlanePacked + (row * hw);
       
       for (int col = 0; col < hw; col++) {
         uint16_t uv = inRowPtr[col];
@@ -340,7 +336,7 @@
       for (int row = 0; row < hh; row++) {
         for (int col = 0; col < hw; col++) {
           int offset = (row * hw) + col;
-          uint16_t CbCr = uvPlanePacked[offset];
+          uint16_t CbCr = cbcrPlanePacked[offset];
           uint8_t Cb = CbCr & 0xFF;
           uint8_t Cr = (CbCr >> 8) & 0xFF;
           printf("%3d %3d ", Cb, Cr);
@@ -350,7 +346,7 @@
     }
     
     free(yPlanePacked);
-    free(uvPlanePacked);
+    free(cbcrPlanePacked);
     
     {
       int status = CVPixelBufferUnlockBaseAddress(cvPixelBuffer, 0);

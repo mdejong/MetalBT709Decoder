@@ -212,8 +212,8 @@ Implementation of renderer class which performs Metal setup and per frame render
   
   CVPixelBufferRef cvPixelBufer;
   
-  cvPixelBufer = [self decodeH264YCbCr_bars256];
-  //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
+  //cvPixelBufer = [self decodeH264YCbCr_bars256];
+  cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
 
   if (debugDumpYCbCr) {
     [BGRAToBT709Converter dumpYCBCr:cvPixelBufer];

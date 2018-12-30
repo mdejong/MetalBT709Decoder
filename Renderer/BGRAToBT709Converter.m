@@ -529,10 +529,11 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   }
   
   uint16_t *uvPlane = (uint16_t *) CVPixelBufferGetBaseAddressOfPlane(cvPixelBuffer, 1);
-  const size_t uvBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(cvPixelBuffer, 1);
+  const size_t cbcrBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(cvPixelBuffer, 1);
+  const size_t cbcrPixelsPerRow = cbcrBytesPerRow / sizeof(uint16_t);
   
   for (int row = 0; row < hh; row++) {
-    uint16_t *rowPtr = (uint16_t *) ((uint8_t*)uvPlane + (row * uvBytesPerRow));
+    uint16_t *rowPtr = uvPlane + (row * cbcrPixelsPerRow);
     
     for (int col = 0; col < hw; col++) {
       uint16_t bPairs = rowPtr[col];
@@ -762,10 +763,11 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     
     uint16_t *cbcrPlane = (uint16_t *) CVPixelBufferGetBaseAddressOfPlane(cvPixelBuffer, 1);
     const size_t cbcrBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(cvPixelBuffer, 1);
+    const size_t cbcrPixelsPerRow = cbcrBytesPerRow / sizeof(uint16_t);
     
     for (int row = 0; row < height; row++) {
       uint8_t *yRowPtr = yPlane + (row * yBytesPerRow);
-      uint16_t *cbcrRowPtr = cbcrPlane + (row/2 * cbcrBytesPerRow);
+      uint16_t *cbcrRowPtr = cbcrPlane + (row/2 * cbcrPixelsPerRow);
       
       for (int col = 0; col < width; col++) {
         int offset = (row * width) + col;
