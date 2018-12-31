@@ -551,6 +551,17 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     assert(status == kCVReturnSuccess);
   }
   
+  if (dump) {
+    uint8_t *yPtr = (uint8_t*)Y.bytes;
+    uint8_t *cbPtr = (uint8_t*)Cb.bytes;
+    uint8_t *crPtr = (uint8_t*)Cr.bytes;
+    
+    int Y = yPtr[0];
+    int Cb = cbPtr[0];
+    int Cr = crPtr[0];
+    printf("first  pixel (Y Cb Cr) (%3d %3d %3d)\n", Y, Cb, Cr);
+  }
+  
 #if defined(DEBUG)
   if (dump) {
     NSString *filename = [NSString stringWithFormat:@"dump_Y.png"];

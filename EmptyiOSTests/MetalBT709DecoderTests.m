@@ -1348,20 +1348,37 @@ uint32_t grayToPixel(uint32_t gray)
   
 }
 
-// SMPTE colorbars : gray (192 192 192) yellow (192 192 0) cyan (0 192 192)
+// SMPTE colorbars as linear RGB values
+//
+// gray   (192 192 192)
+// yellow (192 192 0)
+// cyan   (0 192 192)
 
-- (void)testMetalBT709Decoder_SMPTE_Gray_0xc0c0c0 {
+// 0.75 intensity Grayscale in linear space
+
+- (void)testMetalBT709Decoder_SMPTE_Gray_0xc0c0c0_linear {
   uint32_t Rin, Gin, Bin;
   uint32_t Y, Cb, Cr, dummy;
   uint32_t Rout, Gout, Bout;
   
-  // Gray 75% intensity
+  // Gray 75% linear intensity
   //
-  // sRGB (192 192 192) -> Linear RGB (134 134 134) -> REC.709 (175 128 128)
+  // sRGB (225 225 225) -> Linear RGB (192 192 192) -> REC.709 (206 128 128)
   
-  Rin = 192;
-  Gin = 192;
-  Bin = 192;
+//  Rin = 224; // 190.07 = 0.7454 -> (205 128 128)
+//  Gin = 224;
+//  Bin = 224;
+  
+  Rin = 225; // 192.0 = 0.7529 -> (206 128 128)
+  Gin = 225;
+  Bin = 225;
+  
+  // Encoded example bars: pixel (Y Cb Cr) (179 127 127)
+  // C (no gamma) code Linear RGB (191 191 191) -> REC.709 (180 128 128)
+  
+  // The bars_709_Frame01.m4v example:
+  // gray 75% level : (Y Cb Cr) (179 127 127)
+  // but should be  : (Y Cb Cr) (180 128 128)
   
   //BGRAToBT709ConverterTypeEnum type = BGRAToBT709ConverterSoftware;
   BGRAToBT709ConverterTypeEnum type = BGRAToBT709ConverterVImage;
@@ -1372,7 +1389,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 175;
+    int expectedVal = 206;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
