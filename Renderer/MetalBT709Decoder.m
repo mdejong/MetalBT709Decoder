@@ -226,6 +226,18 @@
   int hw = width / 2;
   int hh = height / 2;
   
+  // Verify that the input CoreVideo buffer is explicitly tagged as BT.709
+  // video. This module only supports BT.709, so no need to guess.
+  
+  CFTypeRef matrixKeyAttachment = CVBufferGetAttachment(cvPixelBuffer, kCVImageBufferYCbCrMatrixKey, NULL);
+  
+  BOOL supported = (CFStringCompare(matrixKeyAttachment, kCVImageBufferYCbCrMatrix_ITU_R_709_2, 0) == kCFCompareEqualTo);
+  
+  if (!supported) {
+    NSLog(@"unsupported YCbCrMatrix \"%@\", only BT.709 matrix is supported", matrixKeyAttachment);
+    return FALSE;
+  }
+  
   // Map Metal texture to the CoreVideo pixel buffer
   
   id<MTLTexture> inputYTexture = nil;
