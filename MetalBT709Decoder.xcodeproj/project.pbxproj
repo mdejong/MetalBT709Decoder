@@ -56,6 +56,9 @@
 		3C4A774A21D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A774821D8C3BD0041ACE3 /* bars_709_Frame01.m4v */; };
 		3C4A774B21D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A774821D8C3BD0041ACE3 /* bars_709_Frame01.m4v */; };
 		3C4A774C21D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A774821D8C3BD0041ACE3 /* bars_709_Frame01.m4v */; };
+		3C4A775421DACE890041ACE3 /* srgb_to_bt709.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A775321DACE890041ACE3 /* srgb_to_bt709.m */; };
+		3C4A77A421DAFF800041ACE3 /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E81321D73BB4005424E6 /* CGFrameBuffer.m */; };
+		3C4A77A521DAFF930041ACE3 /* BGRAToBT709Converter.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A773121D894720041ACE3 /* BGRAToBT709Converter.m */; };
 		3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80321D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */; };
@@ -81,6 +84,18 @@
 			remoteInfo = EmptyiOS;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3C4A774F21DACE880041ACE3 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		25849E602584CC8000000001 /* SampleCode.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = SampleCode.xcconfig; path = Configuration/SampleCode.xcconfig; sourceTree = "<group>"; };
@@ -132,6 +147,8 @@
 		3C4A773621D8981F0041ACE3 /* sRGB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sRGB.h; sourceTree = "<group>"; };
 		3C4A773721D8981F0041ACE3 /* BT709.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BT709.h; sourceTree = "<group>"; };
 		3C4A774821D8C3BD0041ACE3 /* bars_709_Frame01.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = bars_709_Frame01.m4v; sourceTree = "<group>"; };
+		3C4A775121DACE880041ACE3 /* srgb_to_bt709 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = srgb_to_bt709; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C4A775321DACE890041ACE3 /* srgb_to_bt709.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = srgb_to_bt709.m; sourceTree = "<group>"; };
 		3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalBT709Decoder.m; sourceTree = "<group>"; };
 		3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalBT709Decoder.h; sourceTree = "<group>"; };
 		3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = osxcolor_test_image_24bit_BT709.m4v; sourceTree = "<group>"; };
@@ -180,6 +197,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3C4A774E21DACE880041ACE3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -217,6 +241,7 @@
 				3AFD65411F71A6D00008A125 /* Application */,
 				3C4A770B21D892BA0041ACE3 /* EmptyiOS */,
 				3C4A772421D892C00041ACE3 /* EmptyiOSTests */,
+				3C4A775221DACE890041ACE3 /* srgb_to_bt709 */,
 				3ABBE2751F73196D0080C72C /* Frameworks */,
 				3AF7E9C91EB64A46003BB06D /* Products */,
 				2584CCE02584A3B000000001 /* Configuration */,
@@ -260,6 +285,7 @@
 				3AF7E9F81EB64A46003BB06D /* MetalBT709Decoder.app */,
 				3C4A770A21D892BA0041ACE3 /* EmptyiOS.app */,
 				3C4A772121D892C00041ACE3 /* EmptyiOSTests.xctest */,
+				3C4A775121DACE880041ACE3 /* srgb_to_bt709 */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -331,6 +357,14 @@
 				3C4A772721D892C00041ACE3 /* Info.plist */,
 			);
 			path = EmptyiOSTests;
+			sourceTree = "<group>";
+		};
+		3C4A775221DACE890041ACE3 /* srgb_to_bt709 */ = {
+			isa = PBXGroup;
+			children = (
+				3C4A775321DACE890041ACE3 /* srgb_to_bt709.m */,
+			);
+			path = srgb_to_bt709;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -422,6 +456,23 @@
 			productReference = 3C4A772121D892C00041ACE3 /* EmptyiOSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		3C4A775021DACE880041ACE3 /* srgb_to_bt709 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3C4A775521DACE890041ACE3 /* Build configuration list for PBXNativeTarget "srgb_to_bt709" */;
+			buildPhases = (
+				3C4A774D21DACE880041ACE3 /* Sources */,
+				3C4A774E21DACE880041ACE3 /* Frameworks */,
+				3C4A774F21DACE880041ACE3 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = srgb_to_bt709;
+			productName = srgb_to_bt709;
+			productReference = 3C4A775121DACE880041ACE3 /* srgb_to_bt709 */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -457,6 +508,11 @@
 						ProvisioningStyle = Automatic;
 						TestTargetID = 3C4A770921D892BA0041ACE3;
 					};
+					3C4A775021DACE880041ACE3 = {
+						CreatedOnToolsVersion = 10.1;
+						DevelopmentTeam = 9F74CLHA49;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 3AF7E9BB1EB64A46003BB06D /* Build configuration list for PBXProject "MetalBT709Decoder" */;
@@ -477,6 +533,7 @@
 				3AF7E9E11EB64A46003BB06D /* MetalBT709Decoder-tvOS */,
 				3C4A770921D892BA0041ACE3 /* EmptyiOS */,
 				3C4A772021D892C00041ACE3 /* EmptyiOSTests */,
+				3C4A775021DACE880041ACE3 /* srgb_to_bt709 */,
 			);
 		};
 /* End PBXProject section */
@@ -612,6 +669,16 @@
 			files = (
 				3C4A772621D892C00041ACE3 /* EmptyiOSTests.m in Sources */,
 				3C4A772F21D893290041ACE3 /* MetalBT709DecoderTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3C4A774D21DACE880041ACE3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3C4A77A521DAFF930041ACE3 /* BGRAToBT709Converter.m in Sources */,
+				3C4A775421DACE890041ACE3 /* srgb_to_bt709.m in Sources */,
+				3C4A77A421DAFF800041ACE3 /* CGFrameBuffer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -995,6 +1062,41 @@
 			};
 			name = Release;
 		};
+		3C4A775621DACE890041ACE3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9F74CLHA49;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		3C4A775721DACE890041ACE3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9F74CLHA49;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1048,6 +1150,15 @@
 			buildConfigurations = (
 				3C4A772C21D892C00041ACE3 /* Debug */,
 				3C4A772D21D892C00041ACE3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3C4A775521DACE890041ACE3 /* Build configuration list for PBXNativeTarget "srgb_to_bt709" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3C4A775621DACE890041ACE3 /* Debug */,
+				3C4A775721DACE890041ACE3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -129,6 +129,9 @@ samplingShader(RasterizerData in [[stage_in]],
 
 // BT.709 rendering fragment shader
 
+// FIXME: note that Metal "fast math" option would automatically
+// replace pow() with exp2(y * log2(x))
+
 static inline
 float BT709_nonLinearNormToLinear(float normV) {
   

@@ -373,7 +373,9 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   NSDictionary *pixelAttributes = @{
                                     (__bridge NSString*)kCVPixelBufferIOSurfacePropertiesKey : @{},
+#if TARGET_OS_IOS
                                     (__bridge NSString*)kCVPixelFormatOpenGLESCompatibility : @(YES),
+#endif // TARGET_OS_IOS
                                     (__bridge NSString*)kCVPixelBufferCGImageCompatibilityKey : @(YES),
                                     (__bridge NSString*)kCVPixelBufferCGBitmapContextCompatibilityKey : @(YES),
                                     };
@@ -551,7 +553,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     assert(status == kCVReturnSuccess);
   }
   
-  if (dump) {
+  if (dump && 0) {
     uint8_t *yPtr = (uint8_t*)Y.bytes;
     uint8_t *cbPtr = (uint8_t*)Cb.bytes;
     uint8_t *crPtr = (uint8_t*)Cr.bytes;
@@ -559,7 +561,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     int Y = yPtr[0];
     int Cb = cbPtr[0];
     int Cr = crPtr[0];
-    printf("first  pixel (Y Cb Cr) (%3d %3d %3d)\n", Y, Cb, Cr);
+    printf("first pixel (Y Cb Cr) (%3d %3d %3d)\n", Y, Cb, Cr);
   }
   
 #if defined(DEBUG)
