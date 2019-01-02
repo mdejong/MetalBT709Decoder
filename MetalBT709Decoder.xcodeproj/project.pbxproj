@@ -64,6 +64,7 @@
 		3C4A77A921DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */; };
 		3C4A77AA21DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */; };
 		3C4A77AB21DC73FE0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */; };
+		3C4A77B121DD79E20041ACE3 /* CoreImageMetalFilterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A77B021DD79DF0041ACE3 /* CoreImageMetalFilterTests.m */; };
 		3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80321D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */; };
@@ -155,6 +156,7 @@
 		3C4A775121DACE880041ACE3 /* srgb_to_bt709 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = srgb_to_bt709; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C4A775321DACE890041ACE3 /* srgb_to_bt709.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = srgb_to_bt709.m; sourceTree = "<group>"; };
 		3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v; sourceTree = "<group>"; };
+		3C4A77B021DD79DF0041ACE3 /* CoreImageMetalFilterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CoreImageMetalFilterTests.m; sourceTree = "<group>"; };
 		3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalBT709Decoder.m; sourceTree = "<group>"; };
 		3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalBT709Decoder.h; sourceTree = "<group>"; };
 		3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = osxcolor_test_image_24bit_BT709.m4v; sourceTree = "<group>"; };
@@ -359,6 +361,7 @@
 		3C4A772421D892C00041ACE3 /* EmptyiOSTests */ = {
 			isa = PBXGroup;
 			children = (
+				3C4A77B021DD79DF0041ACE3 /* CoreImageMetalFilterTests.m */,
 				3C4A772521D892C00041ACE3 /* EmptyiOSTests.m */,
 				3C4A772E21D893290041ACE3 /* MetalBT709DecoderTests.m */,
 				3C4A772721D892C00041ACE3 /* Info.plist */,
@@ -681,6 +684,7 @@
 			files = (
 				3C4A772621D892C00041ACE3 /* EmptyiOSTests.m in Sources */,
 				3C4A772F21D893290041ACE3 /* MetalBT709DecoderTests.m in Sources */,
+				3C4A77B121DD79E20041ACE3 /* CoreImageMetalFilterTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

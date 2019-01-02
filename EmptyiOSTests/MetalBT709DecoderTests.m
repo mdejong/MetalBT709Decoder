@@ -160,6 +160,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   // Init the first pixel value
   
+//  inBGRA[0] = sRGB;
   inBGRA[0] = rgbToPixel(Rin, Gin, Bin);
   
   // Copy the same pixel value to the other 3 pixels so that subsampling
@@ -1380,16 +1381,22 @@ uint32_t grayToPixel(uint32_t gray)
   // gray 75% level : (Y Cb Cr) (179 127 127)
   // but should be  : (Y Cb Cr) (180 128 128)
   
-  //BGRAToBT709ConverterTypeEnum type = BGRAToBT709ConverterSoftware;
-  BGRAToBT709ConverterTypeEnum type = BGRAToBT709ConverterVImage;
+  BGRAToBT709ConverterTypeEnum type = BGRAToBT709ConverterSoftware;
+  //BGRAToBT709ConverterTypeEnum type = BGRAToBT709ConverterVImage;
   
   uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:type];
   
   pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
   
+  // New Apple encoding: linRGB (192 192 192) -> (186 128 128)
+  
+  // Gamma adjustment output 192 -> 198 : (0.7765 * 255) = 198.0 -> 186 after transform
+  
+  // But, writing H.264 data as 4:2:0 emits Y = 210 ???
+  
   {
     int v = Y;
-    int expectedVal = 206;
+    int expectedVal = 186;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
