@@ -59,6 +59,11 @@
 		3C4A775421DACE890041ACE3 /* srgb_to_bt709.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A775321DACE890041ACE3 /* srgb_to_bt709.m */; };
 		3C4A77A421DAFF800041ACE3 /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E81321D73BB4005424E6 /* CGFrameBuffer.m */; };
 		3C4A77A521DAFF930041ACE3 /* BGRAToBT709Converter.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A773121D894720041ACE3 /* BGRAToBT709Converter.m */; };
+		3C4A77A721DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */; };
+		3C4A77A821DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */; };
+		3C4A77A921DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */; };
+		3C4A77AA21DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */; };
+		3C4A77AB21DC73FE0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */; };
 		3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80321D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */; };
@@ -149,6 +154,7 @@
 		3C4A774821D8C3BD0041ACE3 /* bars_709_Frame01.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = bars_709_Frame01.m4v; sourceTree = "<group>"; };
 		3C4A775121DACE880041ACE3 /* srgb_to_bt709 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = srgb_to_bt709; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C4A775321DACE890041ACE3 /* srgb_to_bt709.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = srgb_to_bt709.m; sourceTree = "<group>"; };
+		3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v; sourceTree = "<group>"; };
 		3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalBT709Decoder.m; sourceTree = "<group>"; };
 		3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalBT709Decoder.h; sourceTree = "<group>"; };
 		3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = osxcolor_test_image_24bit_BT709.m4v; sourceTree = "<group>"; };
@@ -255,6 +261,7 @@
 				3A1857EF1EB7AF9E007D4F50 /* Image.tga */,
 				3C4A774821D8C3BD0041ACE3 /* bars_709_Frame01.m4v */,
 				3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */,
+				3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */,
 				3AF7E9BE1EB64A46003BB06D /* AAPLRenderer.h */,
 				3AF7E9BF1EB64A46003BB06D /* AAPLRenderer.m */,
 				3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */,
@@ -545,6 +552,7 @@
 			files = (
 				3AFD65641F71A7240008A125 /* Main.storyboard in Resources */,
 				3A1857F01EB7AF9E007D4F50 /* Image.tga in Resources */,
+				3C4A77A821DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3AFD65631F71A7240008A125 /* LaunchScreen.storyboard in Resources */,
 				3CB6E80621D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 				3C4A774A21D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */,
@@ -556,6 +564,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3A1857F11EB7AF9E007D4F50 /* Image.tga in Resources */,
+				3C4A77A921DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3A06FBA71F730C4000073097 /* Main.storyboard in Resources */,
 				3CB6E80721D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 				3C4A774B21D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */,
@@ -567,6 +576,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3A1857F21EB7AF9E007D4F50 /* Image.tga in Resources */,
+				3C4A77A721DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3AFD655F1F71A71B0008A125 /* Main.storyboard in Resources */,
 				3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 				3C4A774921D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */,
@@ -578,6 +588,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3C4A771921D892BF0041ACE3 /* LaunchScreen.storyboard in Resources */,
+				3C4A77AA21DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3C4A771621D892BF0041ACE3 /* Assets.xcassets in Resources */,
 				3C4A771421D892BA0041ACE3 /* Main.storyboard in Resources */,
 				3C4A774C21D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */,
@@ -588,6 +599,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C4A77AB21DC73FE0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

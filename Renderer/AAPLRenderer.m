@@ -212,14 +212,37 @@ Implementation of renderer class which performs Metal setup and per frame render
   
   CVPixelBufferRef cvPixelBufer;
   
+  cvPixelBufer = [self decodeSMPTEGray75Perent];
   //cvPixelBufer = [self decodeH264YCbCr_bars256];
-  cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
+  //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
 
   if (debugDumpYCbCr) {
     [BGRAToBT709Converter dumpYCBCr:cvPixelBufer];
   }
   
   return cvPixelBufer;
+}
+
+// Most simple input, 0.75 SMPTE colorbars, input is linear RGB value (192 192 192)
+// which gets decoded to sRGB (225 225 255) from the BT.709 YCbCr (206 128 128)
+
+- (CVPixelBufferRef) decodeSMPTEGray75Perent
+{
+  NSString *resFilename = @"Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v";
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(1920, 1080)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  return cvPixelBuffer;
 }
 
 - (CVPixelBufferRef) decodeH264YCbCr_bars256
