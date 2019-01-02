@@ -131,8 +131,9 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
   } else if (inputIsGrayColorspace) {
     printf("input is grayscale colorspace\n");
   } else {
-    printf("could not determine input image colorspace\n");
-    exit(2);
+    printf("will convert from input colorspace to BT709 gamma encoded space:\n");
+    NSString *desc = [(__bridge id)inputColorspace description];
+    printf("%s\n", [desc UTF8String]);
   }
   
   CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage];
@@ -154,15 +155,17 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
   uint8_t *crPtr = (uint8_t *) Cr.bytes;
   
   if (dump) {
-     CGFrameBuffer *inFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
-     
-     [inFB renderCGImage:inImage];
-
+    // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
+    
+    CGFrameBuffer *inFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    [inFB renderCGImage:inImage];
+    
     uint32_t pixel = ((uint32_t*) inFB.pixels)[0];
     int B = pixel & 0xFF;
     int G = (pixel >> 8) & 0xFF;
     int R = (pixel >> 16) & 0xFF;
-    printf("first pixel (R G B) (%d %d %d)", R, G, B);
+    printf("first pixel sRGB (R G B) (%d %d %d)", R, G, B);
   }
   
   if (dump) {
