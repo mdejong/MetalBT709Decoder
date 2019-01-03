@@ -212,7 +212,8 @@ Implementation of renderer class which performs Metal setup and per frame render
   
   CVPixelBufferRef cvPixelBufer;
   
-  cvPixelBufer = [self decodeSMPTEGray75Perent];
+  cvPixelBufer = [self decodeQuicktimeTestPattern];
+  //cvPixelBufer = [self decodeSMPTEGray75Perent];
   //cvPixelBufer = [self decodeH264YCbCr_bars256];
   //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
 
@@ -221,6 +222,27 @@ Implementation of renderer class which performs Metal setup and per frame render
   }
   
   return cvPixelBufer;
+}
+
+// Quicktime test pattern
+
+- (CVPixelBufferRef) decodeQuicktimeTestPattern
+{
+  NSString *resFilename = @"QuickTime_Test_Pattern_HD.mov";
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(1920, 1080)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  return cvPixelBuffer;
 }
 
 // Most simple input, 0.75 SMPTE colorbars, input is linear RGB value (192 192 192)
