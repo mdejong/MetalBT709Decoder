@@ -121,7 +121,7 @@ void usage() {
     
     if (adaptor.pixelBufferPool == nil) {
 #ifdef LOGGING
-      NSLog(@"Failed to start exprt session with movie size %d x %d", width, height);
+      NSLog(@"Failed to start export session with movie size %d x %d", width, height);
 #endif // LOGGING
       
       [videoWriterInput markAsFinished];
@@ -234,12 +234,7 @@ void usage() {
   
 #if TARGET_IPHONE_SIMULATOR
   [videoWriter performSelectorOnMainThread:@selector(finishWriting) withObject:nil waitUntilDone:TRUE];
-#elif TARGET_MACOS
 #else
-  // Invoke finishWriting on some other thread?
-  dispatch_sync(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    [videoWriter finishWriting];
-  });
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
   [videoWriter finishWriting];
@@ -370,6 +365,12 @@ void exportVideo(CGImageRef inCGImage) {
   NSString *outPath = [dirName stringByAppendingPathComponent:outFilename];
   NSURL *outUrl = [NSURL fileURLWithPath:outPath];
   
+  // If the output file already exists, remove it before encoding?
+  {
+    // rm -f file
+    [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+  }
+  
   [EncoderImpl blockingEncode:inCGImage outputPathURL:outUrl];
   
   NSLog(@"wrote %@", outPath);
@@ -377,6 +378,8 @@ void exportVideo(CGImageRef inCGImage) {
 
 int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *configSPtr) {
   // Read PNG
+  
+  NSLog(@"loading %@", inPNGStr);
   
   CGImageRef inImage = makeImageFromFile(inPNGStr);
   //  if (inImage == NULL) {
@@ -463,18 +466,40 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
   if (1) {
     // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
     
-    CGFrameBuffer *inFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+
+#if TARGET_OS_OSX
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    cgFramebuffer.colorspace = cs;
+    CGColorSpaceRelease(cs);
+#endif // TARGET_OS_OSX
     
-    [inFB renderCGImage:inImage];
+    [cgFramebuffer renderCGImage:inImage];
     
-    uint32_t pixel = ((uint32_t*) inFB.pixels)[0];
+    uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[0];
     int B = pixel & 0xFF;
     int G = (pixel >> 8) & 0xFF;
     int R = (pixel >> 16) & 0xFF;
-    printf("first pixel sRGB (R G B) (%d %d %d)\n", R, G, B);
+    printf("first pixel   sRGB (R G B) (%3d %3d %3d)\n", R, G, B);
   }
-  
-  // FIXME: Render into linear RGB and print that value
+
+  if (1) {
+    // Render into linear (gamma 1.0) RGB buffer and print
+    
+    CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
+    cgFramebuffer.colorspace = cs;
+    CGColorSpaceRelease(cs);
+    
+    [cgFramebuffer renderCGImage:inImage];
+    
+    uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[0];
+    int B = pixel & 0xFF;
+    int G = (pixel >> 8) & 0xFF;
+    int R = (pixel >> 16) & 0xFF;
+    printf("first pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
+  }
   
   CGImageRelease(inImage);
   

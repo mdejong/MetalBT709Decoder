@@ -19,7 +19,9 @@
 //#define USE_ALIGNED_VALLOC 1
 
 // Using page copy makes a huge diff, 24 bpp goes from 15->20 FPS to 30 FPS!
+#if TARGET_OS_IOS || TARGET_OS_TV
 #define USE_MACH_VM_ALLOCATE 1
+#endif // TARGET_OS_IOS
 
 #if defined(USE_ALIGNED_VALLOC) || defined(USE_MACH_VM_ALLOCATE)
 #import <unistd.h> // getpagesize()
@@ -510,9 +512,10 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
     assert(0);
   }
 #else
-  // FIXME: add assert here to check num bytes
-  // FIXME: this code will not compile if USE_MACH_VM_ALLOCATE is not defined
-  memcpy(self->m_pixels, anotherFrameBufferPixelsPtr, anotherFrameBuffer.numBytes);
+  void *src = srcPtr;
+  void *dst = self->m_pixels;
+  int numBytes = (int) self.numBytesAllocated;
+  memcpy(dst, src, numBytes);
 #endif  
 }
 
