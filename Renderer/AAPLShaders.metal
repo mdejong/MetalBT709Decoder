@@ -139,11 +139,20 @@ float BT709_nonLinearNormToLinear(float normV) {
     normV *= (1.0f / 4.5f);
   } else {
     const float a = 0.099f;
-    const float gamma = 1.0f / 0.45f;
+    const float gamma = 1.0f / 0.45f; // 2.2
     normV = (normV + a) * (1.0f / (1.0f + a));
     normV = pow(normV, gamma);
   }
   
+  return normV;
+}
+
+static inline
+float AppleGamma196_nonLinearNormToLinear(float normV) {
+  // Simple power curve that removes "dark room" adjustment from BT.709 gamma
+  //const float gamma = 1.961f;
+  const float gamma = 2.4f;
+  normV = pow(normV, gamma);
   return normV;
 }
 
@@ -212,9 +221,13 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
   rgb = saturate(rgb);
   
   if (applyGammaMap) {
-    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
-    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
-    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
+    //rgb.r = BT709_nonLinearNormToLinear(rgb.r);
+    //rgb.g = BT709_nonLinearNormToLinear(rgb.g);
+    //rgb.b = BT709_nonLinearNormToLinear(rgb.b);
+    
+    rgb.r = AppleGamma196_nonLinearNormToLinear(rgb.r);
+    rgb.g = AppleGamma196_nonLinearNormToLinear(rgb.g);
+    rgb.b = AppleGamma196_nonLinearNormToLinear(rgb.b);
   }
   
   float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);

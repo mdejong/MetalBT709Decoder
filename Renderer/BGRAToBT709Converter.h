@@ -20,7 +20,7 @@
 typedef enum {
   BGRAToBT709ConverterSoftware = 0,
   BGRAToBT709ConverterVImage = 1,
-  BGRAToBT709ConverterCoreImage = 2
+  BGRAToBT709ConverterMetal = 2
 } BGRAToBT709ConverterTypeEnum;
 
 @interface BGRAToBT709Converter : NSObject

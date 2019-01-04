@@ -126,6 +126,28 @@ int BT709_encodeGamma(int v, int minv, int maxv) {
   return rInt;
 }
 
+static inline
+float AppleGamma196_nonLinearNormToLinear(float normV) {
+  // Simple power curve that removes "dark room" adjustment from BT.709 gamma
+  //const float gamma = 1.961f;
+  const float gamma = 2.4f;
+  normV = pow(normV, gamma);
+  return normV;
+}
+
+// Convert a linear log value to a non-linear value.
+// Note that normV must be normalized in the range [0.0 1.0]
+
+static inline
+float AppleGamma196_linearNormToNonLinear(float normV) {
+  //const float gamma = 1.0f / 1.961f;
+  //const float gamma = 1.0f / 2.2f; // std
+  const float gamma = 1.0f / 2.4f;
+  
+  normV = pow(normV, gamma);
+  return normV;
+}
+
 // Given a normalized linear RGB pixel value, convert to BT.709
 // YCbCr log colorspace. This method assumes Alpha = 255, the
 // gamma flag makes it possible to return Y without a gamma
@@ -141,7 +163,7 @@ int BT709_convertLinearRGBToYCbCr(
                             int *CrPtr,
                             int applyGammaMap)
 {
-  const int debug = 0;
+  const int debug = 1;
   
 #if defined(DEBUG)
   assert(YPtr);
@@ -162,12 +184,17 @@ int BT709_convertLinearRGBToYCbCr(
       printf("pre  to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
     }
     
-    Rn = BT709_linearNormToNonLinear(Rn);
-    Gn = BT709_linearNormToNonLinear(Gn);
-    Bn = BT709_linearNormToNonLinear(Bn);
+//    Rn = BT709_linearNormToNonLinear(Rn);
+//    Gn = BT709_linearNormToNonLinear(Gn);
+//    Bn = BT709_linearNormToNonLinear(Bn);
+
+    Rn = AppleGamma196_linearNormToNonLinear(Rn);
+    Gn = AppleGamma196_linearNormToNonLinear(Gn);
+    Bn = AppleGamma196_linearNormToNonLinear(Bn);
     
     if (debug) {
       printf("post to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+      printf("R G B in byte range : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
     }
   }
   
@@ -253,7 +280,7 @@ int BT709_convertYCbCrToLinearRGB(
                              float *BPtr,
                              int applyGammaMap)
 {
-  const int debug = 0;
+  const int debug = 1;
   
 #if defined(DEBUG)
   assert(RPtr);
@@ -378,9 +405,13 @@ int BT709_convertYCbCrToLinearRGB(
       printf("pre  to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
     }
     
-    Rn = BT709_nonLinearNormToLinear(Rn);
-    Gn = BT709_nonLinearNormToLinear(Gn);
-    Bn = BT709_nonLinearNormToLinear(Bn);
+//    Rn = BT709_nonLinearNormToLinear(Rn);
+//    Gn = BT709_nonLinearNormToLinear(Gn);
+//    Bn = BT709_nonLinearNormToLinear(Bn);
+    
+    Rn = AppleGamma196_nonLinearNormToLinear(Rn);
+    Gn = AppleGamma196_nonLinearNormToLinear(Gn);
+    Bn = AppleGamma196_nonLinearNormToLinear(Bn);
     
     if (debug) {
       printf("post to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
@@ -404,7 +435,7 @@ int BT709_convertYCbCrToRGB(
                             int *BIntPtr,
                             int applyGammaMap)
 {
-  const int debug = 0;
+  const int debug = 1;
   
   float Rn;
   float Gn;
@@ -456,7 +487,7 @@ int BT709_from_sRGB_convertRGBToYCbCr(
                                     int *CrPtr,
                                     int applyGammaMap)
 {
-  const int debug = 0;
+  const int debug = 1;
   
 #if defined(DEBUG)
   assert(YPtr);
@@ -510,7 +541,7 @@ int BT709_to_sRGB_convertYCbCrToRGB(
                                     int *BPtr,
                                     int applyGammaMap)
 {
-  const int debug = 0;
+  const int debug = 1;
   
 #if defined(DEBUG)
   assert(RPtr);
