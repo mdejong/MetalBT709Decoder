@@ -1557,7 +1557,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 180;
+    int expectedVal = 180 - 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1699,7 +1699,80 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 139;
+    int expectedVal = 139 - 4;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+// Linear * 0.10
+
+- (void)testMetalBT709Decoder_SMPTE_Gray_0x191919_linear_software {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray 10% linear intensity
+  //
+  // sRGB (89 89 89) -> Linear RGB (25 25 25) -> REC.709 (100 128 128)
+  //
+  // gamma 2.4 : 0.0999 -> 0.3830
+  //
+  // AVFoundation (93 128 128)
+  
+  // Why is AVFoundation value lower? It seems that gamma is off a bit
+  
+  Rin = 89;
+  Gin = Rin;
+  Bin = Rin;
+  
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    int expectedVal = 100 - 11;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   

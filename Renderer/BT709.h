@@ -126,6 +126,78 @@ int BT709_encodeGamma(int v, int minv, int maxv) {
   return rInt;
 }
 
+/*
+
+// This 2.6 gamma is within 1 of 3 of the values
+
+static inline
+float AppleGamma196_nonLinearNormToLinear(float normV) {
+  
+  if (normV < 0.081f) {
+    normV *= (1.0f / 4.5f);
+  } else {
+    const float a = 0.099f;
+    const float gamma = 2.6f;
+    normV = (normV + a) * (1.0f / (1.0f + a));
+    normV = pow(normV, gamma);
+  }
+  
+  return normV;
+}
+
+// Convert a linear log value to a non-linear value.
+// Note that normV must be normalized in the range [0.0 1.0]
+
+static inline
+float AppleGamma196_linearNormToNonLinear(float normV) {
+  
+  if (normV < 0.018f) {
+    normV *= 4.5f;
+  } else {
+    const float a = 0.099f;
+    const float gamma = (1.0f / 2.6f);
+    normV = (1.0f + a) * pow(normV, gamma) - a;
+  }
+  
+  return normV;
+}
+ 
+*/
+
+// https://forums.creativecow.net/thread/2/1131717
+
+// gamma 2.4 (almost on, but getting too big at lower values)
+// 2.35 seems too large
+// gamma 2.3 (a little too under)
+
+// gamma 2.6 with no initial linear parts
+
+static inline
+float AppleGamma196_nonLinearNormToLinear(float normV) {
+  // Simple power curve that removes "dark room" adjustment from BT.709 gamma
+  //const float gamma = 1.961f;
+  //const float gamma = 2.35f;
+  const float gamma = 2.4f;
+  normV = pow(normV, gamma);
+  return normV;
+}
+
+// Convert a linear log value to a non-linear value.
+// Note that normV must be normalized in the range [0.0 1.0]
+
+static inline
+float AppleGamma196_linearNormToNonLinear(float normV) {
+  //const float gamma = 1.0f / 1.961f;
+  //const float gamma = 1.0f / 2.2f; // std
+  //const float gamma = 0.45f; // (1.0 / 2.2) = 0.45
+  //const float gamma = 1.0f / 2.35f;
+  const float gamma = 1.0f / 2.4f;
+  normV = pow(normV, gamma);
+  return normV;
+}
+
+/*
+ 
 static inline
 float AppleGamma196_nonLinearNormToLinear(float normV) {
   // Simple power curve that removes "dark room" adjustment from BT.709 gamma
@@ -147,6 +219,8 @@ float AppleGamma196_linearNormToNonLinear(float normV) {
   normV = pow(normV, gamma);
   return normV;
 }
+ 
+*/
 
 // Given a normalized linear RGB pixel value, convert to BT.709
 // YCbCr log colorspace. This method assumes Alpha = 255, the

@@ -352,7 +352,7 @@ CGImageRef makeImageFromFile(NSString *filenameStr)
 // Export a video to H.264
 
 static inline
-void exportVideo(CGImageRef inCGImage) {
+void exportVideo(CGImageRef inCGImage, NSString *outFilename) {
   //AVAsset* inAsset = [AVAsset assetWithURL:inURL];
   
   //NSString *resFilename = @"Gamma_test_HD_75Per_24BPP_sRGB_HD.png";
@@ -360,8 +360,9 @@ void exportVideo(CGImageRef inCGImage) {
   
   //UIImage *inImage = [UIImage imageNamed:@"Gamma_test_HD_75Per_24BPP_sRGB_HD.png"];
   
-  NSString *outFilename = @"Encoded.m4v";
-  NSString *dirName = NSTemporaryDirectory();
+  //NSString *outFilename = @"Encoded.m4v";
+  //NSString *outFilename = ;
+  NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
   NSString *outPath = [dirName stringByAppendingPathComponent:outFilename];
   NSURL *outUrl = [NSURL fileURLWithPath:outPath];
   
@@ -376,7 +377,7 @@ void exportVideo(CGImageRef inCGImage) {
   NSLog(@"wrote %@", outPath);
 }
 
-int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *configSPtr) {
+int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *configSPtr) {
   // Read PNG
   
   NSLog(@"loading %@", inPNGStr);
@@ -461,7 +462,7 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
   
   // Load BGRA pixel data into BGRA CoreVideo pixel buffer
   
-  exportVideo(inImage);
+  exportVideo(inImage, outM4vStr);
   
   if (1) {
     // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
