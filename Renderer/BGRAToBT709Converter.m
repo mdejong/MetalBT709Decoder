@@ -322,6 +322,41 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   return TRUE;
 }
 
+// Attach ICC profile data to a pixel buffer, so that pixels rendered
+// in the BT.709 colorspace are known to color matching.
+
++ (BOOL) setBT709Colorspace:(CVPixelBufferRef)cvPixelBuffer
+{
+  // FIXME: UHDTV : HEVC uses kCGColorSpaceITUR_2020
+  
+  CGColorSpaceRef yuvColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+  
+  // Attach BT.709 info to pixel buffer
+  
+  //CFDataRef colorProfileData = CGColorSpaceCopyICCProfile(yuvColorSpace); // deprecated
+  CFDataRef colorProfileData = CGColorSpaceCopyICCData(yuvColorSpace);
+  
+  // FIXME: "CVImageBufferChromaSubsampling" read from attached H.264 (.m4v) is "TopLeft"
+  // kCVImageBufferChromaLocationTopFieldKey = kCVImageBufferChromaLocation_TopLeft
+  
+  NSDictionary *pbAttachments = @{
+                                  (__bridge NSString*)kCVImageBufferICCProfileKey: (__bridge NSData *)colorProfileData,
+                                  };
+  
+  CVBufferRef pixelBuffer = cvPixelBuffer;
+  
+  CVBufferSetAttachments(pixelBuffer, (__bridge CFDictionaryRef)pbAttachments, kCVAttachmentMode_ShouldPropagate);
+  
+  // Drop ref to NSDictionary to enable explicit checking of ref count of colorProfileData, after the
+  // release below the colorProfileData must be 1.
+  pbAttachments = nil;
+  CFRelease(colorProfileData);
+  
+  CGColorSpaceRelease(yuvColorSpace);
+  
+  return TRUE;
+}
+
 // Set the proper attributes on a CVPixelBufferRef so that vImage
 // is able to render directly into BT.709 formatted YCbCr planes.
 

@@ -147,12 +147,27 @@ float BT709_nonLinearNormToLinear(float normV) {
   return normV;
 }
 
+// Simple gamma = 2.4
+
+//static inline
+//float AppleGamma196_nonLinearNormToLinear(float normV) {
+//  // Simple power curve that removes "dark room" adjustment from BT.709 gamma
+//  //const float gamma = 1.961f;
+//  const float gamma = 2.4f;
+//  normV = pow(normV, gamma);
+//  return normV;
+//}
+
+// Simple gamma = 2.59
+
 static inline
 float AppleGamma196_nonLinearNormToLinear(float normV) {
-  // Simple power curve that removes "dark room" adjustment from BT.709 gamma
-  //const float gamma = 1.961f;
-  const float gamma = 2.4f;
+  
+  const float a = 0.099f;
+  const float gamma = 2.59f; // best
+  normV = (normV + a) * (1.0f / (1.0f + a));
   normV = pow(normV, gamma);
+
   return normV;
 }
 

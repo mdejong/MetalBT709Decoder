@@ -495,12 +495,28 @@ static const int dumpFramesImages = 0;
   //NSAssert([NSThread isMainThread] == FALSE, @"isMainThread");
 
   [encodedH264Buffers removeAllObjects];
+
+  NSString* movieFilePath = nil;
   
-  NSString *resTail = [resourceName lastPathComponent];
-  
-  NSString* movieFilePath = [[NSBundle mainBundle]
-                             pathForResource:resTail ofType:nil];
-  NSAssert(movieFilePath, @"movieFilePath is nil");
+  if ([resourceName hasPrefix:@"/"]) {
+    // Fully qualified path name, load from filesystem
+    
+    NSString *path = resourceName;
+    
+    NSLog(@"fully qualified filename \"%@\"", path);
+    
+    movieFilePath = path;
+    
+    NSAssert(movieFilePath, @"movieFilePath is nil");
+  } else {
+    // App resource file name
+    
+    NSString *resTail = [resourceName lastPathComponent];
+    
+    movieFilePath = [[NSBundle mainBundle]
+                     pathForResource:resTail ofType:nil];
+    NSAssert(movieFilePath, @"movieFilePath is nil");
+  }
   
   // Previously, asYUV was set to TRUE on device in an attempt to get the best
   // performance by avoiding YUV->RGB->YUV conversion, but it seems to produce
@@ -552,7 +568,7 @@ static const int dumpFramesImages = 0;
     }
     int totalkb = totalEncodeNumBytes / 1000;
     int totalmb = totalkb / 1000;
-    NSLog(@"encoded \"%@\" as %d frames", resTail, (int)encodedH264Buffers.count);
+    NSLog(@"encoded \"%@\" as %d frames", [resourceName lastPathComponent], (int)encodedH264Buffers.count);
     NSLog(@"total encoded num bytes %d, %d kB, %d mB", totalEncodeNumBytes, totalkb, totalmb);
 #endif // LOGGING
   }

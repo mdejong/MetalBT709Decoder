@@ -74,6 +74,8 @@
 		3C4A77C121DEA5290041ACE3 /* encode_h264.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A77C021DEA5280041ACE3 /* encode_h264.m */; };
 		3C4A77C521DEAB0E0041ACE3 /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E81321D73BB4005424E6 /* CGFrameBuffer.m */; };
 		3C4A77C621DEAB0E0041ACE3 /* BGRAToBT709Converter.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A773121D894720041ACE3 /* BGRAToBT709Converter.m */; };
+		3CA8B6C121E03A5300D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
+		3CA8B6C221E03A5300D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
 		3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80321D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */; };
@@ -764,6 +766,7 @@
 			files = (
 				3C4A77A521DAFF930041ACE3 /* BGRAToBT709Converter.m in Sources */,
 				3C4A775421DACE890041ACE3 /* srgb_to_bt709.m in Sources */,
+				3CA8B6C121E03A5300D2B853 /* BGDecodeEncode.m in Sources */,
 				3C4A77A421DAFF800041ACE3 /* CGFrameBuffer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -774,6 +777,7 @@
 			files = (
 				3C4A77C621DEAB0E0041ACE3 /* BGRAToBT709Converter.m in Sources */,
 				3C4A77C121DEA5290041ACE3 /* encode_h264.m in Sources */,
+				3CA8B6C221E03A5300D2B853 /* BGDecodeEncode.m in Sources */,
 				3C4A77C521DEAB0E0041ACE3 /* CGFrameBuffer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -49,6 +49,11 @@ typedef enum {
 
 + (BOOL) setBT709Attributes:(CVPixelBufferRef)cvPixelBuffer;
 
+// Attach ICC profile data to a pixel buffer, so that pixels rendered
+// in the BT.709 colorspace are known to color matching.
+
++ (BOOL) setBT709Colorspace:(CVPixelBufferRef)cvPixelBuffer;
+
 // Allocate a CoreVideo buffer for use with BT.709 format YCBCr 2 plane data
 
 + (CVPixelBufferRef) createCoreVideoYCbCrBuffer:(CGSize)size;

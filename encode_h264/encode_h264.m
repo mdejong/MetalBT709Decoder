@@ -17,6 +17,8 @@
 #import "CGFramebuffer.h"
 #import "BGRAToBT709Converter.h"
 
+#import "BGDecodeEncode.h"
+
 typedef struct {
   int fps;
 } ConfigurationStruct;
@@ -190,6 +192,9 @@ void usage() {
       
       [self fillPixelBufferFromImage:inImageRef buffer:buffer size:movieSize];
       
+      // Verify that the pixel buffer uses the BT.709 colorspace at this
+      // points. This should have been defined inside the fill method.
+      
       NSTimeInterval frameDuration = 1.0; // 1 FPS
       NSAssert(frameDuration != 0.0, @"frameDuration not set in frameDecoder");
       int numerator = frameNum;
@@ -294,7 +299,33 @@ void usage() {
   CGBitmapInfo bitmapInfo = 0;
   bitmapInfo |= kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst;
   
+  // Drawing into the same colorspace as the input will simply memcpy(),
+  // no colorspace mapping and no gamma shift.
+  
   CGColorSpaceRef colorSpace = CGImageGetColorSpace(imageRef);
+  
+#if defined(DEBUG)
+  {
+    CGColorSpaceRef inputColorspace = colorSpace;
+    
+    BOOL inputIsBT709Colorspace = FALSE;
+    
+    {
+      CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+      
+      NSString *colorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(colorspace);
+      NSString *inputColorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(inputColorspace);
+      
+      if ([colorspaceDescription isEqualToString:inputColorspaceDescription]) {
+        inputIsBT709Colorspace = TRUE;
+      }
+      
+      CGColorSpaceRelease(colorspace);
+    }
+    
+    assert(inputIsBT709Colorspace == TRUE);
+  }
+#endif // DEBUG
   
   CGContextRef bitmapContext =
   CGBitmapContextCreate(pxdata, size.width, size.height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo);
@@ -311,7 +342,116 @@ void usage() {
   
   CVPixelBufferUnlockBaseAddress(buffer, 0);
   
+  // Tell CoreVideo what colorspace the pixels were rendered in
+  
+  [BGRAToBT709Converter setBT709Colorspace:buffer];
+  
   return;
+}
+
+// Emit an array of float data as a CSV file, the
+// labels should be NSString, these define
+// the emitted labels in column 0.
+
++ (BOOL) writeTableToCSV:(NSString*)filename
+               labelsArr:(NSArray*)labelsArr
+               valuesArr:(NSArray*)valuesArr
+{
+  //NSString *tmpDir = NSTemporaryDirectory();
+  NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+  NSString *path = [dirName stringByAppendingPathComponent:filename];
+  FILE *csvFile = fopen([path UTF8String], "w");
+  if (csvFile == NULL) {
+    return FALSE;
+  }
+  
+  int numColumns = (int) [labelsArr count];
+  
+  for (int i = 0; i < numColumns; i++) {
+    NSString *label = labelsArr[i];
+    fprintf(csvFile, "%s", [label UTF8String]);
+    
+    if (i < (numColumns - 1)) {
+      fprintf(csvFile, ",");
+    }
+  }
+  fprintf(csvFile, "\n");
+  
+  for ( NSArray *tuple in valuesArr ) {
+    for (int i = 0; i < numColumns; i++) {
+      float v = [tuple[i] floatValue];
+      
+      fprintf(csvFile, "%.4f", v);
+      
+      if (i < (numColumns - 1)) {
+        fprintf(csvFile, ",");
+      }
+    }
+    fprintf(csvFile, "\n");
+    //
+    //    float y1 = [tuple[0] floatValue];
+    //    float y2 = [tuple[1] floatValue];
+    //
+    //    NSLog(@"[%4d] (y1, y2) = %.4f,%.4f", x, y1, y2);
+    //    x++;
+    //
+    //    fprintf(csvFile, "%.4f,%.4f\n", y1, y2);
+  }
+  
+  fclose(csvFile);
+  NSLog(@"wrote %@", path);
+  return TRUE;
+}
+
+// Util methods to allocate a tmp buffer to hold pixel data
+// and render into a new CGFrameBuffer object.
+
++ (CGFrameBuffer*) convertFromColorspaceToColorspace:(CGImageRef)inImage
+                                                 bpp:(int)bpp
+                                 convertToColorspace:(CGColorSpaceRef)convertToColorspace
+{
+  int width = (int) CGImageGetWidth(inImage);
+  int height = (int) CGImageGetHeight(inImage);
+
+  CGFrameBuffer *convertedFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:bpp width:width height:height];
+  
+  //CGColorSpaceRef cs = CGColorSpaceCreateWithName(convertToColorspace);
+  convertedFB.colorspace = convertToColorspace;
+  //CGColorSpaceRelease(convertToColorspace);
+  
+  BOOL worked = [convertedFB renderCGImage:inImage];
+  NSAssert(worked, @"renderCGImage");
+  
+  if (!worked) {
+    return nil;
+  }
+  
+  return convertedFB;
+}
+
+// Convert pixels in one colorspace into a second colorspace, in the
+// event that the pixels share the same white point and color bounds
+// this invocation will only adjust the gamma.
+
++ (CGFrameBuffer*) convertFromColorspaceToColorspace:(CGFrameBuffer*)inFB
+                                 convertToColorspace:(CGColorSpaceRef)convertToColorspace
+{
+  int width = (int) inFB.width;
+  int height = (int) inFB.height;
+  
+  CGFrameBuffer *convertedFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:inFB.bitsPerPixel width:width height:height];
+
+  //CGColorSpaceRef cs = CGColorSpaceCreateWithName(convertToColorspace);
+  convertedFB.colorspace = convertToColorspace;
+  //CGColorSpaceRelease(convertToColorspace);
+  
+  CGImageRef inFBImageRef = [inFB createCGImageRef];
+  
+  [convertedFB renderCGImage:inFBImageRef];
+  
+  CGImageRelease(inFBImageRef);
+  
+  return convertedFB;
 }
 
 @end
@@ -352,7 +492,7 @@ CGImageRef makeImageFromFile(NSString *filenameStr)
 // Export a video to H.264
 
 static inline
-void exportVideo(CGImageRef inCGImage, NSString *outFilename) {
+void exportVideo(CGImageRef inCGImage, NSString *outPath) {
   //AVAsset* inAsset = [AVAsset assetWithURL:inURL];
   
   //NSString *resFilename = @"Gamma_test_HD_75Per_24BPP_sRGB_HD.png";
@@ -362,8 +502,7 @@ void exportVideo(CGImageRef inCGImage, NSString *outFilename) {
   
   //NSString *outFilename = @"Encoded.m4v";
   //NSString *outFilename = ;
-  NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
-  NSString *outPath = [dirName stringByAppendingPathComponent:outFilename];
+  
   NSURL *outUrl = [NSURL fileURLWithPath:outPath];
   
   // If the output file already exists, remove it before encoding?
@@ -381,10 +520,175 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
   // Read PNG
   
   NSLog(@"loading %@", inPNGStr);
+
+  CGImageRef inImage;
   
-  CGImageRef inImage = makeImageFromFile(inPNGStr);
-  //  if (inImage == NULL) {
-  //  }
+  if ((0)) {
+    // Generate 16x16 image that contains all the grayscale values in linear
+    // RGB and then map these values to gamma adjusted values in the BT.709 space
+    
+    int width = 16;
+    int height = 16;
+    
+    // When the Apple supplied BT.709 colorspace is used and every grayscale
+    // input value is written into the output, the gamma adjustment in
+    // converting from this colorpace to the linear colorspace can be
+    // determined by graphing the gamma adjustment.
+    
+    // Mapping each value in this colorspace to linear seems to make use
+    // of a gamma = 1.961
+    
+    CGFrameBuffer *identity709FB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
+    identity709FB.colorspace = cs;
+    CGColorSpaceRelease(cs);
+    
+    uint32_t *pixelsPtr = (uint32_t *) identity709FB.pixels;
+    
+    for (int row = 0; row < height; row++) {
+      for (int col = 0; col < width; col++) {
+        int offset = (row * width) + col;
+        uint32_t G = offset & 0xFF;
+        uint32_t grayPixel = (0xFF << 24) | (G << 16) | (G << 8) | (G);
+        pixelsPtr[offset] = grayPixel;
+      }
+    }
+    
+    if ((1)) {
+      // Emit png with linear colorspace
+      
+      NSString *filename = [NSString stringWithFormat:@"TestBT709InAsLinear.png"];
+      //NSString *tmpDir = NSTemporaryDirectory();
+      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+      NSString *path = [dirName stringByAppendingPathComponent:filename];
+      NSData *pngData = [identity709FB formatAsPNG];
+      
+      BOOL worked = [pngData writeToFile:path atomically:TRUE];
+      assert(worked);
+      
+      NSLog(@"wrote %@", path);
+    }
+
+    // Convert grayscale range to BT.709 gamma adjusted values
+    
+    CGColorSpaceRef bt709cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+    
+    CGFrameBuffer *bt709FB = [EncoderImpl convertFromColorspaceToColorspace:identity709FB convertToColorspace:bt709cs];
+    
+    CGColorSpaceRelease(bt709cs);
+    
+    if ((1)) {
+      // Emit png with linear colorspace
+      
+      NSString *filename = [NSString stringWithFormat:@"TestBT709InAsBT709.png"];
+      //NSString *tmpDir = NSTemporaryDirectory();
+      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+      NSString *path = [dirName stringByAppendingPathComponent:filename];
+      NSData *pngData = [bt709FB formatAsPNG];
+      
+      BOOL worked = [pngData writeToFile:path atomically:TRUE];
+      assert(worked);
+      
+      NSLog(@"wrote %@", path);
+    }
+    
+    // Gather value mappings overthe entire byte range
+    
+    {
+      NSArray *labels = @[ @"G", @"R", @"PG", @"PR" ];
+      
+      NSMutableArray *yPairsArr = [NSMutableArray array];
+      
+      uint32_t *pixelPtr = (uint32_t *) bt709FB.pixels;
+      
+      NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
+      
+      for (int i = 0; i < 256; i++) {
+        uint32_t pixel = pixelPtr[i];
+        int grayVal = pixel & 0xFF;
+        rangeMap[@(i)] = @(grayVal);
+        
+        // Use (Y 128 128) to decode grayscale value to a RGB value.
+        // Since the values for Y are setup with a gamma, need to
+        // know the gamma to be able to decode ?
+        
+        // Float amount of the grayscale range that input grayscale
+        // value corresponds to.
+        
+        float percentOfGrayscale = i / 255.0f;
+        float percentOfRange = grayVal / 255.0f;
+        
+        [yPairsArr addObject:@[@(i), @(grayVal), @(percentOfGrayscale), @(percentOfRange)]];
+      }
+      
+      NSLog(@"rangeMap contains %d values", (int)rangeMap.count);
+      NSLog(@"");
+      
+      [EncoderImpl writeTableToCSV:@"Encode_lin_to_709_GR.csv" labelsArr:labels valuesArr:yPairsArr];
+    }
+    
+  } else if ((0)) {
+    // Generate a HD image at 1920x1080
+    
+    int width = 1920;
+    int height = 1080;
+    
+    // When the Apple supplied BT.709 colorspace is used and every grayscale
+    // input value is written into the output, the gamma adjustment in
+    // converting from this colorpace to the linear colorspace can be
+    // determined by graphing the gamma adjustment.
+    
+    // Mapping each value in this colorspace to linear seems to make use
+    // of a gamma = 1.961
+    
+    CGFrameBuffer *identity709FB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+    identity709FB.colorspace = cs;
+    CGColorSpaceRelease(cs);
+    
+    uint32_t *pixelsPtr = (uint32_t *) identity709FB.pixels;
+    
+    for (int row = 0; row < height; row++) {
+      for (int col = 0; col < width; col++) {
+        int offset = (row * width) + col;
+        uint32_t G = col & 0xFF;
+        uint32_t grayPixel = (0xFF << 24) | (G << 16) | (G << 8) | (G);
+        pixelsPtr[offset] = grayPixel;
+      }
+    }
+    
+    if ((0)) {
+      // Emit Test.png with colorspace already configured as BT.709
+      
+      NSString *filename = [NSString stringWithFormat:@"Test.png"];
+      NSString *tmpDir = NSTemporaryDirectory();
+      NSString *path = [tmpDir stringByAppendingPathComponent:filename];
+      NSData *pngData = [identity709FB formatAsPNG];
+      
+      BOOL worked = [pngData writeToFile:path atomically:TRUE];
+      assert(worked);
+      
+      NSLog(@"wrote %@", path);
+    }
+
+    // Convert to Linear colorspace
+    
+    CGColorSpaceRef linRGB = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
+    
+    CGFrameBuffer *linRGBFB = [EncoderImpl convertFromColorspaceToColorspace:identity709FB convertToColorspace:linRGB];
+    
+    CGColorSpaceRelease(linRGB);
+    
+    // Represent linear framebuffer as CGIamgeRef
+    
+    inImage = [linRGBFB createCGImageRef];
+  } else {
+    inImage = makeImageFromFile(inPNGStr);
+    //  if (inImage == NULL) {
+    //  }
+  }
   
   int width = (int) CGImageGetWidth(inImage);
   int height = (int) CGImageGetHeight(inImage);
@@ -400,6 +704,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
   BOOL inputIsRGBColorspace = FALSE;
   BOOL inputIsSRGBColorspace = FALSE;
   BOOL inputIsGrayColorspace = FALSE;
+  BOOL inputIsBT709Colorspace = FALSE;
   
   {
     CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
@@ -446,6 +751,19 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     CGColorSpaceRelease(colorspace);
   }
+
+  {
+    CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+    
+    NSString *colorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(colorspace);
+    NSString *inputColorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(inputColorspace);
+    
+    if ([colorspaceDescription isEqualToString:inputColorspaceDescription]) {
+      inputIsBT709Colorspace = TRUE;
+    }
+    
+    CGColorSpaceRelease(colorspace);
+  }
   
   if (inputIsRGBColorspace) {
     printf("untagged RGB colorspace is not supported as input\n");
@@ -454,37 +772,123 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     printf("input is sRGB colorspace\n");
   } else if (inputIsGrayColorspace) {
     printf("input is grayscale colorspace\n");
+  } else if (inputIsBT709Colorspace) {
+    printf("input is already in BT.709 colorspace\n");
   } else {
     printf("will convert from input colorspace to BT709 gamma encoded space:\n");
     NSString *desc = [(__bridge id)inputColorspace description];
     printf("%s\n", [desc UTF8String]);
   }
   
-  // Load BGRA pixel data into BGRA CoreVideo pixel buffer
-  
-  exportVideo(inImage, outM4vStr);
-  
   if (1) {
     // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
     
-    CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
-
-#if TARGET_OS_OSX
     CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-    cgFramebuffer.colorspace = cs;
+    
+    CGFrameBuffer *convertedFB = [EncoderImpl convertFromColorspaceToColorspace:inImage bpp:24 convertToColorspace:cs];
+
     CGColorSpaceRelease(cs);
-#endif // TARGET_OS_OSX
     
-    [cgFramebuffer renderCGImage:inImage];
-    
-    uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[0];
+    uint32_t pixel = ((uint32_t*) convertedFB.pixels)[0];
     int B = pixel & 0xFF;
     int G = (pixel >> 8) & 0xFF;
     int R = (pixel >> 16) & 0xFF;
     printf("first pixel   sRGB (R G B) (%3d %3d %3d)\n", R, G, B);
   }
-
+  
   if (1) {
+    // Render into linear (gamma 1.0) RGB buffer and print
+    
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
+    
+    CGFrameBuffer *convertedFB = [EncoderImpl convertFromColorspaceToColorspace:inImage bpp:24 convertToColorspace:cs];
+    
+    CGColorSpaceRelease(cs);
+    
+    uint32_t pixel = ((uint32_t*) convertedFB.pixels)[0];
+    int B = pixel & 0xFF;
+    int G = (pixel >> 8) & 0xFF;
+    int R = (pixel >> 16) & 0xFF;
+    printf("first pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
+  }
+
+  if (inputIsBT709Colorspace == FALSE) {
+    // The input colorspace is converted into the BT.709 colorspace,
+    // typically this will only adjust the gamma of sRGB input pixels
+    // to match the gamma = 1.961 approach defined by Apple. Use of
+    // this specific colorpace indicates that another colorspace
+    // change will not be needed before encoding the data to H264.
+
+    CGColorSpaceRef convertToColorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+    
+    CGFrameBuffer *convertedFB = [EncoderImpl convertFromColorspaceToColorspace:inImage
+                                                                            bpp:24
+                                                            convertToColorspace:convertToColorspace];
+    
+    CGColorSpaceRelease(convertToColorspace);
+    
+    CGImageRelease(inImage);
+    
+    inImage = [convertedFB createCGImageRef];
+  }
+  
+  if (1) {
+    // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
+
+    CGColorSpaceRef cs = CGImageGetColorSpace(inImage);
+    
+    CGFrameBuffer *convertedFB = [EncoderImpl convertFromColorspaceToColorspace:inImage bpp:24 convertToColorspace:cs];
+    
+    //CGColorSpaceRelease(cs);
+    
+    uint32_t pixel = ((uint32_t*) convertedFB.pixels)[0];
+    int B = pixel & 0xFF;
+    int G = (pixel >> 8) & 0xFF;
+    int R = (pixel >> 16) & 0xFF;
+    printf("first pixel  BT709 (R G B) (%3d %3d %3d)\n", R, G, B);
+  }
+  
+  // Load BGRA pixel data into BGRA CoreVideo pixel buffer, note that
+  // all incoming pixels should have been converted to BT.709 at
+  // this point.
+  
+  NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+  NSString *outPath = [dirName stringByAppendingPathComponent:outM4vStr];
+  
+  exportVideo(inImage, outPath);
+  
+  if (0) {
+    // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
+    
+    CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+
+    cgFramebuffer.colorspace = CGImageGetColorSpace(inImage);
+    
+//#if TARGET_OS_OSX
+//    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+//    cgFramebuffer.colorspace = cs;
+//    CGColorSpaceRelease(cs);
+//#endif // TARGET_OS_OSX
+    
+    [cgFramebuffer renderCGImage:inImage];
+    
+//    uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[0];
+//    int B = pixel & 0xFF;
+//    int G = (pixel >> 8) & 0xFF;
+//    int R = (pixel >> 16) & 0xFF;
+//    printf("first pixel   sRGB (R G B) (%3d %3d %3d)\n", R, G, B);
+    
+    for (int i = 0; i < 256; i++) {
+      uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[i];
+      int B = pixel & 0xFF;
+      int G = (pixel >> 8) & 0xFF;
+      int R = (pixel >> 16) & 0xFF;
+      printf("(R G B) (%3d %3d %3d)\n", R, G, B);
+    }
+
+  }
+
+  if (0) {
     // Render into linear (gamma 1.0) RGB buffer and print
     
     CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
@@ -499,10 +903,95 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     int B = pixel & 0xFF;
     int G = (pixel >> 8) & 0xFF;
     int R = (pixel >> 16) & 0xFF;
-    printf("first pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
+    printf("pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
+
+    for (int i = 0; i < 256; i++) {
+      uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[1];
+      int B = pixel & 0xFF;
+      int G = (pixel >> 8) & 0xFF;
+      int R = (pixel >> 16) & 0xFF;
+      printf("pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
+    }
   }
   
   CGImageRelease(inImage);
+  
+  if ((0)) {
+    // Load Y Cb Cr values from movie that was just written by reading
+    // values into a pixel buffer.
+    
+    NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:outPath
+                                                                      frameDuration:1.0/30
+                                                                         renderSize:CGSizeMake(1920, 1080)
+                                                                         aveBitrate:0];
+    NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+    
+    // Grab just the first texture, return retained ref
+    
+    CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+    
+    CVPixelBufferRetain(cvPixelBuffer);
+    
+    // Load Y values, ignore Cb Cr
+    
+    NSMutableArray *yPairsArr = [NSMutableArray array];
+    
+    NSMutableData *yData = [NSMutableData data];
+    NSMutableData *cbData = [NSMutableData data];
+    NSMutableData *crData = [NSMutableData data];
+    
+    BOOL worked = [BGRAToBT709Converter copyYCBCr:cvPixelBuffer
+                               Y:yData
+                              Cb:cbData
+                              Cr:crData
+                            dump:TRUE];
+    assert(worked);
+    
+    // Iterte over every Y value and make unique
+    
+    uint8_t *yPtr = (uint8_t *) yData.bytes;
+    
+    if ((1)) {
+      printf("first pixel (Y) (%3d)\n", yPtr[0]);
+    }
+    
+    // 0 5  -> 16
+    // 5 10 -> 17
+    
+    if ((0)) {
+    
+    NSArray *labels = @[ @"G", @"R", @"PG", @"PR" ];
+    
+    NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
+    
+    for (int i = 0; i < 256; i++) {
+      int yVal = yPtr[i];
+      rangeMap[@(i)] = @(yVal);
+      
+      // Use (Y 128 128) to decode grayscale value to a RGB value.
+      // Since the values for Y are setup with a gamma, need to
+      // know the gamma to be able to decode ?
+      
+      // Float amount of the grayscale range that input grayscale
+      // value corresponds to.
+      
+      float percentOfGrayscale = ((float)i) / 255.0f;
+      
+      float percentOfRange = (yVal - 16) / (237.0f - 16);
+      
+      [yPairsArr addObject:@[@(i), @(yVal), @(percentOfGrayscale), @(percentOfRange)]];
+    }
+
+    NSLog(@"rangeMap contains %d values", (int)rangeMap.count);
+    NSLog(@"");
+    
+    //int yVal = [yNum intValue];
+    //[yPairsArr addObject:@[@(yVal)]];
+    
+    [EncoderImpl writeTableToCSV:@"EncodeGR.csv" labelsArr:labels valuesArr:yPairsArr];
+      
+    }
+  }
   
   return 1;
 }
