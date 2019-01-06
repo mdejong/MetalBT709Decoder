@@ -262,6 +262,8 @@ void exportVideo(CGImageRef inCGImage, NSString *outPath) {
 int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
   // Read PNG
   
+  int genWidth = 2 * 256;
+  
   if ((1)) {
     // Generate 16x16 image that contains all the grayscale values in linear
     // RGB and then map these values to gamma adjusted values in the BT.709 space
@@ -345,8 +347,11 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       
       NSLog(@"wrote %@", path);
     }
-
-    // Convert grayscale range to sRGB gamma adjusted values
+    
+    // Convert identity grayscale values to sRGB gamma adjusted values
+    // and emit as a PNG. This set of gamma adjusted values can be
+    // compared to the known identity values for [0, 255] to see
+    // how large the gamma shift was.
     
     CGColorSpaceRef sRGBcs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
     
@@ -392,20 +397,33 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       NSLog(@"wrote %@", path);
     }
     
-    // Gather value mappings over the entire byte range
+    // Gather value mappings over the entire byte range for lin -> 709
     
+    if ((1))
     {
       NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"709" ];
       
       NSMutableArray *yPairsArr = [NSMutableArray array];
       
+      // CSV generation logic below depends on getting 256 values that
+      // represent the range.
+      
       uint32_t *pixelPtr = (uint32_t *) bt709FB.pixels;
+      
+      NSMutableArray *mSamples = [NSMutableArray array];
+      
+      for (int i = 0; i < genWidth; i += 2) {
+        uint32_t pixel = pixelPtr[i];
+        int grayVal = pixel & 0xFF;
+        [mSamples addObject:@(grayVal)];
+      }
+      
+      assert([mSamples count] == 256);
       
       NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
       
-      for (int i = 0; i < (256 * 2); i++) {
-        uint32_t pixel = pixelPtr[i];
-        int grayVal = pixel & 0xFF;
+      for (int i = 0; i < 256; i++) {
+        int grayVal = [mSamples[i] intValue];
         rangeMap[@(i)] = @(grayVal);
         
         // Use (Y 128 128) to decode grayscale value to a RGB value.
@@ -418,7 +436,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
         float percentOfGrayscale = i / 255.0f;
         float percentOfRange = grayVal / 255.0f;
         
-        float appleGammaAdjusted = AppleGamma196_linearNormToNonLinear(percentOfGrayscale);
+        float appleGammaAdjusted = 0.0;
         
         // This actually appears to be a better approximzation of the actualy current
         // output, so why would anything about the Apple 1961 be useful ??
@@ -435,6 +453,59 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       
       [EncoderImpl writeTableToCSV:@"Encode_lin_to_709_GR.csv" labelsArr:labels valuesArr:yPairsArr];
     }
+
+    // Gather value mappings over the entire byte range for lin -> sRGB
+    
+    if ((1))
+    {
+      NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"sRGB" ];
+      
+      NSMutableArray *yPairsArr = [NSMutableArray array];
+      
+      // CSV generation logic below depends on getting 256 values that
+      // represent the range.
+      
+      uint32_t *pixelPtr = (uint32_t *) sRGBFB.pixels;
+      
+      NSMutableArray *mSamples = [NSMutableArray array];
+      
+      for (int i = 0; i < genWidth; i += 2) {
+        uint32_t pixel = pixelPtr[i];
+        int grayVal = pixel & 0xFF;
+        [mSamples addObject:@(grayVal)];
+      }
+      
+      assert([mSamples count] == 256);
+      
+      NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
+      
+      for (int i = 0; i < 256; i++) {
+        int grayVal = [mSamples[i] intValue];
+        rangeMap[@(i)] = @(grayVal);
+        
+        // Use (Y 128 128) to decode grayscale value to a RGB value.
+        // Since the values for Y are setup with a gamma, need to
+        // know the gamma to be able to decode ?
+        
+        // Float amount of the grayscale range that input grayscale
+        // value corresponds to.
+        
+        float percentOfGrayscale = i / 255.0f;
+        float percentOfRange = grayVal / 255.0f;
+        
+        float appleGammaAdjusted = 0.0f;
+                
+        float sRGBGammaAdjusted = sRGB_linearNormToNonLinear(percentOfGrayscale);
+        
+        [yPairsArr addObject:@[@(i), @(grayVal), @(percentOfGrayscale), @(percentOfRange), @(appleGammaAdjusted), @(sRGBGammaAdjusted)]];
+      }
+      
+      NSLog(@"rangeMap contains %d values", (int)rangeMap.count);
+      NSLog(@"");
+      
+      [EncoderImpl writeTableToCSV:@"Encode_lin_to_sRGB_GR.csv" labelsArr:labels valuesArr:yPairsArr];
+    }
+    
   }
   
   return 1;

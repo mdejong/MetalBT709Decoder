@@ -444,7 +444,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     printf("first pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
   }
 
-  if (1 && inputIsBT709Colorspace == FALSE) {
+  if (0 && inputIsBT709Colorspace == FALSE) {
     // The input colorspace is converted into the BT.709 colorspace,
     // typically this will only adjust the gamma of sRGB input pixels
     // to match the gamma = 1.961 approach defined by Apple. Use of
@@ -542,7 +542,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     uint32_t *pixelPtr = (uint32_t*) cgFramebuffer.pixels;
 
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < (256 * 2); i++) {
       uint32_t pixel = pixelPtr[i];
       int B = pixel & 0xFF;
       int G = (pixel >> 8) & 0xFF;
@@ -632,7 +632,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     // Full mapping of output values to CSV file to determine gamma
     
-    if ((0)) {
+    if ((1)) {
     
     NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"BT" ];
     
@@ -652,12 +652,16 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       
       float percentOfGrayscale = ((float)i) / 255.0f;
       
+      // Weirdly, max seems to be 237 instead of 235 ? Why Apple?
+      int minY = 16;
+      int maxY = 237;
+      
       //float percentOfRange = (yVal - 16) / (237.0f - (16+2));
-      float percentOfRange = (yVal - 16) / (237.0f - 16);
-
-      float bt709Gamma12 = BT709_linearNormToNonLinear(percentOfGrayscale);
+      float percentOfRange = (yVal - minY) / (float)(maxY - minY);
       
       float appleGamma196 = AppleGamma196_linearNormToNonLinear(percentOfGrayscale);
+      
+      float bt709Gamma12 = BT709_linearNormToNonLinear(percentOfGrayscale);
       
       [yPairsArr addObject:@[@(i), @(yVal), @(percentOfGrayscale), @(percentOfRange), @(appleGamma196), @(bt709Gamma12)]];
     }
