@@ -14,10 +14,14 @@
 
 #import <ImageIO/ImageIO.h>
 
-#import "CGFramebuffer.h"
+#import "H264Encoder.h"
+
+#import "CGFrameBuffer.h"
 #import "BGRAToBT709Converter.h"
 
 #import "BGDecodeEncode.h"
+
+#import "BT709.h"
 
 typedef struct {
   int fps;
@@ -30,323 +34,46 @@ void usage() {
 
 // Helper class
 
-@interface EncoderImpl : NSObject
+@interface EncoderImpl : NSObject <H264EncoderFrameSource, H264EncoderResult>
+
+//- (CGImageRef) imageForFrame:(int)frameNum;
+//- (BOOL) hasMoreFrames;
+
+@property (nonatomic, assign) int frameNum;
+
+// Array of CGImageRef
+
+@property (nonatomic, retain) NSMutableArray *frames;
 
 @end
 
 @implementation EncoderImpl
 
-+ (void) blockingEncode:(CGImageRef)inImageRef
-          outputPathURL:(NSURL*)outputPathURL
+// Provide frames for H264 encoder interface
+
+- (CGImageRef) imageForFrame:(int)frameNum
 {
-#define LOGGING
+  CGImageRef imageRef = (__bridge CGImageRef) [self.frames objectAtIndex:frameNum];
   
-  int width = (int) CGImageGetWidth(inImageRef);
-  int height = (int) CGImageGetHeight(inImageRef);
+  self.frameNum = self.frameNum + 1;
   
-  @autoreleasepool {
-    
-    BOOL worked;
-    
-    CGSize movieSize = CGSizeMake(width, height);
-    
-#ifdef LOGGING
-    NSLog(@"Writing movie with size %d x %d", width, height);
-#endif // LOGGING
-    
-    // Output file is a file name like "out.mov" or "out.m4v"
-    
-    NSAssert(outputPathURL, @"outputPathURL");
-    NSError *error = nil;
-    
-    // Output types:
-    // AVFileTypeQuickTimeMovie
-    // AVFileTypeMPEG4 (no)
-    
-    AVAssetWriter *videoWriter = [[AVAssetWriter alloc] initWithURL:outputPathURL
-                                                           fileType:AVFileTypeAppleM4V
-                                                              error:&error];
-#if __has_feature(objc_arc)
-#else
-    videoWriter = [videoWriter autorelease];
-#endif // objc_arc
-    
-    NSAssert(videoWriter, @"videoWriter");
-    NSAssert(error == nil, @"error %@", error);
-    
-    NSNumber *widthNum = [NSNumber numberWithUnsignedInteger:width];
-    NSNumber *heightNum = [NSNumber numberWithUnsignedInteger:height];
-    
-    NSDictionary *videoSettings = [NSDictionary dictionaryWithObjectsAndKeys:
-                                   AVVideoCodecTypeH264, AVVideoCodecKey,
-                                   widthNum, AVVideoWidthKey,
-                                   heightNum, AVVideoHeightKey,
-                                   nil];
-    NSAssert(videoSettings, @"videoSettings");
-    
-    AVAssetWriterInput* videoWriterInput = [AVAssetWriterInput
-                                            assetWriterInputWithMediaType:AVMediaTypeVideo
-                                            outputSettings:videoSettings];
-    
-    NSAssert(videoWriterInput, @"videoWriterInput");
-    
-    // adaptor handles allocation of a pool of pixel buffers and makes writing a series
-    // of images to the videoWriterInput easier.
-    
-    NSMutableDictionary *adaptorAttributes = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-                                              [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA], kCVPixelBufferPixelFormatTypeKey,
-                                              widthNum,  kCVPixelBufferWidthKey,
-                                              heightNum, kCVPixelBufferHeightKey,
-                                              nil];
-    
-    AVAssetWriterInputPixelBufferAdaptor *adaptor = [AVAssetWriterInputPixelBufferAdaptor
-                                                     assetWriterInputPixelBufferAdaptorWithAssetWriterInput:videoWriterInput
-                                                     sourcePixelBufferAttributes:adaptorAttributes];
-    
-    NSAssert(adaptor, @"assetWriterInputPixelBufferAdaptorWithAssetWriterInput");
-    
-    // Media data comes from an input file, not real time
-    
-    videoWriterInput.expectsMediaDataInRealTime = NO;
-    
-    NSAssert([videoWriter canAddInput:videoWriterInput], @"canAddInput");
-    [videoWriter addInput:videoWriterInput];
-    
-    // Start writing samples to video file
-    
-    [videoWriter startWriting];
-    [videoWriter startSessionAtSourceTime:kCMTimeZero];
-    
-    // If the pixelBufferPool is nil after the call to startSessionAtSourceTime then something went wrong
-    // when creating the pixel buffers. Typically, an error indicates the the size of the video data is
-    // not acceptable to the AVAssetWriterInput (like smaller than 128 in either dimension).
-    
-    if (adaptor.pixelBufferPool == nil) {
-#ifdef LOGGING
-      NSLog(@"Failed to start export session with movie size %d x %d", width, height);
-#endif // LOGGING
-      
-      [videoWriterInput markAsFinished];
-      
-      [self.class videoWriterFinishWriting:videoWriter];
-      
-      // Remove output file when H264 compressor is not working
-      
-      //worked = [[NSFileManager defaultManager] removeItemAtPath:outputPath error:nil];
-      //NSAssert(worked, @"could not remove output file");
-      
-      //self.state = AVAssetWriterConvertFromMaxvidStateFailed;
-      return;
-    }
-    
-    CVPixelBufferRef buffer = NULL;
-    
-    //const int numFrames = (int) [frameDecoder numFrames];
-    const int numFrames = 1;
-    int frameNum;
-    for (frameNum = 0; frameNum < numFrames; frameNum++) @autoreleasepool {
-#ifdef LOGGING
-      NSLog(@"Writing frame %d", frameNum);
-#endif // LOGGING
-      
-      // FIXME: might reconsider logic design in terms of using block pull approach
-      
-      // http://stackoverflow.com/questions/11033421/optimization-of-cvpixelbufferref
-      // https://developer.apple.com/library/mac/#documentation/AVFoundation/Reference/AVAssetWriterInput_Class/Reference/Reference.html
-      
-      while (adaptor.assetWriterInput.readyForMoreMediaData == FALSE) {
-        // In the case where the input is not ready to accept input yet, wait until it is.
-        // This is a little complex in the case of the main thread, because we would
-        // need to visit the event loop in order for other processing tasks to happen.
-        
-#ifdef LOGGING
-        NSLog(@"Waiting until writer is ready");
-#endif // LOGGING
-        
-        NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:0.1];
-        [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
-      }
-      
-      // Pull frame of data from MVID file
-      
-      //AVFrame *frame = [frameDecoder advanceToFrame:frameNum];
-      //UIImage *frameImage = frame.image;
-      
-      //NSAssert(frame, @"advanceToFrame returned nil frame");
-      //NSAssert(frameImage, @"advanceToFrame returned frame with nil image");
-      //if (frame.isDuplicate) {
-      // FIXME: (can output frame  duration time be explicitly set to deal with this duplication)
-      // Input frame data is the same as the previous one : (keep using previous one)
-      //}
-      
-      CVReturn poolResult = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &buffer);
-      NSAssert(poolResult == kCVReturnSuccess, @"CVPixelBufferPoolCreatePixelBuffer");
-      
-#ifdef LOGGING
-      NSLog(@"filling pixel buffer");
-#endif // LOGGING
-      
-      // Buffer pool error conditions should have been handled already:
-      // kCVReturnInvalidArgument = -6661 (some configuration value is invalid, like adaptor.pixelBufferPool is nil)
-      // kCVReturnAllocationFailed = -6662
-      
-      [self fillPixelBufferFromImage:inImageRef buffer:buffer size:movieSize];
-      
-      // Verify that the pixel buffer uses the BT.709 colorspace at this
-      // points. This should have been defined inside the fill method.
-      
-      NSTimeInterval frameDuration = 1.0; // 1 FPS
-      NSAssert(frameDuration != 0.0, @"frameDuration not set in frameDecoder");
-      int numerator = frameNum;
-      int denominator = (int)round(1.0 / frameDuration);
-      CMTime presentationTime = CMTimeMake(numerator, denominator);
-      worked = [adaptor appendPixelBuffer:buffer withPresentationTime:presentationTime];
-      
-      if (worked == FALSE) {
-        // Fails on 3G, but works on iphone 4, due to lack of hardware encoder on versions < 4
-        // com.apple.mediaserverd[18] : VTSelectAndCreateVideoEncoderInstance: no video encoder found for 'avc1'
-        
-        NSAssert(FALSE, @"appendPixelBuffer failed");
-        
-        // FIXME: Need to break out of loop and free writer elements in this fail case
-      }
-      
-      CVPixelBufferRelease(buffer);
-    }
-    
-    NSAssert(frameNum == numFrames, @"numFrames");
-    
-#ifdef LOGGING
-    NSLog(@"successfully wrote %d frames", numFrames);
-#endif // LOGGING
-    
-    // Done writing video data
-    
-    [videoWriterInput markAsFinished];
-    
-    [self.class videoWriterFinishWriting:videoWriter];
-  }
-  
-  return;
+  return imageRef;
 }
 
-// Util to invoke finishWriting method
+// Return TRUE if more frames can be returned by this frame source,
+// returning FALSE means that all frames have been encoded.
 
-+ (void) videoWriterFinishWriting:(AVAssetWriter*)videoWriter
+- (BOOL) hasMoreFrames
 {
-  // Bug in finishWriting in iOS 6 simulator:
-  // http://stackoverflow.com/questions/12517760/avassetwriter-finishwriting-fails-on-ios-6-simulator
-  
-#if TARGET_IPHONE_SIMULATOR
-  [videoWriter performSelectorOnMainThread:@selector(finishWriting) withObject:nil waitUntilDone:TRUE];
-#else
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  [videoWriter finishWriting];
-#pragma clang diagnostic pop
-#endif
+  if (self.frameNum < self.frames.count) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
 }
 
-+ (void) fillPixelBufferFromImage:(CGImageRef)imageRef
-                           buffer:(CVPixelBufferRef)buffer
-                             size:(CGSize)size
-{
-  CVPixelBufferLockBaseAddress(buffer, 0);
-  void *pxdata = CVPixelBufferGetBaseAddress(buffer);
-  NSParameterAssert(pxdata != NULL);
-  
-  NSAssert(size.width == CVPixelBufferGetWidth(buffer), @"CVPixelBufferGetWidth");
-  NSAssert(size.height == CVPixelBufferGetHeight(buffer), @"CVPixelBufferGetHeight");
-  
-  // zero out all pixel buffer memory before rendering an image (buffers are reused in pool)
-  
-  if (FALSE) {
-    size_t bytesPerPBRow = CVPixelBufferGetBytesPerRow(buffer);
-    size_t totalNumPBBytes = bytesPerPBRow * CVPixelBufferGetHeight(buffer);
-    memset(pxdata, 0, totalNumPBBytes);
-  }
-  
-  if (TRUE) {
-    size_t bufferSize = CVPixelBufferGetDataSize(buffer);
-    memset(pxdata, 0, bufferSize);
-  }
-  
-  if (FALSE) {
-    size_t bufferSize = CVPixelBufferGetDataSize(buffer);
-    
-    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(buffer);
-    
-    size_t left, right, top, bottom;
-    CVPixelBufferGetExtendedPixels(buffer, &left, &right, &top, &bottom);
-    NSLog(@"extended pixels : left %d right %d top %d bottom %d", (int)left, (int)right, (int)top, (int)bottom);
-    
-    NSLog(@"buffer size = %d (bpr %d), row bytes (%d) * height (%d) = %d", (int)bufferSize, (int)(bufferSize/size.height), (int)bytesPerRow, (int)size.height, (int)(bytesPerRow * size.height));
-    
-  }
-  
-  size_t bitsPerComponent;
-  size_t numComponents;
-  size_t bitsPerPixel;
-  size_t bytesPerRow;
-  
-  // 24 BPP with no alpha channel
-  
-  bitsPerComponent = 8;
-  numComponents = 4;
-  bitsPerPixel = bitsPerComponent * numComponents;
-  bytesPerRow = size.width * (bitsPerPixel / 8);
-  
-  CGBitmapInfo bitmapInfo = 0;
-  bitmapInfo |= kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst;
-  
-  // Drawing into the same colorspace as the input will simply memcpy(),
-  // no colorspace mapping and no gamma shift.
-  
-  CGColorSpaceRef colorSpace = CGImageGetColorSpace(imageRef);
-  
-#if defined(DEBUG)
-  {
-    CGColorSpaceRef inputColorspace = colorSpace;
-    
-    BOOL inputIsBT709Colorspace = FALSE;
-    
-    {
-      CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
-      
-      NSString *colorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(colorspace);
-      NSString *inputColorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(inputColorspace);
-      
-      if ([colorspaceDescription isEqualToString:inputColorspaceDescription]) {
-        inputIsBT709Colorspace = TRUE;
-      }
-      
-      CGColorSpaceRelease(colorspace);
-    }
-    
-    assert(inputIsBT709Colorspace == TRUE);
-  }
-#endif // DEBUG
-  
-  CGContextRef bitmapContext =
-  CGBitmapContextCreate(pxdata, size.width, size.height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo);
-  
-  if (bitmapContext == NULL) {
-    NSAssert(FALSE, @"CGBitmapContextCreate() failed");
-  }
-  
-  CGContextDrawImage(bitmapContext, CGRectMake(0, 0, size.width, size.height), imageRef);
-  
-  CGContextRelease(bitmapContext);
-  
-  CVPixelBufferFillExtendedPixels(buffer);
-  
-  CVPixelBufferUnlockBaseAddress(buffer, 0);
-  
-  // Tell CoreVideo what colorspace the pixels were rendered in
-  
-  [BGRAToBT709Converter setBT709Colorspace:buffer];
-  
-  return;
+- (void)encoderResult:(H264EncoderErrorCode)code {
+  NSLog(@"encoderResult : %@", [H264Encoder ErrorCodeToString:code]);
 }
 
 // Emit an array of float data as a CSV file, the
@@ -493,25 +220,35 @@ CGImageRef makeImageFromFile(NSString *filenameStr)
 
 static inline
 void exportVideo(CGImageRef inCGImage, NSString *outPath) {
-  //AVAsset* inAsset = [AVAsset assetWithURL:inURL];
+  // Allocate a H264Encoder instance and declare a util
+  // object that feeds CoreGraphics images to the encoder
+  // and take care of reporting an error condition.
   
-  //NSString *resFilename = @"Gamma_test_HD_75Per_24BPP_sRGB_HD.png";
-  //NSString *path = [[NSBundle mainBundle] pathForResource:resFilename ofType:nil];
+  H264Encoder *encoder = [H264Encoder h264Encoder];
   
-  //UIImage *inImage = [UIImage imageNamed:@"Gamma_test_HD_75Per_24BPP_sRGB_HD.png"];
+  EncoderImpl *impl = [[EncoderImpl alloc] init];
   
-  //NSString *outFilename = @"Encoded.m4v";
-  //NSString *outFilename = ;
+  encoder.frameSource = impl;
+  encoder.encoderResult = impl;
   
-  NSURL *outUrl = [NSURL fileURLWithPath:outPath];
+  impl.frames = [NSMutableArray array];
+  [impl.frames addObject:(__bridge id)inCGImage];
   
-  // If the output file already exists, remove it before encoding?
-  {
-    // rm -f file
-    [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
-  }
+  float fps = 1.0f; // 1 FPS
   
-  [EncoderImpl blockingEncode:inCGImage outputPathURL:outUrl];
+  int width = (int) CGImageGetWidth(inCGImage);
+  int height = (int) CGImageGetHeight(inCGImage);
+  
+  CGSize renderSize = CGSizeMake(width, height);
+  
+  [encoder encodeframes:outPath
+          frameDuration:fps
+             renderSize:renderSize
+             aveBitrate:0];
+  
+  // Wait until the encoding operation is complet
+  
+  [encoder blockUntilFinished];
   
   NSLog(@"wrote %@", outPath);
 }
@@ -596,7 +333,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     // Gather value mappings overthe entire byte range
     
     {
-      NSArray *labels = @[ @"G", @"R", @"PG", @"PR" ];
+      NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"709" ];
       
       NSMutableArray *yPairsArr = [NSMutableArray array];
       
@@ -618,8 +355,17 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
         
         float percentOfGrayscale = i / 255.0f;
         float percentOfRange = grayVal / 255.0f;
+
+        float appleGammaAdjusted = AppleGamma196_linearNormToNonLinear(percentOfGrayscale);
         
-        [yPairsArr addObject:@[@(i), @(grayVal), @(percentOfGrayscale), @(percentOfRange)]];
+        // This actually appears to be a better approximzation of the actualy current
+        // output, so why would anything about the Apple 1961 be useful ??
+        
+        // Perhaps you are only meant to decode with the 1.961 function?
+        
+        float rec709GammaAdjusted = BT709_linearNormToNonLinear(percentOfGrayscale);
+        
+        [yPairsArr addObject:@[@(i), @(grayVal), @(percentOfGrayscale), @(percentOfRange), @(appleGammaAdjusted), @(rec709GammaAdjusted)]];
       }
       
       NSLog(@"rangeMap contains %d values", (int)rangeMap.count);
@@ -872,12 +618,6 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     [cgFramebuffer renderCGImage:inImage];
     
-//    uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[0];
-//    int B = pixel & 0xFF;
-//    int G = (pixel >> 8) & 0xFF;
-//    int R = (pixel >> 16) & 0xFF;
-//    printf("first pixel   sRGB (R G B) (%3d %3d %3d)\n", R, G, B);
-    
     for (int i = 0; i < 256; i++) {
       uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[i];
       int B = pixel & 0xFF;
@@ -916,7 +656,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
   
   CGImageRelease(inImage);
   
-  if ((0)) {
+  if ((1)) {
     // Load Y Cb Cr values from movie that was just written by reading
     // values into a pixel buffer.
     

@@ -76,6 +76,13 @@
 		3C4A77C621DEAB0E0041ACE3 /* BGRAToBT709Converter.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A773121D894720041ACE3 /* BGRAToBT709Converter.m */; };
 		3CA8B6C121E03A5300D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
 		3CA8B6C221E03A5300D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
+		3CA8B6C521E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
+		3CA8B6C621E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
+		3CA8B6C721E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
+		3CA8B6C821E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
+		3CA8B6C921E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
+		3CA8B6CA21E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
+		3CA8B6CB21E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
 		3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80321D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */; };
@@ -181,6 +188,8 @@
 		3C4A77B321DD87D60041ACE3 /* QuickTime_Test_Pattern_HD.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = QuickTime_Test_Pattern_HD.mov; sourceTree = "<group>"; };
 		3C4A77BE21DEA50F0041ACE3 /* encode_h264 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = encode_h264; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C4A77C021DEA5280041ACE3 /* encode_h264.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = encode_h264.m; sourceTree = "<group>"; };
+		3CA8B6C321E1682500D2B853 /* H264Encoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = H264Encoder.h; sourceTree = "<group>"; };
+		3CA8B6C421E1682600D2B853 /* H264Encoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = H264Encoder.m; sourceTree = "<group>"; };
 		3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalBT709Decoder.m; sourceTree = "<group>"; };
 		3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalBT709Decoder.h; sourceTree = "<group>"; };
 		3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = osxcolor_test_image_24bit_BT709.m4v; sourceTree = "<group>"; };
@@ -312,6 +321,8 @@
 				3C4A773721D8981F0041ACE3 /* BT709.h */,
 				3C4A773021D894720041ACE3 /* BGRAToBT709Converter.h */,
 				3C4A773121D894720041ACE3 /* BGRAToBT709Converter.m */,
+				3CA8B6C321E1682500D2B853 /* H264Encoder.h */,
+				3CA8B6C421E1682600D2B853 /* H264Encoder.m */,
 				3A30EDF71EB67EA800B4FC0B /* AAPLImage.h */,
 				3A30EDF81EB67EA800B4FC0B /* AAPLImage.m */,
 				3AF7E9C01EB64A46003BB06D /* AAPLShaderTypes.h */,
@@ -685,6 +696,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3CA8B6C621E1682600D2B853 /* H264Encoder.m in Sources */,
 				3C4A773321D894720041ACE3 /* BGRAToBT709Converter.m in Sources */,
 				63B42F161ED2063300859D09 /* AAPLShaders.metal in Sources */,
 				3CB6E80321D6C62A005424E6 /* MetalBT709Decoder.m in Sources */,
@@ -706,6 +718,7 @@
 				3C4A770521D8498E0041ACE3 /* MetalRenderContext.m in Sources */,
 				3AFD65701F71A89E0008A125 /* AAPLViewController.m in Sources */,
 				3CB6E81621D73BB5005424E6 /* CGFrameBuffer.m in Sources */,
+				3CA8B6C721E1682600D2B853 /* H264Encoder.m in Sources */,
 				63B42F171ED2063800859D09 /* AAPLShaders.metal in Sources */,
 				3AF7EA0B1EB64A46003BB06D /* AAPLRenderer.m in Sources */,
 				3AFD656D1F71A8980008A125 /* AAPLAppDelegate.m in Sources */,
@@ -723,6 +736,7 @@
 				3C4A770321D8498E0041ACE3 /* MetalRenderContext.m in Sources */,
 				3AFD65711F71A8A00008A125 /* main.m in Sources */,
 				3CB6E81421D73BB5005424E6 /* CGFrameBuffer.m in Sources */,
+				3CA8B6C521E1682600D2B853 /* H264Encoder.m in Sources */,
 				3AFD656E1F71A89E0008A125 /* AAPLViewController.m in Sources */,
 				63B42F181ED2063C00859D09 /* AAPLShaders.metal in Sources */,
 				3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */,
@@ -740,6 +754,7 @@
 				3C4A771121D892BA0041ACE3 /* ViewController.m in Sources */,
 				3C4A774521D898BE0041ACE3 /* CGFrameBuffer.m in Sources */,
 				3C4A771C21D892BF0041ACE3 /* main.m in Sources */,
+				3CA8B6C821E1682600D2B853 /* H264Encoder.m in Sources */,
 				3C4A774621D898BE0041ACE3 /* BGRAToBT709Converter.m in Sources */,
 				3C4A770E21D892BA0041ACE3 /* AppDelegate.m in Sources */,
 				3C4A774321D898BE0041ACE3 /* MetalRenderContext.m in Sources */,
@@ -754,6 +769,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3CA8B6C921E1682600D2B853 /* H264Encoder.m in Sources */,
 				3C4A772621D892C00041ACE3 /* EmptyiOSTests.m in Sources */,
 				3C4A772F21D893290041ACE3 /* MetalBT709DecoderTests.m in Sources */,
 				3C4A77B121DD79E20041ACE3 /* CoreImageMetalFilterTests.m in Sources */,
@@ -768,6 +784,7 @@
 				3C4A775421DACE890041ACE3 /* srgb_to_bt709.m in Sources */,
 				3CA8B6C121E03A5300D2B853 /* BGDecodeEncode.m in Sources */,
 				3C4A77A421DAFF800041ACE3 /* CGFrameBuffer.m in Sources */,
+				3CA8B6CA21E1682600D2B853 /* H264Encoder.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -779,6 +796,7 @@
 				3C4A77C121DEA5290041ACE3 /* encode_h264.m in Sources */,
 				3CA8B6C221E03A5300D2B853 /* BGDecodeEncode.m in Sources */,
 				3C4A77C521DEAB0E0041ACE3 /* CGFrameBuffer.m in Sources */,
+				3CA8B6CB21E1682600D2B853 /* H264Encoder.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
