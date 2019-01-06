@@ -83,6 +83,12 @@
 		3CA8B6C921E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
 		3CA8B6CA21E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
 		3CA8B6CB21E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
+		3CA8B6D321E199CB00D2B853 /* gamma_write.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6D221E199CB00D2B853 /* gamma_write.m */; };
+		3CA8B6D721E19BF400D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
+		3CA8B6D821E19BF900D2B853 /* BGRAToBT709Converter.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A773121D894720041ACE3 /* BGRAToBT709Converter.m */; };
+		3CA8B6D921E19C0200D2B853 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
+		3CA8B6DA21E19C0200D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
+		3CA8B6DB21E19C0200D2B853 /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E81321D73BB4005424E6 /* CGFrameBuffer.m */; };
 		3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80321D6C62A005424E6 /* MetalBT709Decoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */; };
 		3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */; };
@@ -120,6 +126,15 @@
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		3C4A77BC21DEA50F0041ACE3 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		3CA8B6CE21E199C700D2B853 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -190,6 +205,8 @@
 		3C4A77C021DEA5280041ACE3 /* encode_h264.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = encode_h264.m; sourceTree = "<group>"; };
 		3CA8B6C321E1682500D2B853 /* H264Encoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = H264Encoder.h; sourceTree = "<group>"; };
 		3CA8B6C421E1682600D2B853 /* H264Encoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = H264Encoder.m; sourceTree = "<group>"; };
+		3CA8B6D021E199C700D2B853 /* gamma_write */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = gamma_write; sourceTree = BUILT_PRODUCTS_DIR; };
+		3CA8B6D221E199CB00D2B853 /* gamma_write.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = gamma_write.m; sourceTree = "<group>"; };
 		3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalBT709Decoder.m; sourceTree = "<group>"; };
 		3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalBT709Decoder.h; sourceTree = "<group>"; };
 		3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = osxcolor_test_image_24bit_BT709.m4v; sourceTree = "<group>"; };
@@ -252,6 +269,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3CA8B6CD21E199C700D2B853 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -291,6 +315,7 @@
 				3C4A772421D892C00041ACE3 /* EmptyiOSTests */,
 				3C4A775221DACE890041ACE3 /* srgb_to_bt709 */,
 				3C4A77BF21DEA5280041ACE3 /* encode_h264 */,
+				3CA8B6D121E199CB00D2B853 /* gamma_write */,
 				3ABBE2751F73196D0080C72C /* Frameworks */,
 				3AF7E9C91EB64A46003BB06D /* Products */,
 				2584CCE02584A3B000000001 /* Configuration */,
@@ -341,6 +366,7 @@
 				3C4A772121D892C00041ACE3 /* EmptyiOSTests.xctest */,
 				3C4A775121DACE880041ACE3 /* srgb_to_bt709 */,
 				3C4A77BE21DEA50F0041ACE3 /* encode_h264 */,
+				3CA8B6D021E199C700D2B853 /* gamma_write */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -429,6 +455,14 @@
 				3C4A77C021DEA5280041ACE3 /* encode_h264.m */,
 			);
 			path = encode_h264;
+			sourceTree = "<group>";
+		};
+		3CA8B6D121E199CB00D2B853 /* gamma_write */ = {
+			isa = PBXGroup;
+			children = (
+				3CA8B6D221E199CB00D2B853 /* gamma_write.m */,
+			);
+			path = gamma_write;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -554,6 +588,23 @@
 			productReference = 3C4A77BE21DEA50F0041ACE3 /* encode_h264 */;
 			productType = "com.apple.product-type.tool";
 		};
+		3CA8B6CF21E199C700D2B853 /* gamma_write */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3CA8B6D421E199CB00D2B853 /* Build configuration list for PBXNativeTarget "gamma_write" */;
+			buildPhases = (
+				3CA8B6CC21E199C700D2B853 /* Sources */,
+				3CA8B6CD21E199C700D2B853 /* Frameworks */,
+				3CA8B6CE21E199C700D2B853 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = gamma_write;
+			productName = gamma_write;
+			productReference = 3CA8B6D021E199C700D2B853 /* gamma_write */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -599,6 +650,11 @@
 						DevelopmentTeam = 9F74CLHA49;
 						ProvisioningStyle = Automatic;
 					};
+					3CA8B6CF21E199C700D2B853 = {
+						CreatedOnToolsVersion = 10.1;
+						DevelopmentTeam = 9F74CLHA49;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 3AF7E9BB1EB64A46003BB06D /* Build configuration list for PBXProject "MetalBT709Decoder" */;
@@ -621,6 +677,7 @@
 				3C4A772021D892C00041ACE3 /* EmptyiOSTests */,
 				3C4A775021DACE880041ACE3 /* srgb_to_bt709 */,
 				3C4A77BD21DEA50F0041ACE3 /* encode_h264 */,
+				3CA8B6CF21E199C700D2B853 /* gamma_write */,
 			);
 		};
 /* End PBXProject section */
@@ -797,6 +854,19 @@
 				3CA8B6C221E03A5300D2B853 /* BGDecodeEncode.m in Sources */,
 				3C4A77C521DEAB0E0041ACE3 /* CGFrameBuffer.m in Sources */,
 				3CA8B6CB21E1682600D2B853 /* H264Encoder.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3CA8B6CC21E199C700D2B853 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3CA8B6D821E19BF900D2B853 /* BGRAToBT709Converter.m in Sources */,
+				3CA8B6D921E19C0200D2B853 /* MetalBT709Decoder.m in Sources */,
+				3CA8B6DA21E19C0200D2B853 /* BGDecodeEncode.m in Sources */,
+				3CA8B6D721E19BF400D2B853 /* H264Encoder.m in Sources */,
+				3CA8B6D321E199CB00D2B853 /* gamma_write.m in Sources */,
+				3CA8B6DB21E19C0200D2B853 /* CGFrameBuffer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1250,6 +1320,41 @@
 			};
 			name = Release;
 		};
+		3CA8B6D521E199CB00D2B853 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9F74CLHA49;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		3CA8B6D621E199CB00D2B853 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9F74CLHA49;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1321,6 +1426,15 @@
 			buildConfigurations = (
 				3C4A77C321DEA5290041ACE3 /* Debug */,
 				3C4A77C421DEA5290041ACE3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3CA8B6D421E199CB00D2B853 /* Build configuration list for PBXNativeTarget "gamma_write" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3CA8B6D521E199CB00D2B853 /* Debug */,
+				3CA8B6D621E199CB00D2B853 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

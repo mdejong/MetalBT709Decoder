@@ -261,120 +261,6 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
   CGImageRef inImage;
   
   if ((0)) {
-    // Generate 16x16 image that contains all the grayscale values in linear
-    // RGB and then map these values to gamma adjusted values in the BT.709 space
-    
-    int width = 16;
-    int height = 16;
-    
-    // When the Apple supplied BT.709 colorspace is used and every grayscale
-    // input value is written into the output, the gamma adjustment in
-    // converting from this colorpace to the linear colorspace can be
-    // determined by graphing the gamma adjustment.
-    
-    // Mapping each value in this colorspace to linear seems to make use
-    // of a gamma = 1.961
-    
-    CGFrameBuffer *identity709FB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
-    
-    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
-    identity709FB.colorspace = cs;
-    CGColorSpaceRelease(cs);
-    
-    uint32_t *pixelsPtr = (uint32_t *) identity709FB.pixels;
-    
-    for (int row = 0; row < height; row++) {
-      for (int col = 0; col < width; col++) {
-        int offset = (row * width) + col;
-        uint32_t G = offset & 0xFF;
-        uint32_t grayPixel = (0xFF << 24) | (G << 16) | (G << 8) | (G);
-        pixelsPtr[offset] = grayPixel;
-      }
-    }
-    
-    if ((1)) {
-      // Emit png with linear colorspace
-      
-      NSString *filename = [NSString stringWithFormat:@"TestBT709InAsLinear.png"];
-      //NSString *tmpDir = NSTemporaryDirectory();
-      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
-      NSString *path = [dirName stringByAppendingPathComponent:filename];
-      NSData *pngData = [identity709FB formatAsPNG];
-      
-      BOOL worked = [pngData writeToFile:path atomically:TRUE];
-      assert(worked);
-      
-      NSLog(@"wrote %@", path);
-    }
-
-    // Convert grayscale range to BT.709 gamma adjusted values
-    
-    CGColorSpaceRef bt709cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
-    
-    CGFrameBuffer *bt709FB = [EncoderImpl convertFromColorspaceToColorspace:identity709FB convertToColorspace:bt709cs];
-    
-    CGColorSpaceRelease(bt709cs);
-    
-    if ((1)) {
-      // Emit png with linear colorspace
-      
-      NSString *filename = [NSString stringWithFormat:@"TestBT709InAsBT709.png"];
-      //NSString *tmpDir = NSTemporaryDirectory();
-      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
-      NSString *path = [dirName stringByAppendingPathComponent:filename];
-      NSData *pngData = [bt709FB formatAsPNG];
-      
-      BOOL worked = [pngData writeToFile:path atomically:TRUE];
-      assert(worked);
-      
-      NSLog(@"wrote %@", path);
-    }
-    
-    // Gather value mappings overthe entire byte range
-    
-    {
-      NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"709" ];
-      
-      NSMutableArray *yPairsArr = [NSMutableArray array];
-      
-      uint32_t *pixelPtr = (uint32_t *) bt709FB.pixels;
-      
-      NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
-      
-      for (int i = 0; i < 256; i++) {
-        uint32_t pixel = pixelPtr[i];
-        int grayVal = pixel & 0xFF;
-        rangeMap[@(i)] = @(grayVal);
-        
-        // Use (Y 128 128) to decode grayscale value to a RGB value.
-        // Since the values for Y are setup with a gamma, need to
-        // know the gamma to be able to decode ?
-        
-        // Float amount of the grayscale range that input grayscale
-        // value corresponds to.
-        
-        float percentOfGrayscale = i / 255.0f;
-        float percentOfRange = grayVal / 255.0f;
-
-        float appleGammaAdjusted = AppleGamma196_linearNormToNonLinear(percentOfGrayscale);
-        
-        // This actually appears to be a better approximzation of the actualy current
-        // output, so why would anything about the Apple 1961 be useful ??
-        
-        // Perhaps you are only meant to decode with the 1.961 function?
-        
-        float rec709GammaAdjusted = BT709_linearNormToNonLinear(percentOfGrayscale);
-        
-        [yPairsArr addObject:@[@(i), @(grayVal), @(percentOfGrayscale), @(percentOfRange), @(appleGammaAdjusted), @(rec709GammaAdjusted)]];
-      }
-      
-      NSLog(@"rangeMap contains %d values", (int)rangeMap.count);
-      NSLog(@"");
-      
-      [EncoderImpl writeTableToCSV:@"Encode_lin_to_709_GR.csv" labelsArr:labels valuesArr:yPairsArr];
-    }
-    
-  } else if ((0)) {
     // Generate a HD image at 1920x1080
     
     int width = 1920;
@@ -620,7 +506,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
   
   exportVideo(inImage, outPath);
   
-  if (0) {
+  if (1) {
     // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
     
     CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
@@ -635,17 +521,19 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     [cgFramebuffer renderCGImage:inImage];
     
+    uint32_t *pixelPtr = (uint32_t*) cgFramebuffer.pixels;
+    
     for (int i = 0; i < 256; i++) {
-      uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[i];
+      uint32_t pixel = pixelPtr[i];
       int B = pixel & 0xFF;
       int G = (pixel >> 8) & 0xFF;
       int R = (pixel >> 16) & 0xFF;
-      printf("(R G B) (%3d %3d %3d)\n", R, G, B);
+      printf("sRGB (R G B) (%3d %3d %3d)\n", R, G, B);
     }
 
   }
 
-  if (0) {
+  if (1) {
     // Render into linear (gamma 1.0) RGB buffer and print
     
     CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
@@ -656,14 +544,10 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     [cgFramebuffer renderCGImage:inImage];
     
-    uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[0];
-    int B = pixel & 0xFF;
-    int G = (pixel >> 8) & 0xFF;
-    int R = (pixel >> 16) & 0xFF;
-    printf("pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
+    uint32_t *pixelPtr = (uint32_t*) cgFramebuffer.pixels;
 
     for (int i = 0; i < 256; i++) {
-      uint32_t pixel = ((uint32_t*) cgFramebuffer.pixels)[1];
+      uint32_t pixel = pixelPtr[i];
       int B = pixel & 0xFF;
       int G = (pixel >> 8) & 0xFF;
       int R = (pixel >> 16) & 0xFF;
@@ -679,7 +563,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:outPath
                                                                       frameDuration:1.0/30
-                                                                         renderSize:CGSizeMake(1920, 1080)
+                                                                         renderSize:CGSizeMake(width, height)
                                                                          aveBitrate:0];
     NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
     
@@ -721,7 +605,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
     
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < (width * height); i++) {
       int yVal = yPtr[i];
       rangeMap[@(i)] = @(yVal);
       
@@ -741,9 +625,6 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
 
     NSLog(@"rangeMap contains %d values", (int)rangeMap.count);
     NSLog(@"");
-    
-    //int yVal = [yNum intValue];
-    //[yPairsArr addObject:@[@(yVal)]];
     
     [EncoderImpl writeTableToCSV:@"EncodeGR.csv" labelsArr:labels valuesArr:yPairsArr];
       
