@@ -437,10 +437,10 @@ static const int dumpFramesImages = 0;
   
   CGColorSpaceRef colorSpace = CGImageGetColorSpace(imageRef);
   
-  // Force input to be BT.709
-  
 #if defined(DEBUG)
-  if ((1)) {
+  // Verify input colorspace is BT.709
+  
+  if ((0)) {
     CGColorSpaceRef inputColorspace = colorSpace;
     
     BOOL inputIsBT709Colorspace = FALSE;
@@ -459,6 +459,31 @@ static const int dumpFramesImages = 0;
     }
     
     assert(inputIsBT709Colorspace == TRUE);
+  }
+#endif // DEBUG
+  
+#if defined(DEBUG)
+  // Verify input colorspace is sRGB
+  
+  if ((1)) {
+    CGColorSpaceRef inputColorspace = colorSpace;
+    
+    BOOL inputIsSRGBColorspace = FALSE;
+    
+    {
+      CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+      
+      NSString *colorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(colorspace);
+      NSString *inputColorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(inputColorspace);
+      
+      if ([colorspaceDescription isEqualToString:inputColorspaceDescription]) {
+        inputIsSRGBColorspace = TRUE;
+      }
+      
+      CGColorSpaceRelease(colorspace);
+    }
+    
+    assert(inputIsSRGBColorspace == TRUE);
   }
 #endif // DEBUG
   

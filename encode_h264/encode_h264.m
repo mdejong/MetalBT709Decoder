@@ -558,7 +558,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     printf("first pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
   }
 
-  if (inputIsBT709Colorspace == FALSE) {
+  if (0 && inputIsBT709Colorspace == FALSE) {
     // The input colorspace is converted into the BT.709 colorspace,
     // typically this will only adjust the gamma of sRGB input pixels
     // to match the gamma = 1.961 approach defined by Apple. Use of
@@ -579,8 +579,25 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
   }
   
   if (1) {
-    // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
+    // The block above should have converted the input into BT.709, assuming that
+    // is the case print the converted values after a nop conversion to BT.709.
 
+    CGColorSpaceRef convertToColorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+    
+    CGFrameBuffer *convertedFB = [EncoderImpl convertFromColorspaceToColorspace:inImage bpp:24 convertToColorspace:convertToColorspace];
+    
+    CGColorSpaceRelease(convertToColorspace);
+    
+    uint32_t pixel = ((uint32_t*) convertedFB.pixels)[0];
+    int B = pixel & 0xFF;
+    int G = (pixel >> 8) & 0xFF;
+    int R = (pixel >> 16) & 0xFF;
+    printf("first pixel  BT709 (R G B) (%3d %3d %3d)\n", R, G, B);
+  }
+  
+  if (1) {
+    // Print RGB in the colorspace defined for the input image
+    
     CGColorSpaceRef cs = CGImageGetColorSpace(inImage);
     
     CGFrameBuffer *convertedFB = [EncoderImpl convertFromColorspaceToColorspace:inImage bpp:24 convertToColorspace:cs];
@@ -591,7 +608,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     int B = pixel & 0xFF;
     int G = (pixel >> 8) & 0xFF;
     int R = (pixel >> 16) & 0xFF;
-    printf("first pixel  BT709 (R G B) (%3d %3d %3d)\n", R, G, B);
+    printf("first pixel  INPUT (R G B) (%3d %3d %3d)\n", R, G, B);
   }
   
   // Load BGRA pixel data into BGRA CoreVideo pixel buffer, note that
