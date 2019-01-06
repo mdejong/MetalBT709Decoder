@@ -126,112 +126,14 @@ int BT709_encodeGamma(int v, int minv, int maxv) {
   return rInt;
 }
 
-static inline
-float AppleGamma196_nonLinearNormToLinear(float normV) {
-  
-  if (0 && normV < 0.081f) {
-    normV *= (1.0f / 4.5f);
-  } else {
-    const float a = 0.099f;
-    //const float gamma = 2.7f; // too large
-    //const float gamma = 2.61f;
-    //const float gamma = 2.6f;
-    //const float gamma = 2.595f;
-    const float gamma = 2.59f; // best
-    //const float gamma = 2.58f;
-    //const float gamma = 2.57f;
-    //const float gamma = 2.5f; // too low
-    //const float gamma = 2.4f;
-    //const float gamma = 2.2f;
-    normV = (normV + a) * (1.0f / (1.0f + a));
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-
-// Convert a linear log value to a non-linear value.
-// Note that normV must be normalized in the range [0.0 1.0]
-
-static inline
-float AppleGamma196_linearNormToNonLinear(float normV) {
-  
-  if (0 && normV < 0.018f) {
-    normV *= 4.5f;
-  } else {
-    const float a = 0.099f;
-    //const float gamma = (1.0f / 2.7f);
-    //const float gamma = 0.3846; // 0.3846
-    //const float gamma = (1.0f / 2.61f); // too large
-    //const float gamma = (1.0f / 2.6f); // 0.38
-    //const float gamma = (1.0f / 2.595f);
-    const float gamma = (1.0f / 2.59f); // best
-    //const float gamma = (1.0f / 2.58f);
-    //const float gamma = (1.0f / 2.57f);
-    //const float gamma = (1.0f / 2.5f);
-    //const float gamma = (1.0f / 2.4f);
-    //const float gamma = (1.0f / 2.2f);
-    normV = (1.0f + a) * pow(normV, gamma) - a;
-  }
-  
-  return normV;
-}
-
-/*
-
-// This 2.6 gamma is within 1 of 3 of the values
-
-static inline
-float AppleGamma196_nonLinearNormToLinear(float normV) {
-  
-  if (normV < 0.081f) {
-    normV *= (1.0f / 4.5f);
-  } else {
-    const float a = 0.099f;
-    const float gamma = 2.6f;
-    normV = (normV + a) * (1.0f / (1.0f + a));
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-
-// Convert a linear log value to a non-linear value.
-// Note that normV must be normalized in the range [0.0 1.0]
-
-static inline
-float AppleGamma196_linearNormToNonLinear(float normV) {
-  
-  if (normV < 0.018f) {
-    normV *= 4.5f;
-  } else {
-    const float a = 0.099f;
-    const float gamma = (1.0f / 2.6f);
-    normV = (1.0f + a) * pow(normV, gamma) - a;
-  }
-  
-  return normV;
-}
-
-*/
-
 // https://forums.creativecow.net/thread/2/1131717
 
-// gamma 2.4 (almost on, but getting too big at lower values)
-// 2.35 seems too large
-// gamma 2.3 (a little too under)
-
-// gamma 2.6 with no initial linear parts
-
-/*
+// Apple gamma adjustment that seems to remove "dark room"
+// levels from BT.709.
 
 static inline
 float AppleGamma196_nonLinearNormToLinear(float normV) {
-  // Simple power curve that removes "dark room" adjustment from BT.709 gamma
-  //const float gamma = 1.961f;
-  const float gamma = 2.2f;
-  //const float gamma = 2.35f;
-  //const float gamma = 2.4f;
+  const float gamma = 1.96f;
   normV = pow(normV, gamma);
   return normV;
 }
@@ -239,44 +141,16 @@ float AppleGamma196_nonLinearNormToLinear(float normV) {
 // Convert a linear log value to a non-linear value.
 // Note that normV must be normalized in the range [0.0 1.0]
 
-static inline
-float AppleGamma196_linearNormToNonLinear(float normV) {
-  //const float gamma = 1.0f / 1.961f;
-  //const float gamma = 0.45f; // (1.0 / 2.2) = 0.45
-  const float gamma = (1.0f / 2.2f); // (1.0 / 2.2) = 0.45
-  //const float gamma = 1.0f / 2.35f;
-  //const float gamma = 1.0f / 2.4f;
-  normV = pow(normV, gamma);
-  return normV;
-}
-
-*/
- 
-/*
- 
-static inline
-float AppleGamma196_nonLinearNormToLinear(float normV) {
-  // Simple power curve that removes "dark room" adjustment from BT.709 gamma
-  //const float gamma = 1.961f;
-  const float gamma = 2.4f;
-  normV = pow(normV, gamma);
-  return normV;
-}
-
-// Convert a linear log value to a non-linear value.
-// Note that normV must be normalized in the range [0.0 1.0]
+// FIXME: Note that this to gamma encoding does not actually
+// seem to be used when encoding. The BT.709 encoding is
+// a closer actual match for the encoding operation.
 
 static inline
 float AppleGamma196_linearNormToNonLinear(float normV) {
-  //const float gamma = 1.0f / 1.961f;
-  //const float gamma = 1.0f / 2.2f; // std
-  const float gamma = 1.0f / 2.4f;
-  
+  const float gamma = 1.0f / 1.96f;
   normV = pow(normV, gamma);
   return normV;
 }
- 
-*/
 
 // Given a normalized linear RGB pixel value, convert to BT.709
 // YCbCr log colorspace. This method assumes Alpha = 255, the
@@ -313,14 +187,17 @@ int BT709_convertLinearRGBToYCbCr(
     if (debug) {
       printf("pre  to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
     }
-    
-//    Rn = BT709_linearNormToNonLinear(Rn);
-//    Gn = BT709_linearNormToNonLinear(Gn);
-//    Bn = BT709_linearNormToNonLinear(Bn);
 
-    Rn = AppleGamma196_linearNormToNonLinear(Rn);
-    Gn = AppleGamma196_linearNormToNonLinear(Gn);
-    Bn = AppleGamma196_linearNormToNonLinear(Bn);
+    // Always encode using BT.709 defined curve.
+    // Apple may decode with a slightly different curve.
+    
+    Rn = BT709_linearNormToNonLinear(Rn);
+    Gn = BT709_linearNormToNonLinear(Gn);
+    Bn = BT709_linearNormToNonLinear(Bn);
+
+//    Rn = AppleGamma196_linearNormToNonLinear(Rn);
+//    Gn = AppleGamma196_linearNormToNonLinear(Gn);
+//    Bn = AppleGamma196_linearNormToNonLinear(Bn);
     
     if (debug) {
       printf("post to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
@@ -535,13 +412,13 @@ int BT709_convertYCbCrToLinearRGB(
       printf("pre  to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
     }
     
-//    Rn = BT709_nonLinearNormToLinear(Rn);
-//    Gn = BT709_nonLinearNormToLinear(Gn);
-//    Bn = BT709_nonLinearNormToLinear(Bn);
+    Rn = BT709_nonLinearNormToLinear(Rn);
+    Gn = BT709_nonLinearNormToLinear(Gn);
+    Bn = BT709_nonLinearNormToLinear(Bn);
     
-    Rn = AppleGamma196_nonLinearNormToLinear(Rn);
-    Gn = AppleGamma196_nonLinearNormToLinear(Gn);
-    Bn = AppleGamma196_nonLinearNormToLinear(Bn);
+//    Rn = AppleGamma196_nonLinearNormToLinear(Rn);
+//    Gn = AppleGamma196_nonLinearNormToLinear(Gn);
+//    Bn = AppleGamma196_nonLinearNormToLinear(Bn);
     
     if (debug) {
       printf("post to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);

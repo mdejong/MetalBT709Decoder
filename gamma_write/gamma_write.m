@@ -266,8 +266,8 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     // Generate 16x16 image that contains all the grayscale values in linear
     // RGB and then map these values to gamma adjusted values in the BT.709 space
     
-    int width = 16 * 2;
-    int height = 16 * 2;
+    int width = 1920;
+    int height = 1080;
     
     // When the Apple supplied BT.709 colorspace is used and every grayscale
     // input value is written into the output, the gamma adjustment in
@@ -277,26 +277,46 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     // Mapping each value in this colorspace to linear seems to make use
     // of a gamma = 1.961
     
-    CGFrameBuffer *identity709FB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    CGFrameBuffer *identityFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
     
     CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
-    identity709FB.colorspace = cs;
+    identityFB.colorspace = cs;
     CGColorSpaceRelease(cs);
     
-    uint32_t *pixelsPtr = (uint32_t *) identity709FB.pixels;
+    uint32_t *pixelsPtr = (uint32_t *) identityFB.pixels;
     
-    const int dumpGrayOut = 1;
+    const int dumpGrayOut = 0;
     
     if (dumpGrayOut) {
       printf("dumpGrayOut:\n");
     }
     
+//    for (int row = 0; row < height; row++) {
+//      for (int col = 0; col < width; col++) {
+//        int offset = (row * width) + col;
+//        int rd2 = row / 2;
+//        int cd2 = col / 2;
+//        int GForPixel = (rd2 * width/2) + cd2;
+//        uint32_t G = GForPixel & 0xFF;
+//        uint32_t grayPixel = (0xFF << 24) | (G << 16) | (G << 8) | (G);
+//        pixelsPtr[offset] = grayPixel;
+//
+//        if (dumpGrayOut) {
+//          printf("%3d ", G);
+//        }
+//      }
+//
+//      if (dumpGrayOut) {
+//        printf("\n");
+//      }
+//    }
+    
     for (int row = 0; row < height; row++) {
       for (int col = 0; col < width; col++) {
         int offset = (row * width) + col;
-        int rd2 = row / 2;
+        //int rd2 = row / 2;
         int cd2 = col / 2;
-        int GForPixel = (rd2 * width/2) + cd2;
+        int GForPixel = cd2;
         uint32_t G = GForPixel & 0xFF;
         uint32_t grayPixel = (0xFF << 24) | (G << 16) | (G << 8) | (G);
         pixelsPtr[offset] = grayPixel;
@@ -305,7 +325,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
           printf("%3d ", G);
         }
       }
-
+      
       if (dumpGrayOut) {
         printf("\n");
       }
@@ -314,11 +334,34 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     if ((1)) {
       // Emit png with linear colorspace
       
-      NSString *filename = [NSString stringWithFormat:@"TestBT709InAsLinear.png"];
+      NSString *filename = [NSString stringWithFormat:@"TestHDAsLinear.png"];
       //NSString *tmpDir = NSTemporaryDirectory();
       NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
       NSString *path = [dirName stringByAppendingPathComponent:filename];
-      NSData *pngData = [identity709FB formatAsPNG];
+      NSData *pngData = [identityFB formatAsPNG];
+      
+      BOOL worked = [pngData writeToFile:path atomically:TRUE];
+      assert(worked);
+      
+      NSLog(@"wrote %@", path);
+    }
+
+    // Convert grayscale range to sRGB gamma adjusted values
+    
+    CGColorSpaceRef sRGBcs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    
+    CGFrameBuffer *sRGBFB = [EncoderImpl convertFromColorspaceToColorspace:identityFB convertToColorspace:sRGBcs];
+    
+    CGColorSpaceRelease(sRGBcs);
+    
+    if ((1)) {
+      // Emit png in sRGBcolorspace
+      
+      NSString *filename = [NSString stringWithFormat:@"TestHDAsSRGB.png"];
+      //NSString *tmpDir = NSTemporaryDirectory();
+      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+      NSString *path = [dirName stringByAppendingPathComponent:filename];
+      NSData *pngData = [sRGBFB formatAsPNG];
       
       BOOL worked = [pngData writeToFile:path atomically:TRUE];
       assert(worked);
@@ -330,14 +373,14 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     
     CGColorSpaceRef bt709cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
     
-    CGFrameBuffer *bt709FB = [EncoderImpl convertFromColorspaceToColorspace:identity709FB convertToColorspace:bt709cs];
+    CGFrameBuffer *bt709FB = [EncoderImpl convertFromColorspaceToColorspace:identityFB convertToColorspace:bt709cs];
     
     CGColorSpaceRelease(bt709cs);
     
     if ((1)) {
-      // Emit png with linear colorspace
+      // Emit png in BT.709 colorspace
       
-      NSString *filename = [NSString stringWithFormat:@"TestBT709InAsBT709.png"];
+      NSString *filename = [NSString stringWithFormat:@"TestHDAsBT709.png"];
       //NSString *tmpDir = NSTemporaryDirectory();
       NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
       NSString *path = [dirName stringByAppendingPathComponent:filename];
@@ -349,7 +392,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       NSLog(@"wrote %@", path);
     }
     
-    // Gather value mappings overthe entire byte range
+    // Gather value mappings over the entire byte range
     
     {
       NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"709" ];
@@ -360,7 +403,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       
       NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
       
-      for (int i = 0; i < (width * height); i++) {
+      for (int i = 0; i < (256 * 2); i++) {
         uint32_t pixel = pixelPtr[i];
         int grayVal = pixel & 0xFF;
         rangeMap[@(i)] = @(grayVal);

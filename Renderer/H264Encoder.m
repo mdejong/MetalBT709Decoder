@@ -269,6 +269,11 @@ static const int dumpFramesImages = 0;
   // This frame encoding loop runs until the source reports that no
   // more frames are avaialble.
   
+  //NSTimeInterval frameDuration = 1.0; // 1 FPS
+  NSAssert(frameDuration != 0.0, @"frameDuration cannot be zero");
+  int denominator = (int)round(1.0 / frameDuration);
+  CMTime endTime = CMTimeMake(0, denominator);
+  
   int frameNum;
   for (frameNum = 0; TRUE; frameNum++) @autoreleasepool {
     
@@ -329,11 +334,9 @@ static const int dumpFramesImages = 0;
     // Verify that the pixel buffer uses the BT.709 colorspace at this
     // points. This should have been defined inside the fill method.
     
-    //NSTimeInterval frameDuration = 1.0; // 1 FPS
-    NSAssert(frameDuration != 0.0, @"frameDuration cannot be zero");
     int numerator = frameNum;
-    int denominator = (int)round(1.0 / frameDuration);
     CMTime presentationTime = CMTimeMake(numerator, denominator);
+    endTime = CMTimeMake(numerator+1, denominator);
     worked = [adaptor appendPixelBuffer:cvPixelBuffer withPresentationTime:presentationTime];
     
     if (worked == FALSE) {
@@ -355,6 +358,8 @@ static const int dumpFramesImages = 0;
   // Done writing video data
   
   [videoWriterInput markAsFinished];
+  
+  [videoWriter endSessionAtSourceTime:endTime];
   
   [self videoWriterFinishWriting:videoWriter];
   
@@ -465,7 +470,7 @@ static const int dumpFramesImages = 0;
 #if defined(DEBUG)
   // Verify input colorspace is sRGB
   
-  if ((1)) {
+  if ((0)) {
     CGColorSpaceRef inputColorspace = colorSpace;
     
     BOOL inputIsSRGBColorspace = FALSE;
@@ -518,6 +523,8 @@ static const int dumpFramesImages = 0;
 // RGB values in the CoreVideo buffer are interpreted.
 //
 // https://developer.apple.com/library/archive/qa/qa1839/_index.html
+
+// FIXME: set kCVImageBufferCGColorSpaceKey directly
 
 - (BOOL) setColorspace:(CVPixelBufferRef)cvPixelBuffer
             colorSpace:(CGColorSpaceRef)colorSpace

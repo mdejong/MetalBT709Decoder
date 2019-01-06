@@ -178,6 +178,12 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   CGFrameBuffer *inputFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
   
+  // Explicitly indicate that incoming pixels are in sRGB colorspace
+  
+  CGColorSpaceRef sRGBcs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+  inputFB.colorspace = sRGBcs;
+  CGColorSpaceRelease(sRGBcs);
+  
   memcpy(inputFB.pixels, inBGRAPixels, width*height*sizeof(uint32_t));
   
   inputImageRef = [inputFB createCGImageRef];
@@ -206,7 +212,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   uint8_t *cbPtr = (uint8_t *) Cb.bytes;
   uint8_t *crPtr = (uint8_t *) Cr.bytes;
   
-  if ((0)) {
+  if ((1)) {
     int Y = yPtr[0];
     int Cb = cbPtr[0];
     int Cr = crPtr[0];

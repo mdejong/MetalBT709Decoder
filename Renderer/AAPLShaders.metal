@@ -147,27 +147,17 @@ float BT709_nonLinearNormToLinear(float normV) {
   return normV;
 }
 
-// Simple gamma = 2.4
-
-//static inline
-//float AppleGamma196_nonLinearNormToLinear(float normV) {
-//  // Simple power curve that removes "dark room" adjustment from BT.709 gamma
-//  //const float gamma = 1.961f;
-//  const float gamma = 2.4f;
-//  normV = pow(normV, gamma);
-//  return normV;
-//}
-
-// Simple gamma = 2.59
+// Apple gamma 1.96 which seems designed to remove
+// the "dark room" boost implicit in the BT.709
+// gamma transformed signal. Note that in the case
+// where known RGB values were encoded with the
+// BT.709 gamma then decoding with this gamma
+// value will not produce identical results.
 
 static inline
 float AppleGamma196_nonLinearNormToLinear(float normV) {
-  
-  const float a = 0.099f;
-  const float gamma = 2.59f; // best
-  normV = (normV + a) * (1.0f / (1.0f + a));
+  const float gamma = 1.96f;
   normV = pow(normV, gamma);
-
   return normV;
 }
 
@@ -236,13 +226,13 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
   rgb = saturate(rgb);
   
   if (applyGammaMap) {
-    //rgb.r = BT709_nonLinearNormToLinear(rgb.r);
-    //rgb.g = BT709_nonLinearNormToLinear(rgb.g);
-    //rgb.b = BT709_nonLinearNormToLinear(rgb.b);
+    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
+    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
+    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
     
-    rgb.r = AppleGamma196_nonLinearNormToLinear(rgb.r);
-    rgb.g = AppleGamma196_nonLinearNormToLinear(rgb.g);
-    rgb.b = AppleGamma196_nonLinearNormToLinear(rgb.b);
+    //rgb.r = AppleGamma196_nonLinearNormToLinear(rgb.r);
+    //rgb.g = AppleGamma196_nonLinearNormToLinear(rgb.g);
+    //rgb.b = AppleGamma196_nonLinearNormToLinear(rgb.b);
   }
   
   float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);

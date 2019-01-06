@@ -8,6 +8,7 @@
 
 #import <XCTest/XCTest.h>
 
+#import "sRGB.h"
 #import "BT709.h"
 
 @interface CoreImageMetalFilterTests : XCTestCase
@@ -184,6 +185,142 @@ floatIsEqual(float f1, float f2)
   {
     int v = Y;
     int expectedVal = 206;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  int R, G, B;
+  result = BT709_convertYCbCrToRGB(Y, Cb, Cr, &R, &G, &B, applyGammaMap);
+  XCTAssert(result == 0);
+  
+  {
+    int v = R;
+    int expectedVal = Rin + 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = G;
+    int expectedVal = Gin + 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = B;
+    int expectedVal = Bin + 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+- (void)testConvertsLinearRGBToBT709_NoGamma_25Percent {
+  
+  // Gray at 25% intensity
+  //
+  // Linear RGB (64 64 64) -> REC.709 (71 128 128)
+  
+  int Rin = 64;
+  int Gin = Rin;
+  int Bin = Rin;
+  
+  float Rn, Gn, Bn;
+  
+  Rn = byteNorm(Rin);
+  Gn = Rn;
+  Bn = Rn;
+  
+  int Y, Cb, Cr;
+  int applyGammaMap = 0;
+  
+  int result;
+  
+  result = BT709_convertLinearRGBToYCbCr(Rn, Gn, Bn, &Y, &Cb, &Cr, applyGammaMap);
+  XCTAssert(result == 0);
+  
+  {
+    int v = Y;
+    int expectedVal = 71;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  int R, G, B;
+  result = BT709_convertYCbCrToRGB(Y, Cb, Cr, &R, &G, &B, applyGammaMap);
+  XCTAssert(result == 0);
+  
+  {
+    int v = R;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = G;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = B;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+- (void)testConvertsLinearRGBToBT709_WithGamma_25Percent {
+  
+  // Gray at 25% intensity
+  //
+  // Linear RGB (64 64 64) -> REC.709 (124 128 128)
+  
+  // Note that using the rounded linear value 64
+  // means that the output is rounded up and then
+  // the decoded value is +1. When an intermediate
+  // float is used the Y rounds down to 123 which
+  // decodes exactly when returning to sRGB.
+  
+  int Rin = 64;
+  int Gin = Rin;
+  int Bin = Rin;
+  
+  float Rn, Gn, Bn;
+  
+  Rn = byteNorm(Rin);
+  Gn = Rn;
+  Bn = Rn;
+  
+  int Y, Cb, Cr;
+  int applyGammaMap = 1;
+  
+  int result;
+  
+  result = BT709_convertLinearRGBToYCbCr(Rn, Gn, Bn, &Y, &Cb, &Cr, applyGammaMap);
+  XCTAssert(result == 0);
+  
+  {
+    int v = Y;
+    int expectedVal = 124;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   

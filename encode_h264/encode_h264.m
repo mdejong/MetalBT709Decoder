@@ -444,7 +444,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     printf("first pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
   }
 
-  if (0 && inputIsBT709Colorspace == FALSE) {
+  if (1 && inputIsBT709Colorspace == FALSE) {
     // The input colorspace is converted into the BT.709 colorspace,
     // typically this will only adjust the gamma of sRGB input pixels
     // to match the gamma = 1.961 approach defined by Apple. Use of
@@ -506,18 +506,14 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
   
   exportVideo(inImage, outPath);
   
-  if (1) {
+  if (0) {
     // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
     
     CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
-
-    cgFramebuffer.colorspace = CGImageGetColorSpace(inImage);
     
-//#if TARGET_OS_OSX
-//    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-//    cgFramebuffer.colorspace = cs;
-//    CGColorSpaceRelease(cs);
-//#endif // TARGET_OS_OSX
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    cgFramebuffer.colorspace = cs;
+    CGColorSpaceRelease(cs);
     
     [cgFramebuffer renderCGImage:inImage];
     
@@ -533,7 +529,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
 
   }
 
-  if (1) {
+  if (0) {
     // Render into linear (gamma 1.0) RGB buffer and print
     
     CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
@@ -551,7 +547,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       int B = pixel & 0xFF;
       int G = (pixel >> 8) & 0xFF;
       int R = (pixel >> 16) & 0xFF;
-      printf("pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
+      printf("linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
     }
   }
   
@@ -596,17 +592,55 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       printf("first pixel (Y) (%3d)\n", yPtr[0]);
     }
     
-    // 0 5  -> 16
-    // 5 10 -> 17
+    NSMutableArray *mYAverages = [NSMutableArray array];
+    
+    for (int i = 0; i < (2 * 256); i += 2) {
+      int yVal1 = yPtr[i];
+      int yVal2 = yPtr[i+1];
+      
+      int ave = (int) round((yVal1 + yVal2) / 2.0);
+      
+      [mYAverages addObject:@(ave)];
+    }
+    
+    assert([mYAverages count] == 256);
+    
+    if ((0)) {
+      // Write the Y values out to stdout, assumes there are not too many
+      
+      const int dumpGrayOut = 0;
+      
+      if (dumpGrayOut) {
+        printf("dumpGrayOut:\n");
+      }
+      
+      for (int row = 0; row < height; row++) {
+        for (int col = 0; col < width; col++) {
+          int offset = (row * width) + col;
+          int Y = yPtr[offset];
+          
+          if (dumpGrayOut) {
+            printf("%3d ", Y);
+          }
+        }
+        
+        if (dumpGrayOut) {
+          printf("\n");
+        }
+      }
+    }
+    
+    // Full mapping of output values to CSV file to determine gamma
     
     if ((0)) {
     
-    NSArray *labels = @[ @"G", @"R", @"PG", @"PR" ];
+    NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"BT" ];
     
     NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
     
-    for (int i = 0; i < (width * height); i++) {
-      int yVal = yPtr[i];
+    for (int i = 0; i < mYAverages.count; i++) {
+      NSNumber *yNum = mYAverages[i];
+      int yVal = [yNum intValue];
       rangeMap[@(i)] = @(yVal);
       
       // Use (Y 128 128) to decode grayscale value to a RGB value.
@@ -618,16 +652,20 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       
       float percentOfGrayscale = ((float)i) / 255.0f;
       
+      //float percentOfRange = (yVal - 16) / (237.0f - (16+2));
       float percentOfRange = (yVal - 16) / (237.0f - 16);
+
+      float bt709Gamma12 = BT709_linearNormToNonLinear(percentOfGrayscale);
       
-      [yPairsArr addObject:@[@(i), @(yVal), @(percentOfGrayscale), @(percentOfRange)]];
+      float appleGamma196 = AppleGamma196_linearNormToNonLinear(percentOfGrayscale);
+      
+      [yPairsArr addObject:@[@(i), @(yVal), @(percentOfGrayscale), @(percentOfRange), @(appleGamma196), @(bt709Gamma12)]];
     }
 
     NSLog(@"rangeMap contains %d values", (int)rangeMap.count);
-    NSLog(@"");
     
     [EncoderImpl writeTableToCSV:@"EncodeGR.csv" labelsArr:labels valuesArr:yPairsArr];
-      
+    NSLog(@"");
     }
   }
   
