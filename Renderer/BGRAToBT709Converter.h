@@ -17,6 +17,8 @@
 
 @import Accelerate;
 
+@class CGFrameBuffer;
+
 typedef enum {
   BGRAToBT709ConverterSoftware = 0,
   BGRAToBT709ConverterVImage = 1,
@@ -70,7 +72,8 @@ typedef enum {
 // into the indicated destination vImage buffer.
 
 + (BOOL) convertFromCoreVideoBuffer:(CVPixelBufferRef)cvPixelBuffer
-                          bufferPtr:(vImage_Buffer*)bufferPtr;
+                          bufferPtr:(vImage_Buffer*)bufferPtr
+                         colorspace:(CGColorSpaceRef)colorspace;
 
 // Copy Y Cb Cr pixel data from the planes of a CoreVideo pixel buffer.
 // Writes Y Cb Cr values to grayscale PNG if dump flag is TRUE.
@@ -96,5 +99,12 @@ typedef enum {
 
 + (BOOL) copyBT709ToCoreVideo:(uint32_t*)inBT709Pixels
                 cvPixelBuffer:(CVPixelBufferRef)cvPixelBuffer;
+
+// Process a YUV CoreVideo buffer with Metal logic that will convert the BT.709
+// colorspace image and resample it into a sRGB output image. Note that this
+// implementation is not optimal since it allocates intermediate images
+// and a CIContext.
+
++ (CGFrameBuffer*) processYUVTosRGB:(CVPixelBufferRef)cvPixelBuffer;
 
 @end

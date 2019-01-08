@@ -256,7 +256,7 @@ void exportVideo(CGImageRef inCGImage, NSString *outPath) {
 int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *configSPtr) {
   // Read PNG
   
-  NSLog(@"loading %@", inPNGStr);
+  printf("loading %s\n", [inPNGStr UTF8String]);
 
   CGImageRef inImage;
   
@@ -506,8 +506,10 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
   
   exportVideo(inImage, outPath);
   
-  if (0) {
-    // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
+  NSMutableArray *mOriginalSRGBPixels = [NSMutableArray array];
+  
+  if (1) {
+    // Dump original sRGB input pixels
     
     CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
     
@@ -519,12 +521,14 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     uint32_t *pixelPtr = (uint32_t*) cgFramebuffer.pixels;
     
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < (2 * 256); i++) {
       uint32_t pixel = pixelPtr[i];
       int B = pixel & 0xFF;
       int G = (pixel >> 8) & 0xFF;
       int R = (pixel >> 16) & 0xFF;
       printf("sRGB (R G B) (%3d %3d %3d)\n", R, G, B);
+      
+      [mOriginalSRGBPixels addObject:@(B)];
     }
 
   }
@@ -594,16 +598,23 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     NSMutableArray *mYAverages = [NSMutableArray array];
     
+    NSMutableArray *mOriginals = [NSMutableArray array];
+    
     for (int i = 0; i < (2 * 256); i += 2) {
       int yVal1 = yPtr[i];
-      int yVal2 = yPtr[i+1];
-      
-      int ave = (int) round((yVal1 + yVal2) / 2.0);
+      //int yVal2 = yPtr[i+1];
+      //int ave = (int) round((yVal1 + yVal2) / 2.0f);
+      int ave = yVal1;
       
       [mYAverages addObject:@(ave)];
+      
+      // Grab original input sRGB value for step
+      NSNumber *origNum = mOriginalSRGBPixels[i];
+      [mOriginals addObject:origNum];
     }
     
     assert([mYAverages count] == 256);
+    assert([mOriginals count] == 256);
     
     if ((0)) {
       // Write the Y values out to stdout, assumes there are not too many
@@ -634,7 +645,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     if ((1)) {
     
-    NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"BT" ];
+    NSArray *labels = @[ @"G", @"R", @"PG", @"OG", @"BG", @"BT", @"SrgbLin", @"BoostSrgbLin" ];
     
     NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
     
@@ -659,11 +670,44 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       //float percentOfRange = (yVal - 16) / (237.0f - (16+2));
       float percentOfRange = (yVal - minY) / (float)(maxY - minY);
       
-      float appleGamma196 = AppleGamma196_linearNormToNonLinear(percentOfGrayscale);
+      // Convert (Y Cb Cr) back to linRGB and then back to sRGB
+      // so that the boosted RGB (grayscale) can be compared to
+      // the original input. This reverses the Matrix operation
+      // without removing the boost.
+      
+      int boostedY = (int) round(percentOfRange * (235.0f - 16.0f));
+      //float boostedRn, boostedGn, boostedBn;
+      
+      int boostedR, boostedG, boostedB;
+      
+      //BT709_convertYCbCrToLinearRGB(boostedY+16, 128, 128, &boostedRn, &boostedGn, &boostedBn, 1);
+      
+      // Convert back to sRGB using BT.709 ungamma
+      BT709_to_sRGB_convertYCbCrToRGB(boostedY+16, 128, 128, &boostedR, &boostedG, &boostedB, 1);
+      float boostedGrayN = boostedR / 255.0f;
+      
+      //int boostedGray = ((int) round(boostedRn * 255.0f));
       
       float bt709Gamma12 = BT709_linearNormToNonLinear(percentOfGrayscale);
       
-      [yPairsArr addObject:@[@(i), @(yVal), @(percentOfGrayscale), @(percentOfRange), @(appleGamma196), @(bt709Gamma12)]];
+      // Grab original grayscale value in sRGB input
+      
+      int origGray = [mOriginals[i] intValue];
+      float originalGrayPercent = origGray / 255.0f;
+      
+      printf("i %3d : original sRGB gray %3d : boosted gray %3d\n", i, origGray, boostedR);
+      
+      // Convert original sRGB to a linear grayscale value
+      
+      float origGrayLinN = byteNorm(origGray);
+      origGrayLinN = sRGB_nonLinearNormToLinear(origGrayLinN);
+      
+      // Convert boosted sRGB to linear grayscale value
+      
+      float boostedGrayLinN = boostedGrayN;
+      boostedGrayLinN = sRGB_nonLinearNormToLinear(boostedGrayLinN);
+      
+      [yPairsArr addObject:@[@(i), @(yVal), @(percentOfGrayscale), @(originalGrayPercent), @(boostedGrayN), @(bt709Gamma12), @(origGrayLinN), @(boostedGrayLinN)]];
     }
 
     NSLog(@"rangeMap contains %d values", (int)rangeMap.count);

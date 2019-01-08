@@ -147,16 +147,11 @@ float BT709_nonLinearNormToLinear(float normV) {
   return normV;
 }
 
-// Apple gamma 1.96 which seems designed to remove
-// the "dark room" boost implicit in the BT.709
-// gamma transformed signal. Note that in the case
-// where known RGB values were encoded with the
-// BT.709 gamma then decoding with this gamma
-// value will not produce identical results.
+#define APPLE_GAMMA_ADJUST_BOOST_LINEAR (1.0f / 0.8782f) // aka 1.1386
 
 static inline
-float AppleGamma196_nonLinearNormToLinear(float normV) {
-  const float gamma = 1.96f;
+float AppleGamma196_unboost_linearNorm(float normV) {
+  const float gamma = APPLE_GAMMA_ADJUST_BOOST_LINEAR;
   normV = pow(normV, gamma);
   return normV;
 }
@@ -229,10 +224,10 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
     rgb.r = BT709_nonLinearNormToLinear(rgb.r);
     rgb.g = BT709_nonLinearNormToLinear(rgb.g);
     rgb.b = BT709_nonLinearNormToLinear(rgb.b);
-    
-    //rgb.r = AppleGamma196_nonLinearNormToLinear(rgb.r);
-    //rgb.g = AppleGamma196_nonLinearNormToLinear(rgb.g);
-    //rgb.b = AppleGamma196_nonLinearNormToLinear(rgb.b);
+
+    rgb.r = AppleGamma196_unboost_linearNorm(rgb.r);
+    rgb.g = AppleGamma196_unboost_linearNorm(rgb.g);
+    rgb.b = AppleGamma196_unboost_linearNorm(rgb.b);
   }
   
   float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);

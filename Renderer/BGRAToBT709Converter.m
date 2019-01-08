@@ -11,6 +11,7 @@
 #import "BT709.h"
 
 @import Accelerate;
+@import CoreImage;
 
 static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 {
@@ -102,15 +103,33 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
       
       int Y, Cb, Cr;
       
-      int result = BT709_from_sRGB_convertRGBToYCbCr(
-                                          R,
-                                          G,
-                                          B,
-                                          &Y,
-                                          &Cb,
-                                          &Cr,
-                                          1);
-      assert(result == 0);
+      if (1) {
+        // Boosted
+        
+        int result = BT709_boosted_from_sRGB_convertRGBToYCbCr(
+                                                               R,
+                                                               G,
+                                                               B,
+                                                               &Y,
+                                                               &Cb,
+                                                               &Cr,
+                                                               1);
+        
+        assert(result == 0);
+      } else {
+        // Not Boosted convertsion from sRGB -> BT.709
+        
+        int result = BT709_from_sRGB_convertRGBToYCbCr(
+                                                               R,
+                                                               G,
+                                                               B,
+                                                               &Y,
+                                                               &Cb,
+                                                               &Cr,
+                                                               1);
+        
+        assert(result == 0);
+      }
       
       uint32_t Yu = Y;
       uint32_t Cbu = Cb;
@@ -142,7 +161,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
       
       int Ri, Gi, Bi;
       
-      int result = BT709_to_sRGB_convertYCbCrToRGB(
+      int result = BT709_boosted_to_sRGB_convertYCbCrToRGB(
                                                    Y,
                                                    Cb,
                                                    Cr,
@@ -285,7 +304,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   vImage_Buffer dstBuffer;
   
-  worked = [self convertFromCoreVideoBuffer:cvPixelBuffer bufferPtr:&dstBuffer];
+  worked = [self convertFromCoreVideoBuffer:cvPixelBuffer bufferPtr:&dstBuffer colorspace:NULL];
   NSAssert(worked, @"worked");
   
   CVPixelBufferRelease(cvPixelBuffer);
@@ -370,12 +389,12 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 {
   // FIXME: UHDTV : HEVC uses kCGColorSpaceITUR_2020
   
-  CGColorSpaceRef yuvColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+  //CGColorSpaceRef yuvColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
   
   // Attach BT.709 info to pixel buffer
   
   //CFDataRef colorProfileData = CGColorSpaceCopyICCProfile(yuvColorSpace); // deprecated
-  CFDataRef colorProfileData = CGColorSpaceCopyICCData(yuvColorSpace);
+  //CFDataRef colorProfileData = CGColorSpaceCopyICCData(yuvColorSpace);
   
   // FIXME: "CVImageBufferChromaSubsampling" read from attached H.264 (.m4v) is "TopLeft"
   // kCVImageBufferChromaLocationTopFieldKey = kCVImageBufferChromaLocation_TopLeft
@@ -388,7 +407,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
                                   (__bridge NSString*)kCVImageBufferColorPrimariesKey: (__bridge NSString*)kCVImageBufferColorPrimaries_ITU_R_709_2,
                                   (__bridge NSString*)kCVImageBufferTransferFunctionKey: (__bridge NSString*)kCVImageBufferTransferFunction_ITU_R_709_2,
                                   // Note that icc profile is required to enable gamma mapping
-                                  (__bridge NSString*)kCVImageBufferICCProfileKey: (__bridge NSData *)colorProfileData,
+                                  //(__bridge NSString*)kCVImageBufferICCProfileKey: (__bridge NSData *)colorProfileData,
                                   };
   
   CVBufferRef pixelBuffer = cvPixelBuffer;
@@ -398,9 +417,9 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   // Drop ref to NSDictionary to enable explicit checking of ref count of colorProfileData, after the
   // release below the colorProfileData must be 1.
   pbAttachments = nil;
-  CFRelease(colorProfileData);
+  //CFRelease(colorProfileData);
   
-  CGColorSpaceRelease(yuvColorSpace);
+  //CGColorSpaceRelease(yuvColorSpace);
   
   return TRUE;
 }
@@ -447,13 +466,30 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
                       cvPixelBuffer:(CVPixelBufferRef)cvPixelBuffer
                           bufferPtr:(vImage_Buffer*)bufferPtr
 {
-  vImageCVImageFormatRef cvImgFormatRef;
-  cvImgFormatRef = vImageCVImageFormat_CreateWithCVPixelBuffer(cvPixelBuffer);
-  
   // Default to sRGB on both MacOSX and iOS
   //CGColorSpaceRef inputColorspaceRef = NULL;
   CGColorSpaceRef inputColorspaceRef = CGImageGetColorSpace(inputImageRef);
   
+  vImageCVImageFormatRef cvImgFormatRef;
+
+  //cvImgFormatRef = vImageCVImageFormat_CreateWithCVPixelBuffer(cvPixelBuffer);
+  
+  // Init vImageCVImageFormatRef explicitly to enable sRGB boost to
+  // the input signal described in docs for vImageBuffer_CopyToCVPixelBuffer()
+  // This logic depends on a colorspace not being set on the CoreVideo buffer!
+  
+//  CGColorSpaceRef csRef = vImageCVImageFormat_GetColorSpace(cvImgFormatRef);
+//  NSLog(@"csRef %@", csRef);
+  
+  int alphaIsOne = 1; // 24 BPP
+  
+  cvImgFormatRef = vImageCVImageFormat_Create(
+                                              CVPixelBufferGetPixelFormatType(cvPixelBuffer),
+                                              kvImage_ARGBToYpCbCrMatrix_ITU_R_709_2,
+                                              kCVImageBufferChromaLocation_Center,
+                                              inputColorspaceRef,
+                                              alphaIsOne);
+
   vImage_CGImageFormat rgbCGImgFormat = {
     .bitsPerComponent = 8,
     .bitsPerPixel = 32,
@@ -488,18 +524,15 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 
 + (BOOL) convertFromCoreVideoBuffer:(CVPixelBufferRef)cvPixelBuffer
                           bufferPtr:(vImage_Buffer*)bufferPtr
+                         colorspace:(CGColorSpaceRef)colorspace
 {
-//  int width = (int) CVPixelBufferGetWidth(cvPixelBuffer);
-//  int height = (int) CVPixelBufferGetHeight(cvPixelBuffer);
-  
-  // Default to sRGB on both MacOSX and iOS
-  CGColorSpaceRef outputColorspaceRef = NULL;
+  // Note that NULL passed in as colorspace defines colorspace as sRGB on both MacOSX and iOS
   
   vImage_CGImageFormat rgbCGImgFormat = {
     .bitsPerComponent = 8,
     .bitsPerPixel = 32,
     .bitmapInfo = (CGBitmapInfo)(kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst),
-    .colorSpace = outputColorspaceRef,
+    .colorSpace = colorspace,
   };
 
 //  const uint32_t bitsPerPixel = 32;
@@ -678,6 +711,32 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   return;
 }
 
++ (BOOL) setColorspace:(CVPixelBufferRef)cvPixelBuffer
+            colorSpace:(CGColorSpaceRef)colorSpace
+{
+  //CFDataRef colorProfileData = CGColorSpaceCopyICCProfile(colorSpace); // deprecated
+  CFDataRef colorProfileData = CGColorSpaceCopyICCData(colorSpace);
+  NSAssert(colorProfileData, @"CGColorSpaceCopyICCData retuned nil");
+  
+  NSDictionary *pbAttachments = @{
+                                  (__bridge NSString*)kCVImageBufferICCProfileKey: (__bridge NSData *)colorProfileData,
+                                  };
+  
+  CVBufferRef pixelBuffer = cvPixelBuffer;
+  
+  CVBufferSetAttachments(pixelBuffer, (__bridge CFDictionaryRef)pbAttachments, kCVAttachmentMode_ShouldPropagate);
+  
+  // Drop ref to NSDictionary to enable explicit checking of ref count of colorProfileData, after the
+  // release below the colorProfileData must be 1.
+  pbAttachments = nil;
+  CFRelease(colorProfileData);
+  
+  // Note that the passed in colorSpace is not created/retained here so do not relese.
+  //CGColorSpaceRelease(colorSpace);
+  
+  return TRUE;
+}
+
 // Given a CGImageRef, create a CVPixelBufferRef and render into it,
 // format input BGRA data into BT.709 formatted YCbCr at 4:2:0 subsampling.
 // This method returns a new CoreVideo buffer on success, otherwise failure.
@@ -693,6 +752,10 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   CVPixelBufferRef cvPixelBuffer = [self createCoreVideoYCbCrBuffer:size];
 
+  // Note that a colorspace is not being set of the CoreVideo buffer
+  // here, the default (no colorspace) interpretation is expected
+  // to be interpreted correctly if passed to CoreVideo.
+  
   BOOL worked = [self setBT709Attributes:cvPixelBuffer];
   NSAssert(worked, @"worked");
   
@@ -701,7 +764,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer bufferPtr:&sourceBuffer];
   NSAssert(worked, @"worked");
 
-  if ((0)) {
+  if ((1)) {
     uint32_t *pixelPtr = (uint32_t *) sourceBuffer.data;
     uint32_t pixel = pixelPtr[0];
     
@@ -738,12 +801,12 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   // Copy data from CoreVideo pixel buffer planes into flat buffers
   
-  if ((0)) {
+  if ((1)) {
     NSMutableData *Y = [NSMutableData data];
     NSMutableData *Cb = [NSMutableData data];
     NSMutableData *Cr = [NSMutableData data];
     
-    const BOOL dump = TRUE;
+    const BOOL dump = FALSE;
     
     [self copyYCBCr:cvPixelBuffer Y:Y Cb:Cb Cr:Cr dump:dump];
     
@@ -855,6 +918,33 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   }
   
   return TRUE;
+}
+
+// Process a YUV CoreVideo buffer with Metal logic that will convert the BT.709
+// colorspace image and resample it into a sRGB output image. Note that this
+// implementation is not optimal since it allocates intermediate images
+// and a CIContext.
+
++ (CGFrameBuffer*) processYUVTosRGB:(CVPixelBufferRef)cvPixelBuffer
+{
+  int width = (int) CVPixelBufferGetWidth(cvPixelBuffer);
+  int height = (int) CVPixelBufferGetHeight(cvPixelBuffer);
+  
+  CIImage *rgbFromCVImage = [CIImage imageWithCVPixelBuffer:cvPixelBuffer];
+  
+  CIContext *context = [CIContext contextWithOptions:nil];
+  
+  CGImageRef outCGImageRef = [context createCGImage:rgbFromCVImage fromRect:rgbFromCVImage.extent];
+  
+  CGFrameBuffer *cgFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+
+  CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+  cgFramebuffer.colorspace = cs;
+  CGColorSpaceRelease(cs);
+  
+  [cgFramebuffer renderCGImage:outCGImageRef];
+  
+  return cgFramebuffer;
 }
 
 @end

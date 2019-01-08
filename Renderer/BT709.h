@@ -128,12 +128,88 @@ int BT709_encodeGamma(int v, int minv, int maxv) {
 
 // https://forums.creativecow.net/thread/2/1131717
 
+// Apple seems to boost sRGB values after converting
+// to linear. This seems to adjust the sRGB
+// input so that when decoded the pixel intensities
+// will more closely match the original sRGB values.
+
+// CRT gamma / gamma boost ⇒ 2.45 / 1.25 = 1.96
+
+//#define APPLE_GAMMA_ADJUST_VIDEO 1.96f
+//#define APPLE_GAMMA_ADJUST_VIDEO 1.961f
+
+// Non-Linear to linear adjustment for vImage encoded video
+
+// Better at 75% but off at low values
+//#define APPLE_GAMMA_ADJUST_VIDEO 2.25f
+
+#define APPLE_GAMMA_ADJUST_VIDEO (1.0f/0.4509f) // aka 2.217
+
+// (2.2 / 1.961) = 1.1218765935747068
+
+// When sRGB is converted to linear, this
+// boost amount is applied after the value
+// in linear but before the value is passed
+// through the BT.709 matrix transform.
+//
+// gamma = (1.0f / 0.8782f) // aka 1.1386
+// pow(x, gamma)
+//
+
+//#define APPLE_GAMMA_ADJUST_BOOST_LINEAR 1.14f
+#define APPLE_GAMMA_ADJUST_BOOST_LINEAR (1.0f / 0.8782f) // aka 1.1386
+
+static inline
+float AppleGamma196_boost_linearNorm(float normV) {
+  const float gamma = 1.0f / APPLE_GAMMA_ADJUST_BOOST_LINEAR;
+  normV = pow(normV, gamma);
+  return normV;
+}
+
+static inline
+float AppleGamma196_unboost_linearNorm(float normV) {
+  const float gamma = APPLE_GAMMA_ADJUST_BOOST_LINEAR;
+  normV = pow(normV, gamma);
+  return normV;
+}
+
+/*
+
+// A previous fit attempted to adjust sRGB
+// to the boosted value while it was in sRGB
+// gamma adjusted space. That gamma was 2.55
+//
+// Best Fit: 2.549 from http://www.lelandstanfordjunior.com/quickfit.html
+
+#define APPLE_GAMMA_ADJUST_BOOST_SRGB 2.549f
+ 
+// Boosting a sRGB value directly before converting
+// sRGB to linear.
+
+static inline
+float AppleGamma196_boost_srgbNorm(float normV) {
+  const float gamma = 1.0f / APPLE_GAMMA_ADJUST_BOOST_SRGB;
+  normV = pow(normV, gamma);
+  return normV;
+}
+
+static inline
+float AppleGamma196_unboost_srgbNorm(float normV) {
+  const float gamma = APPLE_GAMMA_ADJUST_BOOST_SRGB;
+  normV = pow(normV, gamma);
+  return normV;
+}
+
+*/
+
+/*
+
 // Apple gamma adjustment that seems to remove "dark room"
 // levels from BT.709.
 
 static inline
 float AppleGamma196_nonLinearNormToLinear(float normV) {
-  const float gamma = 1.96f;
+  const float gamma = APPLE_GAMMA_ADJUST_VIDEO;
   normV = pow(normV, gamma);
   return normV;
 }
@@ -147,11 +223,13 @@ float AppleGamma196_nonLinearNormToLinear(float normV) {
 
 static inline
 float AppleGamma196_linearNormToNonLinear(float normV) {
-  const float gamma = 1.0f / 1.96f;
+  const float gamma = 1.0f / APPLE_GAMMA_ADJUST_VIDEO;
   normV = pow(normV, gamma);
   return normV;
 }
 
+*/
+ 
 // Given a normalized linear RGB pixel value, convert to BT.709
 // YCbCr log colorspace. This method assumes Alpha = 255, the
 // gamma flag makes it possible to return Y without a gamma
@@ -194,10 +272,6 @@ int BT709_convertLinearRGBToYCbCr(
     Rn = BT709_linearNormToNonLinear(Rn);
     Gn = BT709_linearNormToNonLinear(Gn);
     Bn = BT709_linearNormToNonLinear(Bn);
-
-//    Rn = AppleGamma196_linearNormToNonLinear(Rn);
-//    Gn = AppleGamma196_linearNormToNonLinear(Gn);
-//    Bn = AppleGamma196_linearNormToNonLinear(Bn);
     
     if (debug) {
       printf("post to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
@@ -274,18 +348,18 @@ int BT709_convertRGBToYCbCr(
   return BT709_convertLinearRGBToYCbCr(Rn, Gn, Bn, YPtr, CbPtr, CrPtr, applyGammaMap);
 }
 
-
-// Convert from BT.709 YCbCr to linear RGB as a normalized float
+// Given a YCbCr input stored as an integer, apply the
+// BT.709 matrix conversion step and return a non-linear
+// result (result is still gamma adjusted) as a normalzied value.
 
 static inline
-int BT709_convertYCbCrToLinearRGB(
-                             int Y,
-                             int Cb,
-                             int Cr,
-                             float *RPtr,
-                             float *GPtr,
-                             float *BPtr,
-                             int applyGammaMap)
+int BT709_convertYCbCrToNonLinearRGB(
+                                  int Y,
+                                  int Cb,
+                                  int Cr,
+                                  float *RPtr,
+                                  float *GPtr,
+                                  float *BPtr)
 {
   const int debug = 1;
   
@@ -307,7 +381,7 @@ int BT709_convertYCbCrToLinearRGB(
   // the limited range [16 235]
   
   float Yn = (Y - 16) * (1.0f / 255.0f);
-
+  
   // Normalize Cb and CR with zero at 128 and range [0 255]
   // Note that matrix will adjust to limited range [16 240]
   
@@ -352,7 +426,7 @@ int BT709_convertYCbCrToLinearRGB(
   // [0] : UVScale * Er_minus_Ey_Range
   // [1] : -1 * UVScale * Er_minus_Ey_Range * Kr_over_Kg
   // [2] : 0.0
-
+  
   const float YScale = 255.0f / (YMax-YMin);
   const float UVScale = 255.0f / (UVMax-UVMin);
   
@@ -399,11 +473,45 @@ int BT709_convertYCbCrToLinearRGB(
     printf("Bn %.8f\n", Bn);
   }
   
-  // Saturate normalzied linear (R G B) to range [0.0, 1.0]
+  // Saturate normalized linear (R G B) to range [0.0, 1.0]
   
   Rn = saturatef(Rn);
   Gn = saturatef(Gn);
   Bn = saturatef(Bn);
+  
+  if (debug) {
+    printf("clamped:\n");
+    printf("Rn %.8f\n", Rn);
+    printf("Gn %.8f\n", Gn);
+    printf("Bn %.8f\n", Bn);
+  }
+  
+  *RPtr = Rn;
+  *GPtr = Gn;
+  *BPtr = Bn;
+  
+  return 0;
+}
+
+// Convert from BT.709 YCbCr to linear RGB as a normalized float
+
+static inline
+int BT709_convertYCbCrToLinearRGB(
+                             int Y,
+                             int Cb,
+                             int Cr,
+                             float *RPtr,
+                             float *GPtr,
+                             float *BPtr,
+                             int applyGammaMap)
+{
+  const int debug = 1;
+  
+  BT709_convertYCbCrToNonLinearRGB(Y, Cb, Cr, RPtr, GPtr, BPtr);
+  
+  float Rn = *RPtr;
+  float Gn = *GPtr;
+  float Bn = *BPtr;
   
   // Gamma adjustment for RGB components after matrix transform
   
@@ -415,10 +523,6 @@ int BT709_convertYCbCrToLinearRGB(
     Rn = BT709_nonLinearNormToLinear(Rn);
     Gn = BT709_nonLinearNormToLinear(Gn);
     Bn = BT709_nonLinearNormToLinear(Bn);
-    
-//    Rn = AppleGamma196_nonLinearNormToLinear(Rn);
-//    Gn = AppleGamma196_nonLinearNormToLinear(Gn);
-//    Bn = AppleGamma196_nonLinearNormToLinear(Bn);
     
     if (debug) {
       printf("post to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
@@ -522,6 +626,8 @@ int BT709_from_sRGB_convertRGBToYCbCr(
   if (applyGammaMap) {
     if (debug) {
       printf("pre  to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+      
+      printf("byte range     Rn Gn Bn : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
     }
     
     Rn = sRGB_nonLinearNormToLinear(Rn);
@@ -530,6 +636,8 @@ int BT709_from_sRGB_convertRGBToYCbCr(
     
     if (debug) {
       printf("post to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+      
+      printf("byte range     Rn Gn Bn : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
     }
   }
   
@@ -565,6 +673,235 @@ int BT709_to_sRGB_convertYCbCrToRGB(
   
   // Convert linear RGB to non-linear sRGB
 
+  if (applyGammaMap) {
+    if (debug) {
+      printf("pre  to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+    }
+    
+    Rn = sRGB_linearNormToNonLinear(Rn);
+    Gn = sRGB_linearNormToNonLinear(Gn);
+    Bn = sRGB_linearNormToNonLinear(Bn);
+    
+    if (debug) {
+      printf("post to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+    }
+  }
+  
+  // Write RGB values as int in byte range [0 255]
+  
+  int R = (int) round(Rn * 255.0f);
+  int G = (int) round(Gn * 255.0f);
+  int B = (int) round(Bn * 255.0f);
+  
+  if (debug) {
+    printf("scaled up to byte range:\n");
+    printf("R %.4f\n", Rn * 255.0f);
+    printf("G %.4f\n", Gn * 255.0f);
+    printf("B %.4f\n", Bn * 255.0f);
+    
+    printf("rounded to int:\n");
+    printf("R %3d\n", R);
+    printf("G %3d\n", G);
+    printf("B %3d\n", B);
+  }
+  
+#if defined(DEBUG)
+  assert(R >= 0 && R <= 255);
+  assert(G >= 0 && G <= 255);
+  assert(B >= 0 && B <= 255);
+#endif // DEBUG
+  
+  *RPtr = R;
+  *GPtr = G;
+  *BPtr = B;
+  
+  return 0;
+}
+
+// This boosted sRGB conversion is an Apple specific
+// method of increasing an input sRGB signal to
+// account for the fact that at decode time a
+// 1.96 gamma will be used to decode the BT.709
+// encoded signal.
+
+static inline
+int BT709_boosted_from_sRGB_convertRGBToYCbCr(
+                                      int R,
+                                      int G,
+                                      int B,
+                                      int *YPtr,
+                                      int *CbPtr,
+                                      int *CrPtr,
+                                      int applyGammaMap)
+{
+  const int debug = 1;
+  
+#if defined(DEBUG)
+  assert(YPtr);
+  assert(CbPtr);
+  assert(CrPtr);
+  
+  assert(R >= 0 && R <= 255);
+  assert(G >= 0 && G <= 255);
+  assert(B >= 0 && B <= 255);
+#endif // DEBUG
+  
+  if (debug) {
+    printf("sRGB in : R G B : %3d %3d %3d\n", R, G, B);
+  }
+  
+  // Intermediate rep must use float to avoid dark precision loss
+  // https://blog.demofox.org/2018/03/10/dont-convert-srgb-u8-to-linear-u8/
+  
+  float Rn = byteNorm(R);
+  float Gn = byteNorm(G);
+  float Bn = byteNorm(B);
+  
+  // Convert non-linear sRGB to linear
+  
+  if (applyGammaMap) {
+    if (debug) {
+      printf("pre  to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+      
+      printf("byte range     Rn Gn Bn : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
+    }
+    
+    Rn = sRGB_nonLinearNormToLinear(Rn);
+    Gn = sRGB_nonLinearNormToLinear(Gn);
+    Bn = sRGB_nonLinearNormToLinear(Bn);
+    
+    if (debug) {
+      printf("post to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+      
+      printf("byte range     Rn Gn Bn : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
+    }
+    
+    // Boost signal up when converting from sRGB, this boost
+    // is only applied to sRGB input.
+    
+    Rn = AppleGamma196_boost_linearNorm(Rn);
+    Gn = AppleGamma196_boost_linearNorm(Gn);
+    Bn = AppleGamma196_boost_linearNorm(Bn);
+    
+    if (debug) {
+      printf("boosted        Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+      
+      printf("byte range     Rn Gn Bn : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
+    }
+  }
+  
+  return BT709_convertLinearRGBToYCbCr(Rn, Gn, Bn, YPtr, CbPtr, CrPtr, applyGammaMap);
+}
+
+// Convert from BT.709 YCbCr to unboosted linear RGB as a normalized float
+
+static inline
+int BT709_boosted_convertYCbCrToLinearRGB(
+                                  int Y,
+                                  int Cb,
+                                  int Cr,
+                                  float *RPtr,
+                                  float *GPtr,
+                                  float *BPtr,
+                                  int applyGammaMap)
+{
+  const int debug = 1;
+  
+  BT709_convertYCbCrToNonLinearRGB(Y, Cb, Cr, RPtr, GPtr, BPtr);
+  
+  float Rn = *RPtr;
+  float Gn = *GPtr;
+  float Bn = *BPtr;
+  
+  // Gamma adjustment for RGB components after matrix transform
+  
+  if (applyGammaMap) {
+    if (debug) {
+      printf("pre  to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+    }
+    
+    Rn = BT709_nonLinearNormToLinear(Rn);
+    Gn = BT709_nonLinearNormToLinear(Gn);
+    Bn = BT709_nonLinearNormToLinear(Bn);
+    
+    if (debug) {
+      printf("post to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+    }
+    
+    // Reverse the boost step after BT.709 has been reversed
+    
+    Rn = AppleGamma196_unboost_linearNorm(Rn);
+    Gn = AppleGamma196_unboost_linearNorm(Gn);
+    Bn = AppleGamma196_unboost_linearNorm(Bn);
+    
+    if (debug) {
+      printf("unboosted      Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+      
+      printf("byte range     Rn Gn Bn : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
+    }
+  }
+  
+  /*
+  
+  // Gamma 196 decode logic will decode from BT.709 + boost signal
+  // in a way that preserves the exact RGB values from the original.
+  
+  if (applyGammaMap) {
+    if (debug) {
+      printf("pre  to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+    }
+    
+    Rn = AppleGamma196_nonLinearNormToLinear(Rn);
+    Gn = AppleGamma196_nonLinearNormToLinear(Gn);
+    Bn = AppleGamma196_nonLinearNormToLinear(Bn);
+    
+    if (debug) {
+      printf("post to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+    }
+    
+    if (debug) {
+      printf("byte range     Rn Gn Bn : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
+    }
+  }
+   
+  */
+  
+  *RPtr = Rn;
+  *GPtr = Gn;
+  *BPtr = Bn;
+  
+  return 0;
+}
+
+// Convert BT.709 to sRGB in non-linear space
+
+static inline
+int BT709_boosted_to_sRGB_convertYCbCrToRGB(
+                                    int Y,
+                                    int Cb,
+                                    int Cr,
+                                    int *RPtr,
+                                    int *GPtr,
+                                    int *BPtr,
+                                    int applyGammaMap)
+{
+  const int debug = 1;
+  
+#if defined(DEBUG)
+  assert(RPtr);
+  assert(GPtr);
+  assert(BPtr);
+#endif // DEBUG
+  
+  if (debug) {
+    printf("Y Cb Cr : %3d %3d %3d\n", Y, Cb, Cr);
+  }
+  
+  float Rn, Gn, Bn;
+  BT709_boosted_convertYCbCrToLinearRGB(Y, Cb, Cr, &Rn, &Gn, &Bn, applyGammaMap);
+  
+  // Convert linear RGB to non-linear sRGB
+  
   if (applyGammaMap) {
     if (debug) {
       printf("pre  to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);

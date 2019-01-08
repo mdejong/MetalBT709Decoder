@@ -13,6 +13,61 @@
 #import "CGFramebuffer.h"
 #import "BGRAToBT709Converter.h"
 
+#import "BT709.h"
+
+// Emit an array of float data as a CSV file, the
+// labels should be NSString, these define
+// the emitted labels in column 0.
+
+static inline
+BOOL writeTableToCSV(NSString *filename, NSArray* labelsArr, NSArray* valuesArr)
+{
+  //NSString *tmpDir = NSTemporaryDirectory();
+  NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+  NSString *path = [dirName stringByAppendingPathComponent:filename];
+  FILE *csvFile = fopen([path UTF8String], "w");
+  if (csvFile == NULL) {
+    return FALSE;
+  }
+  
+  int numColumns = (int) [labelsArr count];
+  
+  for (int i = 0; i < numColumns; i++) {
+    NSString *label = labelsArr[i];
+    fprintf(csvFile, "%s", [label UTF8String]);
+    
+    if (i < (numColumns - 1)) {
+      fprintf(csvFile, ",");
+    }
+  }
+  fprintf(csvFile, "\n");
+  
+  for ( NSArray *tuple in valuesArr ) {
+    for (int i = 0; i < numColumns; i++) {
+      float v = [tuple[i] floatValue];
+      
+      fprintf(csvFile, "%.4f", v);
+      
+      if (i < (numColumns - 1)) {
+        fprintf(csvFile, ",");
+      }
+    }
+    fprintf(csvFile, "\n");
+    //
+    //    float y1 = [tuple[0] floatValue];
+    //    float y2 = [tuple[1] floatValue];
+    //
+    //    NSLog(@"[%4d] (y1, y2) = %.4f,%.4f", x, y1, y2);
+    //    x++;
+    //
+    //    fprintf(csvFile, "%.4f,%.4f\n", y1, y2);
+  }
+  
+  fclose(csvFile);
+  NSLog(@"wrote %@", path);
+  return TRUE;
+}
+
 typedef struct {
   int fps;
 } ConfigurationStruct;
@@ -57,6 +112,8 @@ CGImageRef makeImageFromFile(NSString *filenameStr)
 
 int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *configSPtr) {
   // Read PNG
+  
+  printf("loading %s\n", [inPNGStr UTF8String]);
   
   CGImageRef inImage = makeImageFromFile(inPNGStr);
 //  if (inImage == NULL) {
@@ -136,6 +193,9 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
     printf("%s\n", [desc UTF8String]);
   }
   
+  // FIXME: should the format of the input image be constrained? If it is sRGB then
+  // the boost is used, but what about linear input and BT.709 input?
+  
   CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage];
   
   // Copy (Y Cb Cr) as (c0 c1 c2) in (c3 c2 c1 c0)
@@ -175,7 +235,327 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
     printf(" -> (Y Cb Cr) (%d %d %d)\n", Y, Cb, Cr);
   }
   
-  // Process YCBCr by writing to output y4m file
+  if ((1)) {
+    // Process YCbCr output with CoreImage to generate an output
+    // sRGB image that checks decoding logic.
+    
+    CGFrameBuffer *decompFB = [BGRAToBT709Converter processYUVTosRGB:cvPixelBuffer];
+    
+    {
+      NSString *filename = [NSString stringWithFormat:@"dump_RGB_from_YUV.png"];
+      //NSString *tmpDir = NSTemporaryDirectory();
+      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+      NSString *path = [dirName stringByAppendingPathComponent:filename];
+      NSData *pngData = [decompFB formatAsPNG];
+      
+      NSLog(@"wrote %@", path);
+      
+      BOOL worked = [pngData writeToFile:path atomically:TRUE];
+      assert(worked);
+      
+      if ((1)) {
+        uint32_t pixel = ((uint32_t*) decompFB.pixels)[0];
+        int B = pixel & 0xFF;
+        int G = (pixel >> 8) & 0xFF;
+        int R = (pixel >> 16) & 0xFF;
+        printf("CoreImage first decompressed pixel sRGB (R G B) (%d %d %d)\n", R, G, B);
+      }
+    }
+  }
+  
+  if ((0)) {
+    // Process YCbCr output with vImage to decode
+    
+    vImage_Buffer dstBuffer;
+    
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    
+    BOOL worked = [BGRAToBT709Converter convertFromCoreVideoBuffer:cvPixelBuffer
+                                                         bufferPtr:&dstBuffer
+                                                        colorspace:cs];
+    assert(worked);
+    
+    CGColorSpaceRelease(cs);
+    
+    // Copy BGRA pixels from dstBuffer to outBGRAPixels
+    
+    const int dstRowBytes = (int) dstBuffer.rowBytes;
+    
+    if ((1)) {
+      printf("destBuffer %d x %d : R G B A\n", width, height);
+      
+      for (int row = 0; row < height; row++) {
+        uint32_t *inRowPtr = (uint32_t*) (((uint8_t*)dstBuffer.data) + (row * dstRowBytes));
+        
+        for (int col = 0; col < width; col++) {
+          if (col >= 512 || row > 0) {
+            continue;
+          }
+          
+          uint32_t inPixel = inRowPtr[col];
+          
+          uint32_t B = (inPixel & 0xFF);
+          uint32_t G = ((inPixel >> 8) & 0xFF);
+          uint32_t R = ((inPixel >> 16) & 0xFF);
+          uint32_t A = ((inPixel >> 24) & 0xFF);
+          
+          printf("R G B A (%3d %3d %3d %3d)\n", R, G, B, A);
+        }
+      }
+    }
+    
+    // Copy from conversion buffer to output pixels
+    
+    CGFrameBuffer *decompFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    for (int row = 0; row < height; row++) {
+      uint8_t *outPtr = (((uint8_t*)decompFB.pixels) + (row * width * sizeof(uint32_t)));
+      uint8_t *inPtr = (((uint8_t*)dstBuffer.data) + (row * dstRowBytes));
+      memcpy(outPtr, inPtr, width * sizeof(uint32_t));
+    }
+    
+    // Free allocated bufers
+    
+    free(dstBuffer.data);
+    
+    {
+      NSString *filename = [NSString stringWithFormat:@"dump_vImage_RGB_from_YUV.png"];
+      //NSString *tmpDir = NSTemporaryDirectory();
+      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+      NSString *path = [dirName stringByAppendingPathComponent:filename];
+      NSData *pngData = [decompFB formatAsPNG];
+      
+      NSLog(@"wrote %@", path);
+      
+      BOOL worked = [pngData writeToFile:path atomically:TRUE];
+      assert(worked);
+      
+      if ((1)) {
+        uint32_t pixel = ((uint32_t*) decompFB.pixels)[0];
+        int B = pixel & 0xFF;
+        int G = (pixel >> 8) & 0xFF;
+        int R = (pixel >> 16) & 0xFF;
+        printf("vImage first decompressed pixel sRGB (R G B) (%d %d %d)\n", R, G, B);
+      }
+    }
+  }
+
+  if ((0)) {
+    // Process YCbCr output with vImage to decode
+    
+    vImage_Buffer dstBuffer;
+    
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
+    
+    BOOL worked = [BGRAToBT709Converter convertFromCoreVideoBuffer:cvPixelBuffer
+                                                         bufferPtr:&dstBuffer
+                                                        colorspace:cs];
+    assert(worked);
+    
+    // Copy BGRA pixels from dstBuffer to outBGRAPixels
+    
+    const int dstRowBytes = (int) dstBuffer.rowBytes;
+    
+    if ((1)) {
+      printf("destBuffer %d x %d : R G B A\n", width, height);
+      
+      for (int row = 0; row < height; row++) {
+        uint32_t *inRowPtr = (uint32_t*) (((uint8_t*)dstBuffer.data) + (row * dstRowBytes));
+        
+        for (int col = 0; col < width; col++) {
+          if (col >= 512 || row > 0) {
+            continue;
+          }
+          
+          uint32_t inPixel = inRowPtr[col];
+          
+          uint32_t B = (inPixel & 0xFF);
+          uint32_t G = ((inPixel >> 8) & 0xFF);
+          uint32_t R = ((inPixel >> 16) & 0xFF);
+          uint32_t A = ((inPixel >> 24) & 0xFF);
+          
+          printf("R G B A (%3d %3d %3d %3d)\n", R, G, B, A);
+        }
+      }
+    }
+    
+    // Copy from conversion buffer to output pixels
+    
+    CGFrameBuffer *decompFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    decompFB.colorspace = cs;
+    
+    for (int row = 0; row < height; row++) {
+      uint8_t *outPtr = (((uint8_t*)decompFB.pixels) + (row * width * sizeof(uint32_t)));
+      uint8_t *inPtr = (((uint8_t*)dstBuffer.data) + (row * dstRowBytes));
+      memcpy(outPtr, inPtr, width * sizeof(uint32_t));
+    }
+    
+    // Free allocated bufers
+    
+    free(dstBuffer.data);
+    
+    CGColorSpaceRelease(cs);
+    
+    {
+      NSString *filename = [NSString stringWithFormat:@"dump_vImage_RGB_from_YUV_as_linear.png"];
+      //NSString *tmpDir = NSTemporaryDirectory();
+      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+      NSString *path = [dirName stringByAppendingPathComponent:filename];
+      NSData *pngData = [decompFB formatAsPNG];
+      
+      NSLog(@"wrote %@", path);
+      
+      BOOL worked = [pngData writeToFile:path atomically:TRUE];
+      assert(worked);
+      
+      if ((1)) {
+        uint32_t pixel = ((uint32_t*) decompFB.pixels)[0];
+        int B = pixel & 0xFF;
+        int G = (pixel >> 8) & 0xFF;
+        int R = (pixel >> 16) & 0xFF;
+        printf("vImage first decompressed pixel sRGB (R G B) (%d %d %d)\n", R, G, B);
+      }
+    }
+  }
+
+  // Simulate decoding of the YCbCr matrix calculation but without conversion
+  // from the non-linear gamma space. Emit the matrix output as linear
+  // chopped values to get a rough idea of the graph slope.
+  
+  if ((1)) {
+    // Process YCbCr output with vImage to decode into non-linear rounded output
+    // in the linear RGB colorspace.
+    
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
+    
+    // Copy from conversion buffer to output pixels
+    
+    CGFrameBuffer *decompFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    decompFB.colorspace = cs;
+    
+    uint32_t *pixelPtr = (uint32_t *) decompFB.pixels;
+    
+    const int dump = FALSE;
+    
+    // Save the first 512 entries as 256 float values
+    
+    NSMutableArray *mDecodedGrays = [NSMutableArray array];
+    
+    for (int row = 0; row < height; row++) {
+      for (int col = 0; col < width; col++) {
+        int offset = (row * width) + col;
+        uint32_t inY = yPtr[offset];
+        
+        if (col >= 512 || row > 0) {
+          continue;
+        }
+        
+//        if (dump) {
+//        printf("%3d ", inY);
+//        }
+        
+        // FIXME: invoke first stage of decompression to reverse matrix
+        
+        float Rn, Gn, Bn;
+        
+        BT709_convertYCbCrToNonLinearRGB(inY, 128, 128, &Rn, &Gn, &Bn);
+        
+        uint32_t G = (uint32_t) round(Gn * 255.0);
+        
+        assert(G <= 255);
+        
+        uint32_t pixel = (G << 16) | (G << 8) | G;
+        
+        if (dump) {
+          printf("%3d ", G);
+        }
+        
+        pixelPtr[offset] = pixel;
+        
+        if ((row == 0) && (col < (256 * 2)) && ((col % 2) == 0)) {
+          [mDecodedGrays addObject:@(Gn)];
+        }
+      }
+      
+      if (dump) {
+        printf("\n");
+      }
+    }
+    
+    assert(mDecodedGrays.count == 256);
+    
+    CGColorSpaceRelease(cs);
+    
+    {
+      NSString *filename = [NSString stringWithFormat:@"dump_vImage_gray_nonlinear_as_linear.png"];
+      //NSString *dirName = NSTemporaryDirectory();
+      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+      NSString *path = [dirName stringByAppendingPathComponent:filename];
+      NSData *pngData = [decompFB formatAsPNG];
+      
+      NSLog(@"wrote %@", path);
+      
+      BOOL worked = [pngData writeToFile:path atomically:TRUE];
+      assert(worked);
+      
+      if ((1)) {
+        uint32_t pixel = ((uint32_t*) decompFB.pixels)[0];
+        int B = pixel & 0xFF;
+        int G = (pixel >> 8) & 0xFF;
+        int R = (pixel >> 16) & 0xFF;
+        printf("vImage first decompressed pixel sRGB (R G B) (%d %d %d)\n", R, G, B);
+      }
+    }
+    
+    // Map linear values to the output gamma mapped values
+    
+    if ((1)) {
+      NSArray *labels = @[ @"G", @"R", @"PG", @"OG", @"Un709", @"UnB", @"Up709", @"Down709" ];
+      
+      NSMutableArray *yPairsArr = [NSMutableArray array];
+      
+      for (int i = 0; i < mDecodedGrays.count; i++) {
+        NSNumber *gNum = mDecodedGrays[i];
+        
+        float grayN = [gNum floatValue];
+        
+        int grayInt = (int) round(grayN * 255.0f);
+        
+        float percentOfGrayscale = ((float)i) / 255.0f;
+        
+        // Adjust the boosted values using the BT.709 gamma decoding
+        // function with a linear ramp. This should generate values
+        // that are 1.14 larger than the linear vlaues.
+        
+        float dec709 = BT709_nonLinearNormToLinear(grayN);
+        
+        // Second adjustment based on the output of the un-709, this
+        // should have interpreted the linear curve segment more
+        // effectively.
+
+        //float decUnboost709 = AppleGamma196_unboost_linearNorm(dec709);
+        
+        float up709 = BT709_linearNormToNonLinear(percentOfGrayscale);
+        
+        float down709 = BT709_nonLinearNormToLinear(up709);
+        
+        // Decode the values pushed up to 709 using a simplified
+        // 1.961 gamma setting, this decodes but makes use of
+        // the linear ramp in the original encoding.
+        
+        printf("%3d: %3d %.4f %.4f %.4f %.4f\n", i, grayInt, percentOfGrayscale, grayN, dec709, decUnboost709);
+        
+        [yPairsArr addObject:@[@(i), @(grayInt), @(percentOfGrayscale), @(grayN), @(dec709), @(decUnboost709), @(up709), @(down709)]];
+      }
+      
+      writeTableToCSV(@"EncodeGrayAsLinear.csv", labels, yPairsArr);
+      NSLog(@"");
+    }
+  }
+  
+  // Process YCbCr by writing to output y4m file
   
   FILE *outFile = fopen([outY4mStr UTF8String], "w");
   
