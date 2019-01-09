@@ -156,14 +156,20 @@ float BT709_nonLinearNormToLinear(float normV) {
 //  return normV;
 //}
 
-//#define BT709_G22_GAMMA 2.2177f
-//
-//static inline
-//float BT709_G22_nonLinearNormToLinear(float normV) {
-//  const float gamma = BT709_G22_GAMMA;
-//  normV = pow(normV, gamma);
-//  return normV;
-//}
+/*
+
+#define BT709_G22_GAMMA 2.2177f
+
+static inline
+float BT709_G22_nonLinearNormToLinear(float normV) {
+  const float gamma = BT709_G22_GAMMA;
+  normV = pow(normV, gamma);
+  return normV;
+}
+
+*/
+
+/*
 
 // Undo a boost to sRGB values by applying a 2.2 like gamma.
 // This should return a sRGB boosted value to linear when
@@ -178,6 +184,29 @@ float BT709_nonLinearNormToLinear(float normV) {
 static inline
 float BT709_B22_nonLinearNormToLinear(float normV) {
   const float xCrossing = 0.13369f;
+  
+  if (normV < xCrossing) {
+    normV *= (1.0f / BT709_B22_MULT);
+  } else {
+    const float gamma = BT709_B22_GAMMA;
+    normV = pow(normV, gamma);
+  }
+  
+  return normV;
+}
+
+*/
+
+#define BT709_B22_GAMMA 2.233f
+#define BT709_B22_MULT 9.05f
+
+// f1 = x / BT709_B22_MULT
+// f2 = pow(x, 2.233)
+// intercept = ( 0.16754, 0.01851 )
+
+static inline
+float BT709_B22_nonLinearNormToLinear(float normV) {
+  const float xCrossing = 0.16754f;
   
   if (normV < xCrossing) {
     normV *= (1.0f / BT709_B22_MULT);
@@ -262,6 +291,12 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
 //    rgb.g = AppleGamma196_unboost_linearNorm(rgb.g);
 //    rgb.b = AppleGamma196_unboost_linearNorm(rgb.b);
 
+//    rgb.r = BT709_G22_nonLinearNormToLinear(rgb.r);
+//    rgb.g = BT709_G22_nonLinearNormToLinear(rgb.g);
+//    rgb.b = BT709_G22_nonLinearNormToLinear(rgb.b);
+    
+// Segment 22 gamma
+    
     rgb.r = BT709_B22_nonLinearNormToLinear(rgb.r);
     rgb.g = BT709_B22_nonLinearNormToLinear(rgb.g);
     rgb.b = BT709_B22_nonLinearNormToLinear(rgb.b);

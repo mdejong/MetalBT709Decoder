@@ -283,7 +283,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
                      width:(int)width
                     height:(int)height
 {
-  const int debug = 0;
+  const int debug = 1;
   
   // Copy (Y Cb Cr) from c0 c1 c2 and then subsample into CoreVideo buffer
   
@@ -304,8 +304,12 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   vImage_Buffer dstBuffer;
   
-  worked = [self convertFromCoreVideoBuffer:cvPixelBuffer bufferPtr:&dstBuffer colorspace:NULL];
+  CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+  
+  worked = [self convertFromCoreVideoBuffer:cvPixelBuffer bufferPtr:&dstBuffer colorspace:colorspace];
   NSAssert(worked, @"worked");
+  
+  CGColorSpaceRelease(colorspace);
   
   CVPixelBufferRelease(cvPixelBuffer);
 
@@ -313,7 +317,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   const int dstRowBytes = (int) dstBuffer.rowBytes;
   
-  if (0) {
+  if (debug) {
     printf("destBuffer %d x %d : R G B A\n", width, height);
     
     for (int row = 0; row < height; row++) {
@@ -543,8 +547,23 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   vImage_Error err;
   
-  vImageCVImageFormatRef cvImgFormatRef = vImageCVImageFormat_CreateWithCVPixelBuffer(cvPixelBuffer);
+  //vImageCVImageFormatRef cvImgFormatRef = vImageCVImageFormat_CreateWithCVPixelBuffer(cvPixelBuffer);
 
+  vImageCVImageFormatRef cvImgFormatRef;
+  
+  // Init vImageCVImageFormatRef explicitly to enable sRGB boost to
+  // the input signal described in docs for vImageBuffer_CopyToCVPixelBuffer()
+  // This logic depends on a colorspace not being set on the CoreVideo buffer!
+  
+  int alphaIsOne = 1; // 24 BPP
+  
+  cvImgFormatRef = vImageCVImageFormat_Create(
+                                              CVPixelBufferGetPixelFormatType(cvPixelBuffer),
+                                              kvImage_ARGBToYpCbCrMatrix_ITU_R_709_2,
+                                              kCVImageBufferChromaLocation_Center,
+                                              colorspace,
+                                              alphaIsOne);
+  
   NSAssert(cvImgFormatRef, @"vImageCVImageFormat_CreateWithCVPixelBuffer failed");
   
   err = vImageBuffer_InitWithCVPixelBuffer(bufferPtr, &rgbCGImgFormat, cvPixelBuffer, cvImgFormatRef, &backgroundColor, flags);
@@ -864,7 +883,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 + (BOOL) copyBT709ToCoreVideo:(uint32_t*)inBT709Pixels
                 cvPixelBuffer:(CVPixelBufferRef)cvPixelBuffer
 {
-  const int debug = 0;
+  const int debug = 1;
   
   int width = (int) CVPixelBufferGetWidth(cvPixelBuffer);
   int height = (int) CVPixelBufferGetHeight(cvPixelBuffer);

@@ -288,17 +288,38 @@ float BT709_G22_linearNormToNonLinear(float normV) {
 // with a form like pow(x, Gamma) will reduce the signal strength.
 
 #define BT709_B22_GAMMA 2.233f
-#define BT709_B22_MULT (1.0f / 0.08365f) // about 11.95
+//#define BT709_B22_MULT (1.0f / 0.08365f) // about 11.95
+//#define BT709_B22_MULT 8.85f
+#define BT709_B22_MULT 9.05f
 
 // f1 = x / BT709_B22_MULT
 // f2 = pow(x, 2.233)
-// intercept = ( 0.13369, 0.01118 )
+// intercept = ( 0.16754, 0.01851 )
 
 static inline
 float BT709_B22_nonLinearNormToLinear(float normV) {
-  const float xCrossing = 0.13369f;
+  const float xCrossing = 0.16754f;
   
   if (normV < xCrossing) {
+    //normV *= (1.0f / BT709_B22_MULT); // 27
+    //normV *= (1.0f / 12.92f); // 25
+    //normV *= (1.0f / 10.0f); // 30
+    //normV *= (1.0f / 8.0f); // 34
+    // Between 8.5 and 9.5 ?
+    //normV *= (1.0f / 9.0f); // 31.6 -> 32
+    //normV *= (1.0f / 9.5f); // 30.6 -> 31
+    //normV *= (1.0f / 8.5f); // 32.7 -> 33
+    //normV *= (1.0f / 8.75f); // 32.2 -> 32
+    //normV *= (1.0f / 8.85f); // 32.0039 -> 32
+    //normV *= (1.0f / BT709_B22_MULT); // 27
+    // Between 8.5 -> 8.9
+    //normV *= (1.0f / 8.9f); // 26.7 -> 27
+    //normV *= (1.0f / 8.95f); // 26.6 -> 27
+    //normV *= (1.0f / 8.99f); // 26.5 -> 27
+    //normV *= (1.0f / 9.0f); // 26.5 -> 27
+    //normV *= (1.0f / 9.1f); // 26.3 -> 26
+    //normV *= (1.0f / 9.05f); // 26.4 -> 26
+    
     normV *= (1.0f / BT709_B22_MULT);
   } else {
     const float gamma = BT709_B22_GAMMA;
@@ -314,11 +335,11 @@ float BT709_B22_nonLinearNormToLinear(float normV) {
 
 // f1 = x * BT709_B22_MULT
 // f2 = pow(x, 1.0 / 2.233)
-// intercept = ( 0.01118, 0.13369 )
+// intercept = ( 0.01851, 0.16754 )
 
 static inline
 float BT709_B22_linearNormToNonLinear(float normV) {
-  const float xCrossing = 0.01118f;
+  const float xCrossing = 0.01851f;
   
   if (normV < xCrossing) {
     normV *= BT709_B22_MULT;
@@ -917,6 +938,8 @@ int BT709_boosted_convertYCbCrToLinearRGB(
   if (applyGammaMap) {
     if (debug) {
       printf("pre  to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+      
+      printf("byte range     Rn Gn Bn : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
     }
     
     Rn = BT709_B22_nonLinearNormToLinear(Rn);
@@ -925,6 +948,8 @@ int BT709_boosted_convertYCbCrToLinearRGB(
     
     if (debug) {
       printf("post to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+      
+      printf("byte range     Rn Gn Bn : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
     }
     
 //    // Reverse the boost step after BT.709 has been reversed

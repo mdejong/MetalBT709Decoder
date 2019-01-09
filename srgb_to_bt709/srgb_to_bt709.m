@@ -13,6 +13,7 @@
 #import "CGFramebuffer.h"
 #import "BGRAToBT709Converter.h"
 
+#import "sRGB.h"
 #import "BT709.h"
 
 // Emit an array of float data as a CSV file, the
@@ -550,14 +551,16 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
         // 1.961 gamma setting, this decodes but makes use of
         // the linear ramp in the original encoding.
         
+        float upSRGB = sRGB_linearNormToNonLinear(percentOfGrayscale);
+        
         //printf("%3d: %3d %.4f %.4f %.4f %.4f\n", i, grayInt, percentOfGrayscale, grayN, dec709, decUnboost709);
         
         [yPairsArr addObject:@[@(i), @(grayInt), @(percentOfGrayscale), @(grayN),
-                               @(up709), @(un709), @(decUnboost)]];
+                               @(up709), @(un709), @(decUnboost), @(upSRGB)]];
       }
       
       NSArray *labels = @[ @"G", @"R", @"PG", @"OG",
-                           @"Up709", @"Un709", @"UnB" ];
+                           @"Up709", @"Un709", @"UnB", @"sRGB" ];
       
       writeTableToCSV(@"EncodeGrayAsLinear.csv", labels, yPairsArr);
       NSLog(@"");
