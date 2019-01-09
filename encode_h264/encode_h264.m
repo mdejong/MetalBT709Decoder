@@ -444,7 +444,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     printf("first pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
   }
 
-  if (0 && inputIsBT709Colorspace == FALSE) {
+  if (1 && inputIsBT709Colorspace == FALSE) {
     // The input colorspace is converted into the BT.709 colorspace,
     // typically this will only adjust the gamma of sRGB input pixels
     // to match the gamma = 1.961 approach defined by Apple. Use of
@@ -645,8 +645,6 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     if ((1)) {
     
-    NSArray *labels = @[ @"G", @"R", @"PG", @"OG", @"BG", @"BT", @"SrgbLin", @"BoostSrgbLin" ];
-    
     NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
     
     for (int i = 0; i < mYAverages.count; i++) {
@@ -663,54 +661,78 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       
       float percentOfGrayscale = ((float)i) / 255.0f;
       
+      // Exact sRGB curve generated from Linear float inputs
+      
+      float sRGBFromLin = sRGB_linearNormToNonLinear(percentOfGrayscale);
+      
+      // Exact BT.709 curve generated from Linear float inputs
+      
+      float bt709FromLin = BT709_linearNormToNonLinear(percentOfGrayscale);
+      
       // Weirdly, max seems to be 237 instead of 235 ? Why Apple?
       int minY = 16;
       int maxY = 237;
       
       //float percentOfRange = (yVal - 16) / (237.0f - (16+2));
-      float percentOfRange = (yVal - minY) / (float)(maxY - minY);
+      float yPercentOfRange = (yVal - minY) / (float)(maxY - minY);
       
       // Convert (Y Cb Cr) back to linRGB and then back to sRGB
       // so that the boosted RGB (grayscale) can be compared to
       // the original input. This reverses the Matrix operation
       // without removing the boost.
       
-      int boostedY = (int) round(percentOfRange * (235.0f - 16.0f));
+      int yPercentOfRangeAsInt = (int) round(yPercentOfRange * (235.0f - 16.0f));
       //float boostedRn, boostedGn, boostedBn;
       
-      int boostedR, boostedG, boostedB;
-      
+      //int boostedR, boostedG, boostedB;
       //BT709_convertYCbCrToLinearRGB(boostedY+16, 128, 128, &boostedRn, &boostedGn, &boostedBn, 1);
       
       // Convert back to sRGB using BT.709 ungamma
-      BT709_to_sRGB_convertYCbCrToRGB(boostedY+16, 128, 128, &boostedR, &boostedG, &boostedB, 1);
-      float boostedGrayN = boostedR / 255.0f;
+      //BT709_to_sRGB_convertYCbCrToRGB(boostedY+16, 128, 128, &boostedR, &boostedG, &boostedB, 1);
+      //float boostedGrayN = boostedR / 255.0f;
+      
+      // Convert Y back to BT.709 gamma encoded value (do not decode to linear and then to sRGB)
+      
+      float boostedRN, boostedGN, boostedBN;
+      BT709_convertYCbCrToNonLinearRGB(yPercentOfRangeAsInt+16, 128, 128, &boostedRN, &boostedGN, &boostedBN);
+      float encodedGrayN = boostedRN;
       
       //int boostedGray = ((int) round(boostedRn * 255.0f));
       
-      float bt709Gamma12 = BT709_linearNormToNonLinear(percentOfGrayscale);
+      //float bt709Gamma12 = BT709_linearNormToNonLinear(percentOfGrayscale);
       
       // Grab original grayscale value in sRGB input
       
       int origGray = [mOriginals[i] intValue];
       float originalGrayPercent = origGray / 255.0f;
       
-      printf("i %3d : original sRGB gray %3d : boosted gray %3d\n", i, origGray, boostedR);
+      //printf("i %3d : original sRGB gray %3d : boosted gray %3d\n", i, origGray, boostedR);
       
       // Convert original sRGB to a linear grayscale value
       
-      float origGrayLinN = byteNorm(origGray);
-      origGrayLinN = sRGB_nonLinearNormToLinear(origGrayLinN);
+      //float origGrayLinN = byteNorm(origGray);
+      //origGrayLinN = sRGB_nonLinearNormToLinear(origGrayLinN);
       
-      // Convert boosted sRGB to linear grayscale value
+      // Convert encode grayscale value down to linear as if it was sRGB
+      //float encodedGrayNMappedToLin = sRGB_nonLinearNormToLinear(encodedGrayN);
       
-      float boostedGrayLinN = boostedGrayN;
-      boostedGrayLinN = sRGB_nonLinearNormToLinear(boostedGrayLinN);
+      // Convert encode grayscale value down to linear as if it was BT.709
+      float encodedGrayNMappedToLin = BT709_nonLinearNormToLinear(encodedGrayN);
       
-      [yPairsArr addObject:@[@(i), @(yVal), @(percentOfGrayscale), @(originalGrayPercent), @(boostedGrayN), @(bt709Gamma12), @(origGrayLinN), @(boostedGrayLinN)]];
+      [yPairsArr addObject:@[@(i), @(yVal), @(percentOfGrayscale),
+                             @(sRGBFromLin),
+                             @(bt709FromLin),
+                             @(originalGrayPercent),
+                             @(encodedGrayN),
+                             @(encodedGrayNMappedToLin)]];
     }
 
-    NSLog(@"rangeMap contains %d values", (int)rangeMap.count);
+    NSArray *labels = @[ @"G", @"R", @"PG",
+                         @"sRGB",
+                         @"BT709",
+                         @"OG",
+                         @"BG",
+                         @"BG2Lin" ];
     
     [EncoderImpl writeTableToCSV:@"EncodeGR.csv" labelsArr:labels valuesArr:yPairsArr];
     NSLog(@"");
