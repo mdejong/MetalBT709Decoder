@@ -281,7 +281,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     
     CGFrameBuffer *identityFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
     
-    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
     identityFB.colorspace = cs;
     CGColorSpaceRelease(cs);
     
@@ -336,7 +336,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     if ((1)) {
       // Emit png with linear colorspace
       
-      NSString *filename = [NSString stringWithFormat:@"TestHDAsLinear.png"];
+      NSString *filename = [NSString stringWithFormat:@"TestHDFirst20PerSRGB.png"];
       //NSString *tmpDir = NSTemporaryDirectory();
       NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
       NSString *path = [dirName stringByAppendingPathComponent:filename];
@@ -359,7 +359,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     
     CGColorSpaceRelease(sRGBcs);
     
-    if ((1)) {
+    if ((0)) {
       // Emit png in sRGBcolorspace
       
       NSString *filename = [NSString stringWithFormat:@"TestHDAsSRGB.png"];
@@ -382,7 +382,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     
     CGColorSpaceRelease(bt709cs);
     
-    if ((1)) {
+    if ((0)) {
       // Emit png in BT.709 colorspace
       
       NSString *filename = [NSString stringWithFormat:@"TestHDAsBT709.png"];

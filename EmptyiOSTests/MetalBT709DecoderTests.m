@@ -1491,19 +1491,19 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Rout;
-    int expectedVal = Rin - 1;
+    int expectedVal = Rin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Gout;
-    int expectedVal = Gin - 1;
+    int expectedVal = Gin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Bout;
-    int expectedVal = Bin - 1;
+    int expectedVal = Bin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1582,19 +1582,19 @@ uint32_t grayToPixel(uint32_t gray)
  
   {
     int v = Rout;
-    int expectedVal = Rin - 1;
+    int expectedVal = Rin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Gout;
-    int expectedVal = Gin - 1;
+    int expectedVal = Gin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Bout;
-    int expectedVal = Bin - 1;
+    int expectedVal = Bin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1631,7 +1631,8 @@ uint32_t grayToPixel(uint32_t gray)
     //int expectedVal = 179;
     // Software output 171
     //int expectedVal = 171;
-    int expectedVal = 178;
+    //int expectedVal = 178;
+    int expectedVal = 177;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1734,19 +1735,19 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Rout;
-    int expectedVal = Rin - 1;
+    int expectedVal = Rin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Gout;
-    int expectedVal = Gin - 1;
+    int expectedVal = Gin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Bout;
-    int expectedVal = Bin - 1;
+    int expectedVal = Bin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
 }
@@ -1783,7 +1784,7 @@ uint32_t grayToPixel(uint32_t gray)
     int v = Y;
     //int expectedVal = 135;
     //int expectedVal = 123;
-    int expectedVal = 134;
+    int expectedVal = 134; // C and vImage
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1809,19 +1810,19 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Rout;
-    int expectedVal = Rin + 1;
+    int expectedVal = Rin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Gout;
-    int expectedVal = Gin + 1;
+    int expectedVal = Gin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Bout;
-    int expectedVal = Bin + 1;
+    int expectedVal = Bin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
 }
@@ -1930,7 +1931,8 @@ uint32_t grayToPixel(uint32_t gray)
     int v = Y;
     //int expectedVal = 93;
     //int expectedVal = 80;
-    int expectedVal = 91;
+    //int expectedVal = 91;
+    int expectedVal = 92; // vImage
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -2222,7 +2224,8 @@ uint32_t grayToPixel(uint32_t gray)
     //int expectedVal = 44 - 3; // 30 vs 44 ? (no ramp on pow)
     //int expectedVal = 30;
     //int expectedVal = 41 - 1;
-    int expectedVal = 39;
+    //int expectedVal = 39;
+    int expectedVal = 44;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   

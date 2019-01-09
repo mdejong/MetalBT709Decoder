@@ -147,12 +147,45 @@ float BT709_nonLinearNormToLinear(float normV) {
   return normV;
 }
 
-#define APPLE_GAMMA_ADJUST_BOOST_LINEAR (1.0f / 0.8782f) // aka 1.1386
+//#define APPLE_GAMMA_ADJUST_BOOST_LINEAR (1.0f / 0.8782f) // aka 1.1386
+//
+//static inline
+//float AppleGamma196_unboost_linearNorm(float normV) {
+//  const float gamma = APPLE_GAMMA_ADJUST_BOOST_LINEAR;
+//  normV = pow(normV, gamma);
+//  return normV;
+//}
+
+//#define BT709_G22_GAMMA 2.2177f
+//
+//static inline
+//float BT709_G22_nonLinearNormToLinear(float normV) {
+//  const float gamma = BT709_G22_GAMMA;
+//  normV = pow(normV, gamma);
+//  return normV;
+//}
+
+// Undo a boost to sRGB values by applying a 2.2 like gamma.
+// This should return a sRGB boosted value to linear when
+// a 2.2 monitor gamma is applied.
+//
+// Note that converting from non-linear to linear
+// with a form like pow(x, Gamma) will reduce the signal strength.
+
+#define BT709_B22_GAMMA 2.233f
+#define BT709_B22_MULT (1.0f / 0.08365f) // about 11.95
 
 static inline
-float AppleGamma196_unboost_linearNorm(float normV) {
-  const float gamma = APPLE_GAMMA_ADJUST_BOOST_LINEAR;
-  normV = pow(normV, gamma);
+float BT709_B22_nonLinearNormToLinear(float normV) {
+  const float xCrossing = 0.13369f;
+  
+  if (normV < xCrossing) {
+    normV *= (1.0f / BT709_B22_MULT);
+  } else {
+    const float gamma = BT709_B22_GAMMA;
+    normV = pow(normV, gamma);
+  }
+  
   return normV;
 }
 
@@ -221,13 +254,17 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
   rgb = saturate(rgb);
   
   if (applyGammaMap) {
-    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
-    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
-    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
+//    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
+//    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
+//    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
+//
+//    rgb.r = AppleGamma196_unboost_linearNorm(rgb.r);
+//    rgb.g = AppleGamma196_unboost_linearNorm(rgb.g);
+//    rgb.b = AppleGamma196_unboost_linearNorm(rgb.b);
 
-    rgb.r = AppleGamma196_unboost_linearNorm(rgb.r);
-    rgb.g = AppleGamma196_unboost_linearNorm(rgb.g);
-    rgb.b = AppleGamma196_unboost_linearNorm(rgb.b);
+    rgb.r = BT709_B22_nonLinearNormToLinear(rgb.r);
+    rgb.g = BT709_B22_nonLinearNormToLinear(rgb.g);
+    rgb.b = BT709_B22_nonLinearNormToLinear(rgb.b);
   }
   
   float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);

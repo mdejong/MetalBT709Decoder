@@ -512,8 +512,6 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
     // Map linear values to the output gamma mapped values
     
     if ((1)) {
-      NSArray *labels = @[ @"G", @"R", @"PG", @"OG", @"Un709", @"UnB", @"Up709", @"Down709" ];
-      
       NSMutableArray *yPairsArr = [NSMutableArray array];
       
       for (int i = 0; i < mDecodedGrays.count; i++) {
@@ -529,7 +527,14 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
         // function with a linear ramp. This should generate values
         // that are 1.14 larger than the linear vlaues.
         
-        float dec709 = BT709_nonLinearNormToLinear(grayN);
+        float un709 = BT709_nonLinearNormToLinear(grayN);
+        
+        // Custom unboost with linear ramp logic, this logic accepts
+        // a boosted value in non-linear space and applies a curve
+        // that should remove the boost and render a result very
+        // near to the original linear line.
+        
+        float decUnboost = BT709_B22_nonLinearNormToLinear(grayN);
         
         // Second adjustment based on the output of the un-709, this
         // should have interpreted the linear curve segment more
@@ -539,16 +544,20 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
         
         float up709 = BT709_linearNormToNonLinear(percentOfGrayscale);
         
-        float down709 = BT709_nonLinearNormToLinear(up709);
+        //float down709 = BT709_nonLinearNormToLinear(up709);
         
         // Decode the values pushed up to 709 using a simplified
         // 1.961 gamma setting, this decodes but makes use of
         // the linear ramp in the original encoding.
         
-        printf("%3d: %3d %.4f %.4f %.4f %.4f\n", i, grayInt, percentOfGrayscale, grayN, dec709, decUnboost709);
+        //printf("%3d: %3d %.4f %.4f %.4f %.4f\n", i, grayInt, percentOfGrayscale, grayN, dec709, decUnboost709);
         
-        [yPairsArr addObject:@[@(i), @(grayInt), @(percentOfGrayscale), @(grayN), @(dec709), @(decUnboost709), @(up709), @(down709)]];
+        [yPairsArr addObject:@[@(i), @(grayInt), @(percentOfGrayscale), @(grayN),
+                               @(up709), @(un709), @(decUnboost)]];
       }
+      
+      NSArray *labels = @[ @"G", @"R", @"PG", @"OG",
+                           @"Up709", @"Un709", @"UnB" ];
       
       writeTableToCSV(@"EncodeGrayAsLinear.csv", labels, yPairsArr);
       NSLog(@"");
