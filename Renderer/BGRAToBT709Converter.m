@@ -112,8 +112,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
                                                                B,
                                                                &Y,
                                                                &Cb,
-                                                               &Cr,
-                                                               1);
+                                                               &Cr);
         
         assert(result == 0);
       } else {

@@ -147,6 +147,25 @@ float BT709_nonLinearNormToLinear(float normV) {
   return normV;
 }
 
+// Convert a non-linear log value to a linear value.
+// Note that normV must be normalized in the range [0.0 1.0].
+
+static inline
+float sRGB_nonLinearNormToLinear(float normV)
+{
+  if (normV <= 0.04045f) {
+    normV *= (1.0f / 12.92f);
+  } else {
+    const float a = 0.055f;
+    const float gamma = 2.4f;
+    //const float gamma = 1.0f / (1.0f / 2.4f);
+    normV = (normV + a) * (1.0f / (1.0f + a));
+    normV = pow(normV, gamma);
+  }
+  
+  return normV;
+}
+
 //#define APPLE_GAMMA_ADJUST_BOOST_LINEAR (1.0f / 0.8782f) // aka 1.1386
 //
 //static inline
@@ -197,6 +216,8 @@ float BT709_B22_nonLinearNormToLinear(float normV) {
 
 */
 
+/*
+
 #define BT709_B22_GAMMA 2.233f
 #define BT709_B22_MULT 9.05f
 
@@ -218,6 +239,8 @@ float BT709_B22_nonLinearNormToLinear(float normV) {
   return normV;
 }
 
+*/
+ 
 // Extract common BT.709 decode logic from the 2 implementations
 
 static inline
@@ -297,9 +320,15 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
     
 // Segment 22 gamma
     
-    rgb.r = BT709_B22_nonLinearNormToLinear(rgb.r);
-    rgb.g = BT709_B22_nonLinearNormToLinear(rgb.g);
-    rgb.b = BT709_B22_nonLinearNormToLinear(rgb.b);
+//    rgb.r = BT709_B22_nonLinearNormToLinear(rgb.r);
+//    rgb.g = BT709_B22_nonLinearNormToLinear(rgb.g);
+//    rgb.b = BT709_B22_nonLinearNormToLinear(rgb.b);
+    
+    // Convert sRGB to linear
+    
+    rgb.r = sRGB_nonLinearNormToLinear(rgb.r);
+    rgb.g = sRGB_nonLinearNormToLinear(rgb.g);
+    rgb.b = sRGB_nonLinearNormToLinear(rgb.b);
   }
   
   float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);
