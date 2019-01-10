@@ -460,7 +460,7 @@
   id<MTLRenderPipelineState> pipeline = self.renderPipelineState;
   
   // Configure fragment shader render into output texture of the exact same dimensions
-  // so that there is no scaling so single (non-linear) pixels are rendered 1 to 1.
+  // so that there is no scaling and single (non-linear) pixels are rendered 1 to 1.
   
   MTLRenderPassDescriptor *renderPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
   

@@ -87,7 +87,9 @@ Implementation of renderer class which performs Metal setup and per frame render
     
     // Configure Metal view so that it treats pixels as sRGB values.
     
+//#if TARGET_OS_IOS
     mtkView.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
+//#endif // TARGET_OS_IOS
     
     {
       // Init render texture that will hold resize render intermediate
@@ -165,7 +167,12 @@ Implementation of renderer class which performs Metal setup and per frame render
     
     self.metalBT709Decoder.metalRenderContext = mrc;
 
+#if TARGET_OS_IOS
+    // sRGB texture
     self.metalBT709Decoder.colorPixelFormat = mtkView.colorPixelFormat;
+#else
+    self.metalBT709Decoder.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+#endif // TARGET_OS_IOS
     
     //self.metalBT709Decoder.useComputeRenderer = TRUE;
     
@@ -212,9 +219,9 @@ Implementation of renderer class which performs Metal setup and per frame render
   
   CVPixelBufferRef cvPixelBufer;
   
-  cvPixelBufer = [self decodeQuicktimeTestPattern];
+  //cvPixelBufer = [self decodeQuicktimeTestPattern];
   //cvPixelBufer = [self decodeSMPTEGray75Perent];
-  //cvPixelBufer = [self decodeH264YCbCr_bars256];
+  cvPixelBufer = [self decodeH264YCbCr_bars256];
   //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
 
   if (debugDumpYCbCr) {
@@ -404,7 +411,6 @@ Implementation of renderer class which performs Metal setup and per frame render
                 slice:0];
 
     if (_resizeTexture.pixelFormat == MTLPixelFormatBGRA8Unorm) {
-      // Work around linear render issue by explicitly setting colorspace to linear
       CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
       renderedFB.colorspace = cs;
       CGColorSpaceRelease(cs);
