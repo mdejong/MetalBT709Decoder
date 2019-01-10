@@ -574,7 +574,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
   
   CGImageRelease(inImage);
   
-  if ((1)) {
+  if ((0)) {
     // Load Y Cb Cr values from movie that was just written by reading
     // values into a pixel buffer.
     
@@ -660,7 +660,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     // Full mapping of output values to CSV file to determine gamma
     
-    if ((1)) {
+    if ((0)) {
     
     NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
     
