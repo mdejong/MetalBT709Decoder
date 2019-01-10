@@ -424,7 +424,7 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
   // from the non-linear gamma space. Emit the matrix output as linear
   // chopped values to get a rough idea of the graph slope.
   
-  if ((1)) {
+  if ((0)) {
     // Process YCbCr output with vImage to decode into non-linear rounded output
     // in the linear RGB colorspace.
     
@@ -512,7 +512,7 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
     
     // Map linear values to the output gamma mapped values
     
-    if ((1)) {
+    if ((0)) {
       NSMutableArray *yPairsArr = [NSMutableArray array];
       
       for (int i = 0; i < mDecodedGrays.count; i++) {

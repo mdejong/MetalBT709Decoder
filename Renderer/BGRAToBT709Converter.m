@@ -103,7 +103,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
       
       int Y, Cb, Cr;
       
-      if (1) {
+      if (0) {
         // Boosted
         
         int result = BT709_boosted_from_sRGB_convertRGBToYCbCr(
@@ -160,14 +160,28 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
       
       int Ri, Gi, Bi;
       
-      int result = BT709_boosted_to_sRGB_convertYCbCrToRGB(
-                                                   Y,
-                                                   Cb,
-                                                   Cr,
-                                                   &Ri,
-                                                   &Gi,
-                                                   &Bi,
-                                                   1);
+      int result;
+      
+      if ((0)) {
+        result = BT709_boosted_to_sRGB_convertYCbCrToRGB(
+                                                         Y,
+                                                         Cb,
+                                                         Cr,
+                                                         &Ri,
+                                                         &Gi,
+                                                         &Bi,
+                                                         1);
+      } else {
+        result = BT709_to_sRGB_convertYCbCrToRGB(
+                                                         Y,
+                                                         Cb,
+                                                         Cr,
+                                                         &Ri,
+                                                         &Gi,
+                                                         &Bi,
+                                                         1);
+      }
+      
       assert(result == 0);
       
       uint32_t Ru = Ri;
@@ -475,23 +489,23 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   vImageCVImageFormatRef cvImgFormatRef;
 
-  //cvImgFormatRef = vImageCVImageFormat_CreateWithCVPixelBuffer(cvPixelBuffer);
-  
-  // Init vImageCVImageFormatRef explicitly to enable sRGB boost to
-  // the input signal described in docs for vImageBuffer_CopyToCVPixelBuffer()
-  // This logic depends on a colorspace not being set on the CoreVideo buffer!
-  
-//  CGColorSpaceRef csRef = vImageCVImageFormat_GetColorSpace(cvImgFormatRef);
-//  NSLog(@"csRef %@", csRef);
-  
-  int alphaIsOne = 1; // 24 BPP
-  
-  cvImgFormatRef = vImageCVImageFormat_Create(
-                                              CVPixelBufferGetPixelFormatType(cvPixelBuffer),
-                                              kvImage_ARGBToYpCbCrMatrix_ITU_R_709_2,
-                                              kCVImageBufferChromaLocation_Center,
-                                              inputColorspaceRef,
-                                              alphaIsOne);
+  if ((1)) {
+    // Create from CoreVideo pixel buffer properties
+    cvImgFormatRef = vImageCVImageFormat_CreateWithCVPixelBuffer(cvPixelBuffer);
+  } else {
+    // Init vImageCVImageFormatRef explicitly to enable sRGB boost to
+    // the input signal described in docs for vImageBuffer_CopyToCVPixelBuffer()
+    // This logic depends on a colorspace not being set on the CoreVideo buffer!
+    
+    int alphaIsOne = 1; // 24 BPP
+    
+    cvImgFormatRef = vImageCVImageFormat_Create(
+                                                CVPixelBufferGetPixelFormatType(cvPixelBuffer),
+                                                kvImage_ARGBToYpCbCrMatrix_ITU_R_709_2,
+                                                kCVImageBufferChromaLocation_Center,
+                                                inputColorspaceRef,
+                                                alphaIsOne);
+  }
 
   vImage_CGImageFormat rgbCGImgFormat = {
     .bitsPerComponent = 8,
@@ -546,22 +560,25 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   vImage_Error err;
   
-  //vImageCVImageFormatRef cvImgFormatRef = vImageCVImageFormat_CreateWithCVPixelBuffer(cvPixelBuffer);
-
   vImageCVImageFormatRef cvImgFormatRef;
   
-  // Init vImageCVImageFormatRef explicitly to enable sRGB boost to
-  // the input signal described in docs for vImageBuffer_CopyToCVPixelBuffer()
-  // This logic depends on a colorspace not being set on the CoreVideo buffer!
-  
-  int alphaIsOne = 1; // 24 BPP
-  
-  cvImgFormatRef = vImageCVImageFormat_Create(
-                                              CVPixelBufferGetPixelFormatType(cvPixelBuffer),
-                                              kvImage_ARGBToYpCbCrMatrix_ITU_R_709_2,
-                                              kCVImageBufferChromaLocation_Center,
-                                              colorspace,
-                                              alphaIsOne);
+  if ((1)) {
+    // Create from CoreVideo pixel buffer properties
+    cvImgFormatRef = vImageCVImageFormat_CreateWithCVPixelBuffer(cvPixelBuffer);
+  } else {
+    // Init vImageCVImageFormatRef explicitly to enable sRGB boost to
+    // the input signal described in docs for vImageBuffer_CopyToCVPixelBuffer()
+    // This logic depends on a colorspace not being set on the CoreVideo buffer!
+    
+    int alphaIsOne = 1; // 24 BPP
+    
+    cvImgFormatRef = vImageCVImageFormat_Create(
+                                                CVPixelBufferGetPixelFormatType(cvPixelBuffer),
+                                                kvImage_ARGBToYpCbCrMatrix_ITU_R_709_2,
+                                                kCVImageBufferChromaLocation_Center,
+                                                colorspace,
+                                                alphaIsOne);
+  }
   
   NSAssert(cvImgFormatRef, @"vImageCVImageFormat_CreateWithCVPixelBuffer failed");
   
@@ -774,7 +791,14 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   // here, the default (no colorspace) interpretation is expected
   // to be interpreted correctly if passed to CoreVideo.
   
-  BOOL worked = [self setBT709Attributes:cvPixelBuffer];
+  BOOL worked;
+  
+  worked = [self setBT709Attributes:cvPixelBuffer];
+  NSAssert(worked, @"worked");
+
+  // Explicitly set BT.709 as the colorspace of the pixels
+  
+  worked = [self setBT709Colorspace:cvPixelBuffer];
   NSAssert(worked, @"worked");
   
   vImage_Buffer sourceBuffer;

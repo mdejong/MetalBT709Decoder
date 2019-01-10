@@ -1,8 +1,14 @@
 //
-//  MetalBT709DecoderTests.m
+//  MetalSRGBDecoderTests.m
 //
 //  Created by Mo DeJong on 12/13/18.
 //
+//  This set of test cases focuses on examples where sRGB gamma curve
+//  is used to encode video instead of the BT.709 gamma curve. This
+//  approach privdes better exact color reproduction when the output
+//  is to be displayed on computer displays as opposed to a crt.
+
+/*
 
 #import <XCTest/XCTest.h>
 
@@ -17,7 +23,7 @@
 
 #import "MetalRenderContext.h"
 
-@interface MetalBT709DecoderTests : XCTestCase
+@interface MetalSRGBDecoderTests : XCTestCase
 
 @end
 
@@ -73,7 +79,7 @@ uint32_t grayToPixel(uint32_t gray)
   return rgbaToPixel(gray, gray, gray, 0xFF);
 }
 
-@implementation MetalBT709DecoderTests
+@implementation MetalSRGBDecoderTests
 
 - (void)setUp {
   // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -359,8 +365,9 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    //int expectedVal = 162; // vImage -> sRGB
-    int expectedVal = 154; // vImage -> 709
+    //int expectedVal = 171;
+    //int expectedVal = 154;
+    int expectedVal = 162; // vImage
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -426,8 +433,8 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    //int expectedVal = 126; // vImage -> sRGB
-    int expectedVal = 115; // vImage -> 709
+    //int expectedVal = 115;
+    int expectedVal = 126;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -493,8 +500,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    //int expectedVal = 89; // vImage -> sRGB
-    int expectedVal = 76; // vImage -> 709
+    int expectedVal = 89;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -653,11 +659,11 @@ uint32_t grayToPixel(uint32_t gray)
   pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
   
   // AVFoundation [0, 237] range is decoded (2 0 255)
-  // vImage [0, 235] range is decoded as (2 0 255)
+  // vImage [0, 235] range is decoded as (0 0 255)
   
   {
     int v = Rout;
-    int expectedVal = Rin + 2;
+    int expectedVal = Rin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -697,19 +703,19 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 26;
+    int expectedVal = 27;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cb;
-    int expectedVal = 199;
+    int expectedVal = 203;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cr;
-    int expectedVal = 122;
+    int expectedVal = 121;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -722,11 +728,11 @@ uint32_t grayToPixel(uint32_t gray)
   pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
   
   // AVFoundation [0, 237] range is decoded (2 0 170)
-  // vImage [0, 235] range is decoded as (2 0 170)
+  // vImage [0, 235] range is decoded as (0 0 171)
   
   {
     int v = Rout;
-    int expectedVal = Rin + 2;
+    int expectedVal = Rin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -738,7 +744,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Bout;
-    int expectedVal = Bin;
+    int expectedVal = Bin + 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -835,19 +841,19 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 63;
+    int expectedVal = 74;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cb;
-    int expectedVal = 135;
+    int expectedVal = 137;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cr;
-    int expectedVal = 97;
+    int expectedVal = 91;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -860,11 +866,11 @@ uint32_t grayToPixel(uint32_t gray)
   pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
   
   // AVFoundation [0, 237] range is decoded (0 85 84)
-  // vImage [0, 235] range is decoded as (0 85 84)
+  // vImage [0, 235] range is decoded as (1 85 86)
   
   {
     int v = Rout;
-    int expectedVal = Rin;
+    int expectedVal = Rin + 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -876,7 +882,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Bout;
-    int expectedVal = Bin - 1;
+    int expectedVal = Bin + 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -931,7 +937,7 @@ uint32_t grayToPixel(uint32_t gray)
   pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
   
   // AVFoundation [0, 237] range is decoded (0 255 3)
-  // vImage [0, 235] range is decoded as (0 255 3)
+  // vImage [0, 235] range is decoded as (0 255 1)
   
   // Decoded ()
   
@@ -949,7 +955,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Bout;
-    int expectedVal = Bin + 3;
+    int expectedVal = Bin + 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -977,19 +983,19 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 115;
+    int expectedVal = 120;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cb;
-    int expectedVal = 73;
+    int expectedVal = 70;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cr;
-    int expectedVal = 64;
+    int expectedVal = 60;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1002,11 +1008,11 @@ uint32_t grayToPixel(uint32_t gray)
   pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
   
   // AVFoundation [0, 237] range is decoded (1 170 0)
-  // vImage [0, 235] range is decoded as (1 170 0)
+  // vImage [0, 235] range is decoded as (0 170 0)
   
   {
     int v = Rout;
-    int expectedVal = Rin + 1;
+    int expectedVal = Rin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1115,13 +1121,13 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 72;
+    int expectedVal = 84;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cb;
-    int expectedVal = 97;
+    int expectedVal = 91;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1140,11 +1146,11 @@ uint32_t grayToPixel(uint32_t gray)
   pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
   
   // AVFoundation [0, 237] range is decoded (85 85 0)
-  // vImage [0, 235] range is decoded as (85 85 1)
+  // vImage [0, 235] range is decoded as (84 85 1)
   
   {
     int v = Rout;
-    int expectedVal = Rin;
+    int expectedVal = Rin - 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1156,7 +1162,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Bout;
-    int expectedVal = Bin;
+    int expectedVal = Bin + 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1211,7 +1217,7 @@ uint32_t grayToPixel(uint32_t gray)
   pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
   
   // AVFoundation [0, 237] range is decoded (255 2 0)
-  // vImage [0, 235] range is decoded as (255 2 0)
+  // vImage [0, 235] range is decoded as (255 0 0)
   
   {
     int v = Rout;
@@ -1221,7 +1227,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Gout;
-    int expectedVal = Gin + 2;
+    int expectedVal = Gin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1256,19 +1262,19 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 45;
+    int expectedVal = 47;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cb;
-    int expectedVal = 112;
+    int expectedVal = 111;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cr;
-    int expectedVal = 199;
+    int expectedVal = 203;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1394,19 +1400,19 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 33;
+    int expectedVal = 37;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cb;
-    int expectedVal = 152;
+    int expectedVal = 157;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cr;
-    int expectedVal = 156;
+    int expectedVal = 162;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1489,7 +1495,14 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 206;
+    //int expectedVal = 211 - 1;
+    
+    // C, vImage generates 206 due to rounding and colorspace conversion.
+    //int expectedVal = 206;
+    
+    //int expectedVal = 211;
+    int expectedVal = 209;
+    
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1561,7 +1574,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 171; // vImage
+    int expectedVal = 177; // vImage
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1587,19 +1600,19 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Rout;
-    int expectedVal = Rin;
+    int expectedVal = Rin - 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Gout;
-    int expectedVal = Gin;
+    int expectedVal = Gin - 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Bout;
-    int expectedVal = Bin;
+    int expectedVal = Bin - 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
 }
@@ -1634,78 +1647,10 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 123;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Cb;
-    int expectedVal = 128;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Cr;
-    int expectedVal = 128;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
-  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
-  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
-  
-  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
-  
-  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
-  
-  {
-    int v = Rout;
-    int expectedVal = Rin - 1;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Gout;
-    int expectedVal = Gin - 1;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Bout;
-    int expectedVal = Bin - 1;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-}
-
-// Linear * 0.10
-
-- (void)testMetalBT709Decoder_SMPTE_Gray_0x191919_linear_metal {
-  uint32_t Rin, Gin, Bin;
-  uint32_t Y, Cb, Cr, dummy;
-  uint32_t Rout, Gout, Bout;
-  
-  // Gray 10% linear intensity
-  //
-  // sRGB (89 89 89) -> Linear RGB (25 25 25) -> REC.709 (100 128 128)
-  //
-  // AVFoundation (93 128 128)
-  
-  // Why is AVFoundation value lower? It seems that gamma is off a bit
-  
-  Rin = 89;
-  Gin = Rin;
-  Bin = Rin;
-  
-  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
-  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
-  
-  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
-  
-  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
-  
-  {
-    int v = Y;
-    int expectedVal = 80;
+    //int expectedVal = 135;
+    //int expectedVal = 123;
+    //int expectedVal = 136;
+    int expectedVal = 134;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1748,20 +1693,22 @@ uint32_t grayToPixel(uint32_t gray)
   }
 }
 
-// Linear * 0.05
+// Linear * 0.10
 
-- (void)testMetalBT709Decoder_SMPTE_Gray_0x0D0D0D_linear_metal {
+- (void)testMetalBT709Decoder_SMPTE_Gray_0x191919_linear_metal {
   uint32_t Rin, Gin, Bin;
   uint32_t Y, Cb, Cr, dummy;
   uint32_t Rout, Gout, Bout;
   
-  // Gray 5% linear intensity
+  // Gray 10% linear intensity
   //
-  // sRGB (64 64 64) -> Linear RGB (13 13 13) -> REC.709 (71 128 128)
+  // sRGB (89 89 89) -> Linear RGB (25 25 25) -> REC.709 (100 128 128)
   //
-  // AVFoundation (71 128 128)
+  // AVFoundation (93 128 128)
   
-  Rin = 64;
+  // Why is AVFoundation value lower? It seems that gamma is off a bit
+  
+  Rin = 89;
   Gin = Rin;
   Bin = Rin;
   
@@ -1774,7 +1721,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 57;
+    int expectedVal = 92;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1813,6 +1760,75 @@ uint32_t grayToPixel(uint32_t gray)
   {
     int v = Bout;
     int expectedVal = Bin - 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+// Linear * 0.05
+
+- (void)testMetalBT709Decoder_SMPTE_Gray_0x0D0D0D_linear_metal {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray 5% linear intensity
+  //
+  // sRGB (64 64 64) -> Linear RGB (13 13 13) -> REC.709 (71 128 128)
+  //
+  // AVFoundation (71 128 128)
+  
+  Rin = 64;
+  Gin = Rin;
+  Bin = Rin;
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    int expectedVal = 71;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
 }
@@ -1847,7 +1863,12 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 30;
+    // Allow 41 to pass as it is close, no linear slope segment
+    //int expectedVal = 44 - 3; // 30 vs 44 ? (no ramp on pow)
+    //int expectedVal = 30;
+    //int expectedVal = 41 - 1;
+    int expectedVal = 44; // vImage and AVFoundation
+    //int expectedVal = 39;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1866,71 +1887,6 @@ uint32_t grayToPixel(uint32_t gray)
   //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
   //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
   BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
-  
-  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
-  
-  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
-  
-  {
-    int v = Rout;
-    int expectedVal = Rin;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Gout;
-    int expectedVal = Gin;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Bout;
-    int expectedVal = Bin;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-}
-
-- (void)testMetalBT709Decoder_SMPTE_Gray_0x030303_linear_software {
-  uint32_t Rin, Gin, Bin;
-  uint32_t Y, Cb, Cr, dummy;
-  uint32_t Rout, Gout, Bout;
-  
-  // Gray 1% linear intensity : 0.0144
-  //
-  // sRGB (32 32 32) -> Linear RGB (3 3 3) -> REC.709 (47 128 128)
-  
-  Rin = 30;
-  Gin = Rin;
-  Bin = Rin;
-  
-  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
-  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
-  
-  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
-  
-  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
-  
-  {
-    int v = Y;
-    int expectedVal = 29;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Cb;
-    int expectedVal = 128;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Cr;
-    int expectedVal = 128;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
-  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
-  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
   
   uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
   
@@ -1983,7 +1939,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 25;
+    int expectedVal = 37;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1998,6 +1954,8 @@ uint32_t grayToPixel(uint32_t gray)
     int expectedVal = 128;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
+  
+  yuvOutPixel = rgbToPixel(128, 128, 37);
   
   //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
   //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
@@ -2033,7 +1991,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   // Gray LT 1% linear intensity : 0.0144
   //
-  // sRGB (8 8 8) -> Linear RGB (1 1 1) -> REC.709 (19 128 128)
+  // sRGB (8 8 8) -> Linear RGB (1 1 1) -> REC.709 (30 128 128)
   //
   // This does not appear to be a linear ramp at the small values
   
@@ -2050,7 +2008,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Y;
-    int expectedVal = 19;
+    int expectedVal = 23;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -2066,72 +2024,8 @@ uint32_t grayToPixel(uint32_t gray)
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
-  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
-  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
-  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
-  
-  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
-  
-  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
-  
-  {
-    int v = Rout;
-    int expectedVal = Rin + 2;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Gout;
-    int expectedVal = Gin + 2;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Bout;
-    int expectedVal = Bin + 2;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-}
-
-- (void)testMetalBT709Decoder_SMPTE_Gray_0x010101_n2_linear_metal {
-  uint32_t Rin, Gin, Bin;
-  uint32_t Y, Cb, Cr, dummy;
-  uint32_t Rout, Gout, Bout;
-  
-  // Gray LT 1% linear intensity : 0.0144
-  //
-  // sRGB (5 5 5) -> Linear RGB (1 1 1) -> REC.709 (18 128 128)
-  //
-  // This does not appear to be a linear ramp at the small values
-  
-  Rin = 5;
-  Gin = Rin;
-  Bin = Rin;
-  
-  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
-  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
-  
-  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
-  
-  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
-  
-  {
-    int v = Y;
-    int expectedVal = 18;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Cb;
-    int expectedVal = 128;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Cr;
-    int expectedVal = 128;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
+  // vImage output
+  //yuvOutPixel = rgbToPixel(128, 128, 30);
   
   //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
   //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
@@ -2143,89 +2037,23 @@ uint32_t grayToPixel(uint32_t gray)
   
   {
     int v = Rout;
-    int expectedVal = Rin + 1;
+    int expectedVal = Rin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Gout;
-    int expectedVal = Gin + 1;
+    int expectedVal = Gin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Bout;
-    int expectedVal = Bin + 1;
+    int expectedVal = Bin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
 }
-
-- (void)testMetalBT709Decoder_SMPTE_Gray_0x010101_n3_linear_metal {
-  uint32_t Rin, Gin, Bin;
-  uint32_t Y, Cb, Cr, dummy;
-  uint32_t Rout, Gout, Bout;
-  
-  // Gray LT 1% linear intensity : 0.0144
-  //
-  // sRGB (2 2 2) -> Linear RGB (1 1 1) -> REC.709 (17 128 128)
-  //
-  // This does not appear to be a linear ramp at the small values
-  
-  Rin = 2;
-  Gin = Rin;
-  Bin = Rin;
-  
-  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
-  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
-  
-  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
-  
-  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
-  
-  {
-    int v = Y;
-    int expectedVal = 17;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Cb;
-    int expectedVal = 128;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Cr;
-    int expectedVal = 128;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
-  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
-  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
-  
-  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
-  
-  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
-  
-  {
-    int v = Rout;
-    int expectedVal = Rin + 1;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Gout;
-    int expectedVal = Gin + 1;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-  
-  {
-    int v = Bout;
-    int expectedVal = Bin + 1;
-    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
-  }
-}
-
 
 @end
+
+ */

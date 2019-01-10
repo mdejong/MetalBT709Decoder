@@ -305,30 +305,25 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
   
   rgb = saturate(rgb);
   
+  // Note that application of this call to pow() and the if branch
+  // has very little performance impact on iOS with an A9 chip.
+  // The whole process seems to be IO bound and the resize render
+  // takes just as much time as the original calculation, so optimization
+  // that would only do 1 step in the exact render size would be the
+  // most useful optimization.
+  
   if (applyGammaMap) {
-//    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
-//    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
-//    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
-//
-//    rgb.r = AppleGamma196_unboost_linearNorm(rgb.r);
-//    rgb.g = AppleGamma196_unboost_linearNorm(rgb.g);
-//    rgb.b = AppleGamma196_unboost_linearNorm(rgb.b);
-
-//    rgb.r = BT709_G22_nonLinearNormToLinear(rgb.r);
-//    rgb.g = BT709_G22_nonLinearNormToLinear(rgb.g);
-//    rgb.b = BT709_G22_nonLinearNormToLinear(rgb.b);
-    
-// Segment 22 gamma
-    
-//    rgb.r = BT709_B22_nonLinearNormToLinear(rgb.r);
-//    rgb.g = BT709_B22_nonLinearNormToLinear(rgb.g);
-//    rgb.b = BT709_B22_nonLinearNormToLinear(rgb.b);
-    
     // Convert sRGB to linear
     
-    rgb.r = sRGB_nonLinearNormToLinear(rgb.r);
-    rgb.g = sRGB_nonLinearNormToLinear(rgb.g);
-    rgb.b = sRGB_nonLinearNormToLinear(rgb.b);
+//    rgb.r = sRGB_nonLinearNormToLinear(rgb.r);
+//    rgb.g = sRGB_nonLinearNormToLinear(rgb.g);
+//    rgb.b = sRGB_nonLinearNormToLinear(rgb.b);
+    
+    // Convert BT.709 to linear
+    
+    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
+    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
+    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
   }
   
   float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);
