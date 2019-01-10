@@ -444,7 +444,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     printf("first pixel linRGB (R G B) (%3d %3d %3d)\n", R, G, B);
   }
 
-  if (1 && inputIsBT709Colorspace == FALSE) {
+  if (0 && inputIsBT709Colorspace == FALSE) {
     // The input colorspace is converted into the BT.709 colorspace,
     // typically this will only adjust the gamma of sRGB input pixels
     // to match the gamma = 1.961 approach defined by Apple. Use of
@@ -452,6 +452,23 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     // change will not be needed before encoding the data to H264.
 
     CGColorSpaceRef convertToColorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+    
+    CGFrameBuffer *convertedFB = [EncoderImpl convertFromColorspaceToColorspace:inImage
+                                                                            bpp:24
+                                                            convertToColorspace:convertToColorspace];
+    
+    CGColorSpaceRelease(convertToColorspace);
+    
+    CGImageRelease(inImage);
+    
+    inImage = [convertedFB createCGImageRef];
+  }
+
+  if ((0)) {
+    // Convert to default system RGB, this is an attempt to emulate
+    // what is going on with the default colorspace being sRGB on iOS.
+    
+    CGColorSpaceRef convertToColorspace = CGColorSpaceCreateDeviceRGB();
     
     CGFrameBuffer *convertedFB = [EncoderImpl convertFromColorspaceToColorspace:inImage
                                                                             bpp:24
@@ -675,6 +692,13 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       
       //float percentOfRange = (yVal - 16) / (237.0f - (16+2));
       float yPercentOfRange = (yVal - minY) / (float)(maxY - minY);
+
+      if (yPercentOfRange < 0.0f) {
+        yPercentOfRange = 0.0f; // Why Apple?
+      }
+      if (yPercentOfRange > 1.0f) {
+        yPercentOfRange = 1.0f; // Why Apple?
+      }
       
       // Convert (Y Cb Cr) back to linRGB and then back to sRGB
       // so that the boosted RGB (grayscale) can be compared to
@@ -682,6 +706,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       // without removing the boost.
       
       int yPercentOfRangeAsInt = (int) round(yPercentOfRange * (235.0f - 16.0f));
+      
       //float boostedRn, boostedGn, boostedBn;
       
       //int boostedR, boostedG, boostedB;

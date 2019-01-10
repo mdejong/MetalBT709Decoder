@@ -437,41 +437,16 @@ static const int dumpFramesImages = 0;
   CGBitmapInfo bitmapInfo = 0;
   bitmapInfo |= kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst;
   
-  // Drawing into the same colorspace as the input will simply memcpy(),
-  // no colorspace mapping and no gamma shift.
-  
-  CGColorSpaceRef colorSpace = CGImageGetColorSpace(imageRef);
-  
-#if defined(DEBUG)
-  // Verify input colorspace is BT.709
-  
-  if ((0)) {
-    CGColorSpaceRef inputColorspace = colorSpace;
-    
-    BOOL inputIsBT709Colorspace = FALSE;
-    
-    {
-      CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
-      
-      NSString *colorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(colorspace);
-      NSString *inputColorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(inputColorspace);
-      
-      if ([colorspaceDescription isEqualToString:inputColorspaceDescription]) {
-        inputIsBT709Colorspace = TRUE;
-      }
-      
-      CGColorSpaceRelease(colorspace);
-    }
-    
-    assert(inputIsBT709Colorspace == TRUE);
-  }
-#endif // DEBUG
+  // Make sure the rendered pixels are in the BT.709 colorspace,
+  // if not then do a colorspace and gamma space conversion to
+  // BT.709 so that the proper gamma adjustment is done *before*
+  // the BT.709 matrix is applied.
   
 #if defined(DEBUG)
   // Verify input colorspace is sRGB
   
   if ((0)) {
-    CGColorSpaceRef inputColorspace = colorSpace;
+    CGColorSpaceRef inputColorspace = CGImageGetColorSpace(imageRef);
     
     BOOL inputIsSRGBColorspace = FALSE;
     
@@ -492,8 +467,10 @@ static const int dumpFramesImages = 0;
   }
 #endif // DEBUG
   
+  CGColorSpaceRef bt709ColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+  
   CGContextRef bitmapContext =
-  CGBitmapContextCreate(pxdata, size.width, size.height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo);
+  CGBitmapContextCreate(pxdata, size.width, size.height, bitsPerComponent, bytesPerRow, bt709ColorSpace, bitmapInfo);
   
   if (bitmapContext == NULL) {
     NSAssert(FALSE, @"CGBitmapContextCreate() failed");
@@ -508,11 +485,28 @@ static const int dumpFramesImages = 0;
   
   CVPixelBufferFillExtendedPixels(cvPixelBuffer);
   
+  if ((1)) {
+    // Should have rendered BT.709 pixels into the BGRA pixel buffer at this
+    // point, grab the RGB values and print to make sure.
+
+    uint32_t *pixelPtr = (uint32_t*) pxdata;
+    uint32_t pixel = pixelPtr[0];
+    int B = pixel & 0xFF;
+    int G = (pixel >> 8) & 0xFF;
+    int R = (pixel >> 16) & 0xFF;
+    printf("first CoreVideo pixel  BT709 (R G B) (%3d %3d %3d)\n", R, G, B);
+  }
+  
   CVPixelBufferUnlockBaseAddress(cvPixelBuffer, 0);
 
-  // Attach colorspace to CoreVideo buffer
+  // Attach BT.709 colorspace to CoreVideo buffer, this is required so that
+  // AVFoundation knows that this CoreVideo pixel buffer is defined in
+  // terms of the BT.709 colorspace and gamma curve and that values
+  // can be fed into the BT.709 matrix conversion directly.
   
-  [self setColorspace:cvPixelBuffer colorSpace:colorSpace];
+  [self setColorspace:cvPixelBuffer colorSpace:bt709ColorSpace];
+  
+  CGColorSpaceRelease(bt709ColorSpace);
   
   return;
 }
@@ -531,7 +525,7 @@ static const int dumpFramesImages = 0;
 {
   //CFDataRef colorProfileData = CGColorSpaceCopyICCProfile(colorSpace); // deprecated
   CFDataRef colorProfileData = CGColorSpaceCopyICCData(colorSpace);
-  NSAssert(colorProfileData, @"CGColorSpaceCopyICCData retuned nil");
+  NSAssert(colorProfileData, @"CGColorSpaceCopyICCData retuned nil, must not pass default device colorspace");
   
   NSDictionary *pbAttachments = @{
                                   (__bridge NSString*)kCVImageBufferICCProfileKey: (__bridge NSData *)colorProfileData,
