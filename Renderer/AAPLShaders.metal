@@ -111,20 +111,22 @@ identityVertexShader(uint vertexID [[ vertex_id ]],
 }
 
 
-// Fragment shader that can do simple rescale
+// Fragment shader that can do simple rescale, note that the input
+// and output if float here as opposed to half to support 16 bit
+// float input texture.
 
 fragment float4
 samplingShader(RasterizerData in [[stage_in]],
-               texture2d<half, access::sample> colorTexture [[ texture(AAPLTextureIndexBaseColor) ]])
+               texture2d<float, access::sample> colorTexture [[ texture(AAPLTextureIndexBaseColor) ]])
 {
   constexpr sampler textureSampler (mag_filter::linear,
                                     min_filter::linear);
   
   // Sample the texture to obtain a color
-  const half4 colorSample = colorTexture.sample(textureSampler, in.textureCoordinate);
+  const float4 colorSample = colorTexture.sample(textureSampler, in.textureCoordinate);
   
   // We return the color of the texture
-  return float4(colorSample);
+  return colorSample;
 }
 
 // BT.709 rendering fragment shader

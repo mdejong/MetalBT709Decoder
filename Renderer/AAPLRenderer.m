@@ -106,9 +106,9 @@ Implementation of renderer class which performs Metal setup and per frame render
 #if TARGET_OS_IOS
       textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
 #else
-      textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
+      //textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
       // FIXME: Render to 16 bit float intermediate texture to avoid precision loss
-      //textureDescriptor.pixelFormat = MTLPixelFormatRGBA16Float;
+      textureDescriptor.pixelFormat = MTLPixelFormatRGBA16Float;
 #endif // TARGET_OS_IOS
       
       // Set the pixel dimensions of the texture
@@ -171,7 +171,7 @@ Implementation of renderer class which performs Metal setup and per frame render
     // sRGB texture
     self.metalBT709Decoder.colorPixelFormat = mtkView.colorPixelFormat;
 #else
-    self.metalBT709Decoder.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    self.metalBT709Decoder.colorPixelFormat = MTLPixelFormatRGBA16Float;
 #endif // TARGET_OS_IOS
     
     //self.metalBT709Decoder.useComputeRenderer = TRUE;
@@ -392,14 +392,20 @@ Implementation of renderer class which performs Metal setup and per frame render
     [commandBuffer commit];
   }
 
+  // Internal resize texture can only be captured when it is sRGB texture. In the case
+  // of MacOSX that makes use a linear 16 bit intermeiate texture, no means to
+  // capture the intermediate form aside from another render pass that reads from
+  // the intermediate and writes into a lower precision texture.
   
-  if (isCaptureRenderedTextureEnabled && 1) {
+  if (isCaptureRenderedTextureEnabled && (_resizeTexture.pixelFormat == MTLPixelFormatBGRA8Unorm_sRGB)) {
     // Capture results of intermediate render to same size texture
     
     int width = (int) _resizeTexture.width;
     int height = (int) _resizeTexture.height;
     
     CGFrameBuffer *renderedFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    // Copy 16 bit floating point values into a tmp buffer
     
     // Copy from texture into framebuffer as BGRA pixels
     
@@ -419,7 +425,41 @@ Implementation of renderer class which performs Metal setup and per frame render
     NSData *pngData = [renderedFB formatAsPNG];
     
     NSString *tmpDir = NSTemporaryDirectory();
-    NSString *path = [tmpDir stringByAppendingPathComponent:@"DUMP_resize_BGRA.png"];
+    NSString *path = [tmpDir stringByAppendingPathComponent:@"DUMP_internal_sRGB_texture.png"];
+    BOOL worked = [pngData writeToFile:path atomically:TRUE];
+    assert(worked);
+    NSLog(@"wrote %@ as %d bytes", path, (int)pngData.length);
+  }
+  
+  if (isCaptureRenderedTextureEnabled) {
+    // Capture output of the resize operation, this is a
+    // sRGB encoded value.
+    
+    id<MTLTexture> texture = renderPassDescriptor.colorAttachments[0].texture;
+    
+    int width = (int) texture.width;
+    int height = (int) texture.height;
+    
+    CGFrameBuffer *renderedFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    [texture getBytes:(void*)renderedFB.pixels
+                 bytesPerRow:width*sizeof(uint32_t)
+               bytesPerImage:width*height*sizeof(uint32_t)
+                  fromRegion:MTLRegionMake2D(0, 0, width, height)
+                 mipmapLevel:0
+                       slice:0];
+    
+    if (1) {
+      // Backing texture for the view is sRGB
+      CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+      renderedFB.colorspace = cs;
+      CGColorSpaceRelease(cs);
+    }
+    
+    NSData *pngData = [renderedFB formatAsPNG];
+    
+    NSString *tmpDir = NSTemporaryDirectory();
+    NSString *path = [tmpDir stringByAppendingPathComponent:@"DUMP_resized_texture.png"];
     BOOL worked = [pngData writeToFile:path atomically:TRUE];
     assert(worked);
     NSLog(@"wrote %@ as %d bytes", path, (int)pngData.length);
