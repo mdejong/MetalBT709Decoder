@@ -27,6 +27,61 @@ Implementation of renderer class which performs Metal setup and per frame render
 
 @end
 
+// Define this symbol to enable private texture mode on MacOSX.
+
+//#define STORAGE_MODE_PRIVATE
+
+static inline
+void set_storage_mode(MTLTextureDescriptor *textureDescriptor)
+{
+#if defined(STORAGE_MODE_PRIVATE)
+  
+#if TARGET_OS_IOS
+  // Nop since MTLStorageModeManaged is the default for iOS
+#else
+  // MacOSX must use GPU private memory for intermediate texture or
+  // performance will be seriously impacted (60 FPS -> 38 FPS for HD render).
+  textureDescriptor.storageMode = MTLStorageModePrivate;
+#endif // TARGET_OS_IOS
+  
+#endif // STORAGE_MODE_PRIVATE
+}
+
+static inline
+void validate_storage_mode(id<MTLTexture> texture)
+{
+#if defined(STORAGE_MODE_PRIVATE)
+  
+#if TARGET_OS_IOS
+  // Nop
+#else
+# if defined(DEBUG)
+  assert(texture.storageMode == MTLStorageModePrivate);
+# endif // DEBUG
+#endif // TARGET_OS_IOS
+  
+#endif // STORAGE_MODE_PRIVATE
+  
+  // Debug print size of intermediate render texture
+  
+# if defined(DEBUG)
+  {
+    int numBytesPerPixel;
+    
+#if TARGET_OS_IOS
+    numBytesPerPixel = sizeof(uint8_t) * 4;
+#else
+    numBytesPerPixel = sizeof(uint16_t) * 4;
+#endif // TARGET_OS_IOS
+    
+    int numBytes = (int) (texture.width * texture.height * numBytesPerPixel);
+    
+    printf("intermediate render texture num bytes %d kB : %.2f mB\n", (int)(numBytes / 1000), numBytes / 1000000.0f);
+  }
+# endif // DEBUG
+}
+
+
 // Main class performing the rendering
 @implementation AAPLRenderer
 {
@@ -106,8 +161,8 @@ Implementation of renderer class which performs Metal setup and per frame render
 #if TARGET_OS_IOS
       textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
 #else
+      // Render to 16 bit float intermediate texture to avoid precision loss
       //textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
-      // FIXME: Render to 16 bit float intermediate texture to avoid precision loss
       textureDescriptor.pixelFormat = MTLPixelFormatRGBA16Float;
 #endif // TARGET_OS_IOS
       
@@ -117,10 +172,17 @@ Implementation of renderer class which performs Metal setup and per frame render
       
       textureDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
       
-      // Create the texture from the device by using the descriptor
+      // Create the texture from the device by using the descriptor,
+      // note that GPU private storage mode is the default for
+      // newTextureWithDescriptor, this is just here to make that clear.
+      
+      set_storage_mode(textureDescriptor);
+      
       _resizeTexture = [_device newTextureWithDescriptor:textureDescriptor];
       
       NSAssert(_resizeTexture, @"_resizeTexture");
+      
+      validate_storage_mode(_resizeTexture);
     }
     
     // Set up a simple MTLBuffer with our vertices which include texture coordinates
@@ -219,9 +281,9 @@ Implementation of renderer class which performs Metal setup and per frame render
   
   CVPixelBufferRef cvPixelBufer;
   
-  //cvPixelBufer = [self decodeQuicktimeTestPattern];
+  cvPixelBufer = [self decodeQuicktimeTestPattern];
   //cvPixelBufer = [self decodeSMPTEGray75Perent];
-  cvPixelBufer = [self decodeH264YCbCr_bars256];
+  //cvPixelBufer = [self decodeH264YCbCr_bars256];
   //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
 
   if (debugDumpYCbCr) {
@@ -405,8 +467,6 @@ Implementation of renderer class which performs Metal setup and per frame render
     
     CGFrameBuffer *renderedFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
     
-    // Copy 16 bit floating point values into a tmp buffer
-    
     // Copy from texture into framebuffer as BGRA pixels
     
     [_resizeTexture getBytes:(void*)renderedFB.pixels
@@ -416,12 +476,13 @@ Implementation of renderer class which performs Metal setup and per frame render
           mipmapLevel:0
                 slice:0];
 
-    if (_resizeTexture.pixelFormat == MTLPixelFormatBGRA8Unorm) {
-      CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGBLinear);
+    if (1) {
+      // texture is sRGB
+      CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
       renderedFB.colorspace = cs;
       CGColorSpaceRelease(cs);
     }
-    
+
     NSData *pngData = [renderedFB formatAsPNG];
     
     NSString *tmpDir = NSTemporaryDirectory();

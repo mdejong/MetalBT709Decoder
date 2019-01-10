@@ -568,7 +568,7 @@ static const int dumpFramesImages = 0;
     }
     int totalkb = totalEncodeNumBytes / 1000;
     int totalmb = totalkb / 1000;
-    NSLog(@"encoded \"%@\" as %d frames", [resourceName lastPathComponent], (int)encodedH264Buffers.count);
+    NSLog(@"decoded \"%@\" as %d frames", [resourceName lastPathComponent], (int)encodedH264Buffers.count);
     NSLog(@"total encoded num bytes %d, %d kB, %d mB", totalEncodeNumBytes, totalkb, totalmb);
 #endif // LOGGING
   }

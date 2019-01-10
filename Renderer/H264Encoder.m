@@ -517,6 +517,8 @@ static const int dumpFramesImages = 0;
 // RGB values in the CoreVideo buffer are interpreted.
 //
 // https://developer.apple.com/library/archive/qa/qa1839/_index.html
+// https://developer.apple.com/library/archive/technotes/tn2257/_index.html
+// https://developer.apple.com/library/archive/technotes/tn2227/_index.html
 
 // FIXME: set kCVImageBufferCGColorSpaceKey directly
 
