@@ -39,8 +39,6 @@ void set_storage_mode(MTLTextureDescriptor *textureDescriptor)
 #if TARGET_OS_IOS
   // Nop since MTLStorageModeManaged is the default for iOS
 #else
-  // MacOSX must use GPU private memory for intermediate texture or
-  // performance will be seriously impacted (60 FPS -> 38 FPS for HD render).
   textureDescriptor.storageMode = MTLStorageModePrivate;
 #endif // TARGET_OS_IOS
   
