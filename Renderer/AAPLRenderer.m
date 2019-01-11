@@ -277,9 +277,10 @@ void validate_storage_mode(id<MTLTexture> texture)
   
   CVPixelBufferRef cvPixelBufer;
   
-  cvPixelBufer = [self decodeQuicktimeTestPattern];
+  //cvPixelBufer = [self decodeQuicktimeTestPattern];
   //cvPixelBufer = [self decodeSMPTEGray75Perent];
   //cvPixelBufer = [self decodeH264YCbCr_bars256];
+  cvPixelBufer = [self decodeH264YCbCr_bars_iPadFullScreen];
   //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
 
   if (debugDumpYCbCr) {
@@ -351,6 +352,25 @@ void validate_storage_mode(id<MTLTexture> texture)
   return cvPixelBuffer;
 }
 
+- (CVPixelBufferRef) decodeH264YCbCr_bars_iPadFullScreen
+{
+  NSString *resFilename = @"osxcolor_test_image_iPad_2048_1536.m4v";
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(2048, 1536)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  return cvPixelBuffer;
+}
+
 - (CVPixelBufferRef) decodeH264YCbCr_barsFullscreen
 {
   NSString *resFilename = @"bars_709_Frame01.m4v";
@@ -390,53 +410,104 @@ void validate_storage_mode(id<MTLTexture> texture)
   id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
   commandBuffer.label = @"BT709 Render";
   
-  // Obtain a reference to a sRGB intermediate texture
-  
-  worked = [self.metalBT709Decoder decodeBT709:_yCbCrPixelBuffer
-                      bgraSRGBTexture:_resizeTexture
-                        commandBuffer:commandBuffer
-                   waitUntilCompleted:FALSE];
-#if defined(DEBUG)
-  NSAssert(worked, @"decodeBT709 worked");
-#endif // DEBUG
-  if (!worked) {
-    return;
-  }
-
   // Obtain a renderPassDescriptor generated from the view's drawable textures
   MTLRenderPassDescriptor *renderPassDescriptor = view.currentRenderPassDescriptor;
   
-  if(renderPassDescriptor != nil)
-  {
-    // Create a render command encoder so we can render into something
-    id<MTLRenderCommandEncoder> renderEncoder =
-    [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
-    renderEncoder.label = @"RescaleRender";
+  MetalBT709Decoder *metalBT709Decoder = self.metalBT709Decoder;
+  
+  int renderWidth = (int) _viewportSize.x;
+  int renderHeight = (int) _viewportSize.y;
+  
+  BOOL isExactlySameSize =
+  (renderWidth == ((int)CVPixelBufferGetWidth(_yCbCrPixelBuffer))) &&
+  (renderHeight == ((int)CVPixelBufferGetHeight(_yCbCrPixelBuffer))) &&
+  (renderPassDescriptor != nil);
+
+  if ((0)) {
+    // Phony up exact match results just for testing purposes, this
+    // would generate slightly wrong non-linear resample results
+    // if the dimensions do not exactly match.
+    isExactlySameSize = 1;
+    renderWidth = (int)CVPixelBufferGetWidth(_yCbCrPixelBuffer);
+    renderHeight = (int)CVPixelBufferGetHeight(_yCbCrPixelBuffer);
+  }
+  
+  if (isExactlySameSize) {
+    // Render directly into the view, this optimization reduces IO
+    // and results in a significant performance improvement.
+
+    worked = [metalBT709Decoder decodeBT709:_yCbCrPixelBuffer
+                                 bgraSRGBTexture:nil
+                                   commandBuffer:commandBuffer
+                            renderPassDescriptor:renderPassDescriptor
+                                     renderWidth:renderWidth
+                                    renderHeight:renderHeight
+                              waitUntilCompleted:FALSE];
     
-    // Set the region of the drawable to which we'll draw.
-    [renderEncoder setViewport:(MTLViewport){0.0, 0.0, _viewportSize.x, _viewportSize.y, -1.0, 1.0 }];
+    if (worked) {
+      // Schedule a present once the framebuffer is complete using the current drawable
+      [commandBuffer presentDrawable:view.currentDrawable];
+    }
+  } else {
+    // Viewport dimensions do not exactly match the input texture
+    // dimensions, so a 2 pass render operation with an
+    // intermediate texture is required.
     
-    [renderEncoder setRenderPipelineState:_pipelineState];
+    if (renderPassDescriptor != nil)
+    {
+      int renderWidth = (int) _resizeTexture.width;
+      int renderHeight = (int) _resizeTexture.height;
+      
+      worked = [metalBT709Decoder decodeBT709:_yCbCrPixelBuffer
+                                   bgraSRGBTexture:_resizeTexture
+                                     commandBuffer:commandBuffer
+                              renderPassDescriptor:nil
+                                       renderWidth:renderWidth
+                                      renderHeight:renderHeight
+                                waitUntilCompleted:FALSE];
+      
+#if defined(DEBUG)
+      NSAssert(worked, @"decodeBT709 worked");
+#endif // DEBUG
+      if (!worked) {
+        return;
+      }
+    }
     
-    [renderEncoder setVertexBuffer:mrc.identityVerticesBuffer
-                            offset:0
-                           atIndex:AAPLVertexInputIndexVertices];
+    // renderWidth, renderHeight already set to viewport dimensions above
     
-    // Set the texture object.  The AAPLTextureIndexBaseColor enum value corresponds
-    ///  to the 'colorMap' argument in our 'samplingShader' function because its
-    //   texture attribute qualifier also uses AAPLTextureIndexBaseColor for its index
-    [renderEncoder setFragmentTexture:_resizeTexture
-                              atIndex:AAPLTextureIndexBaseColor];
-    
-    // Draw the vertices of our triangles
-    [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle
-                      vertexStart:0
-                      vertexCount:mrc.identityNumVertices];
-    
-    [renderEncoder endEncoding];
-    
-    // Schedule a present once the framebuffer is complete using the current drawable
-    [commandBuffer presentDrawable:view.currentDrawable];
+    if (renderPassDescriptor != nil)
+    {
+      // Create a render command encoder so we can render into something
+      id<MTLRenderCommandEncoder> renderEncoder =
+      [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+      renderEncoder.label = @"RescaleRender";
+      
+      // Set the region of the drawable to which we'll draw.
+      [renderEncoder setViewport:(MTLViewport){0.0, 0.0, renderWidth, renderHeight, -1.0, 1.0 }];
+      
+      [renderEncoder setRenderPipelineState:_pipelineState];
+      
+      [renderEncoder setVertexBuffer:mrc.identityVerticesBuffer
+                              offset:0
+                             atIndex:0];
+      
+      // Set the texture object.  The AAPLTextureIndexBaseColor enum value corresponds
+      ///  to the 'colorMap' argument in our 'samplingShader' function because its
+      //   texture attribute qualifier also uses AAPLTextureIndexBaseColor for its index
+      [renderEncoder setFragmentTexture:_resizeTexture
+                                atIndex:AAPLTextureIndexBaseColor];
+      
+      // Draw the vertices of our triangles
+      [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle
+                        vertexStart:0
+                        vertexCount:mrc.identityNumVertices];
+      
+      [renderEncoder endEncoding];
+      
+      // Schedule a present once the framebuffer is complete using the current drawable
+      [commandBuffer presentDrawable:view.currentDrawable];
+    }
   }
   
   if (isCaptureRenderedTextureEnabled) {

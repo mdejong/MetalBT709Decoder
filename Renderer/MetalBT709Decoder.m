@@ -174,10 +174,16 @@
 // BT709 -> BGRA conversion that writes directly into a Metal texture.
 // This logic assumes that the Metal texture was already allocated at
 // exactly the same dimensions as the input YCbCr encoded data.
+// Note that in the case where the render should be done in 1 step,
+// meaning directly into a view then pass a renderPassDescriptor.
+// A 2 stage render would pass nil for renderPassDescriptor.
 
 - (BOOL) decodeBT709:(CVPixelBufferRef)yCbCrInputTexture
      bgraSRGBTexture:(id<MTLTexture>)bgraSRGBTexture
        commandBuffer:(id<MTLCommandBuffer>)commandBuffer
+renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
+         renderWidth:(int)renderWidth
+        renderHeight:(int)renderHeight
   waitUntilCompleted:(BOOL)waitUntilCompleted
 {
   BOOL worked;
@@ -190,6 +196,9 @@
   worked = [self processBT709ToSRGB:yCbCrInputTexture
                     bgraSRGBTexture:bgraSRGBTexture
                       commandBuffer:commandBuffer
+               renderPassDescriptor:renderPassDescriptor
+                        renderWidth:renderWidth
+                       renderHeight:renderHeight
                  waitUntilCompleted:waitUntilCompleted];
   if (worked == FALSE) {
     return FALSE;
@@ -204,6 +213,9 @@
 - (BOOL) processBT709ToSRGB:(CVPixelBufferRef)cvPixelBuffer
             bgraSRGBTexture:(id<MTLTexture>)bgraSRGBTexture
               commandBuffer:(id<MTLCommandBuffer>)commandBuffer
+       renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
+                renderWidth:(int)renderWidth
+               renderHeight:(int)renderHeight
          waitUntilCompleted:(BOOL)waitUntilCompleted
 {
   const int debug = 0;
@@ -217,9 +229,19 @@
   // dimensions as the YCbCr pixel buffer, resizing and scaling a
   // non-linear BT709 input texture would generate incorrect pixel values.
   
-  NSAssert(width == bgraSRGBTexture.width, @"width mismatch between BT709 and SRGB : %d != %d", width, (int)bgraSRGBTexture.width);
-  NSAssert(height == bgraSRGBTexture.height, @"height mismatch between BT709 and SRGB : %d != %d", height, (int)bgraSRGBTexture.height);
-  if (width != bgraSRGBTexture.width || height != bgraSRGBTexture.height) {
+  if (bgraSRGBTexture != nil) {
+    NSAssert(width == bgraSRGBTexture.width, @"width mismatch between BT709 and SRGB : %d != %d", width, (int)bgraSRGBTexture.width);
+    NSAssert(height == bgraSRGBTexture.height, @"height mismatch between BT709 and SRGB : %d != %d", height, (int)bgraSRGBTexture.height);
+    
+    if (width != bgraSRGBTexture.width || height != bgraSRGBTexture.height) {
+      return FALSE;
+    }
+  }
+
+  NSAssert(width == renderWidth, @"width mismatch : %d != %d", width, renderWidth);
+  NSAssert(height == renderHeight, @"height mismatch : %d != %d", height, renderHeight);
+  
+  if (width != renderWidth || height != renderHeight) {
     return FALSE;
   }
   
@@ -258,6 +280,10 @@
     
     NSParameterAssert(ret == kCVReturnSuccess && yTextureWrapperRef != NULL);
     
+    if (ret != kCVReturnSuccess || yTextureWrapperRef == NULL) {
+      return FALSE;
+    }
+    
     inputYTexture = CVMetalTextureGetTexture(yTextureWrapperRef);
     
     CFRelease(yTextureWrapperRef);
@@ -277,6 +303,10 @@
                                                              &cbcrTextureWrapperRef);
     
     NSParameterAssert(ret == kCVReturnSuccess && cbcrTextureWrapperRef != NULL);
+    
+    if (ret != kCVReturnSuccess || cbcrTextureWrapperRef == NULL) {
+      return FALSE;
+    }
     
     inputCbCrTexture = CVMetalTextureGetTexture(cbcrTextureWrapperRef);
     
@@ -378,8 +408,20 @@
     worked = [self renderWithComputePipeline:outputTexture
                                commandBuffer:commandBuffer];
   } else {
-    worked = [self renderWithRenderPipeline:outputTexture
-                              commandBuffer:commandBuffer];
+    if (renderPassDescriptor != nil) {
+      worked = [self renderWithRenderPipeline:commandBuffer
+                         renderPassDescriptor:renderPassDescriptor
+                                  renderWidth:renderWidth
+                                 renderHeight:renderHeight];
+    } else {
+      worked = [self renderWithRenderPipeline:outputTexture
+                                commandBuffer:commandBuffer];
+    }
+    
+    if (waitUntilCompleted && renderPassDescriptor != nil) {
+      // FIXME: would need to present drawable here before
+      // calling commit on the commandBuffer
+    }
   }
   
   if (worked == FALSE) {
@@ -486,6 +528,76 @@
     [renderEncoder setVertexBuffer:self.metalRenderContext.identityVerticesBuffer
                             offset:0
                            atIndex:0];
+    
+    [renderEncoder setFragmentTexture:self.inputYTexture
+                              atIndex:0];
+    [renderEncoder setFragmentTexture:self.inputCbCrTexture
+                              atIndex:1];
+    
+    // Draw the 3 vertices of our triangle
+    [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle
+                      vertexStart:0
+                      vertexCount:self.metalRenderContext.identityNumVertices];
+    
+    [renderEncoder popDebugGroup]; // RenderToTexture
+    
+    [renderEncoder endEncoding];
+    
+    return TRUE;
+  } else {
+    // Return FALSE to indicate that render was not successful
+    return FALSE;
+  }
+}
+
+// Fragment shader based render that output directly into a view
+// via an existing MTLRenderPassDescriptor, this optimized
+// execution path is only useful when the view to render into
+// is exactly the same size at the input texture.
+// When the sizes exactly match then no resampling against
+// a non-linear texture is done and thus no intermediate
+// texture is needed. This render path should be 2x faster.
+
+- (BOOL) renderWithRenderPipeline:(id<MTLCommandBuffer>)commandBuffer
+             renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
+                      renderWidth:(int)renderWidth
+                     renderHeight:(int)renderHeight
+{
+  NSString *label = @"BT709 Render";
+  
+  id<MTLRenderPipelineState> pipeline = self.renderPipelineState;
+  
+  // Configure fragment shader render into output texture of the exact same dimensions
+  // so that there is no scaling and single (non-linear) pixels are rendered 1 to 1.
+  
+  if (renderPassDescriptor != nil)
+  {
+    id<MTLRenderCommandEncoder> renderEncoder =
+      [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+    renderEncoder.label = label;
+    
+    [renderEncoder pushDebugGroup:label];
+    
+    // Set the region of the drawable to which we'll draw.
+    
+    MTLViewport mtlvp = {0.0, 0.0, renderWidth, renderHeight, -1.0, 1.0 };
+    [renderEncoder setViewport:mtlvp];
+    
+    [renderEncoder setRenderPipelineState:pipeline];
+    
+    [renderEncoder setVertexBuffer:self.metalRenderContext.identityVerticesBuffer
+                            offset:0
+                           atIndex:0];
+    
+#if defined(DEBUG)
+    // This render operation is only legal when the input dimensions
+    // exactly match the output dimensions so that there is no resampling
+    // of a non-linear input texture. Note that any 2x scaling on an iOS
+    // screen does not matter, the pixel width is all that matters.
+    
+    NSAssert(renderWidth == self.inputYTexture.width, @"render width must exactly match original texture width : %d != %d", renderWidth, (int)self.inputYTexture.width);
+    NSAssert(renderHeight == self.inputYTexture.height, @"render height must exactly match original texture height : %d != %d", renderHeight, (int)self.inputYTexture.height);
+#endif // DEBUG
     
     [renderEncoder setFragmentTexture:self.inputYTexture
                               atIndex:0];

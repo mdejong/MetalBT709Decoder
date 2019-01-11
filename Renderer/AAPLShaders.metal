@@ -32,7 +32,7 @@ typedef struct
 
 vertex RasterizerData
 identityVertexShader(uint vertexID [[ vertex_id ]],
-             constant AAPLVertex *vertexArray [[ buffer(AAPLVertexInputIndexVertices) ]])
+             constant AAPLVertex *vertexArray [[ buffer(0) ]])
 {
   RasterizerData out;
   

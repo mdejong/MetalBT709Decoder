@@ -75,6 +75,9 @@
 		3C4A77C121DEA5290041ACE3 /* encode_h264.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A77C021DEA5280041ACE3 /* encode_h264.m */; };
 		3C4A77C521DEAB0E0041ACE3 /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E81321D73BB4005424E6 /* CGFrameBuffer.m */; };
 		3C4A77C621DEAB0E0041ACE3 /* BGRAToBT709Converter.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A773121D894720041ACE3 /* BGRAToBT709Converter.m */; };
+		3C8219D521E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */; };
+		3C8219D621E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */; };
+		3C8219D721E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */; };
 		3CA8B6C121E03A5300D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
 		3CA8B6C221E03A5300D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
 		3CA8B6C521E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
@@ -205,6 +208,7 @@
 		3C4A77B321DD87D60041ACE3 /* QuickTime_Test_Pattern_HD.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = QuickTime_Test_Pattern_HD.mov; sourceTree = "<group>"; };
 		3C4A77BE21DEA50F0041ACE3 /* encode_h264 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = encode_h264; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C4A77C021DEA5280041ACE3 /* encode_h264.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = encode_h264.m; sourceTree = "<group>"; };
+		3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = osxcolor_test_image_iPad_2048_1536.m4v; sourceTree = "<group>"; };
 		3CA8B6C321E1682500D2B853 /* H264Encoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = H264Encoder.h; sourceTree = "<group>"; };
 		3CA8B6C421E1682600D2B853 /* H264Encoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = H264Encoder.m; sourceTree = "<group>"; };
 		3CA8B6D021E199C700D2B853 /* gamma_write */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = gamma_write; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -331,6 +335,7 @@
 				3A1857EF1EB7AF9E007D4F50 /* Image.tga */,
 				3C4A774821D8C3BD0041ACE3 /* bars_709_Frame01.m4v */,
 				3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */,
+				3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */,
 				3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */,
 				3C4A77B321DD87D60041ACE3 /* QuickTime_Test_Pattern_HD.mov */,
 				3C4A77B221DD87D50041ACE3 /* QuickTime_Test_Pattern_SD.mov */,
@@ -690,6 +695,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C8219D621E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
 				3C4A77B821DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
 				3AFD65641F71A7240008A125 /* Main.storyboard in Resources */,
 				3C4A77B521DD87D90041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
@@ -710,6 +716,7 @@
 				3C4A77A921DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3A06FBA71F730C4000073097 /* Main.storyboard in Resources */,
 				3CB6E80721D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
+				3C8219D721E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
 				3C4A774B21D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */,
 				3C4A77B621DD87DA0041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
 			);
@@ -724,6 +731,7 @@
 				3C4A77A721DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3AFD655F1F71A71B0008A125 /* Main.storyboard in Resources */,
 				3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
+				3C8219D521E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
 				3C4A774921D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */,
 				3C4A77B421DD87D80041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
 			);

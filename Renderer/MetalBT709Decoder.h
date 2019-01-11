@@ -36,10 +36,16 @@
 // BT709 -> BGRA conversion that writes directly into a Metal texture.
 // This logic assumes that the Metal texture was already allocated at
 // exactly the same dimensions as the input YCbCr encoded data.
+// Note that in the case where the render should be done in 1 step,
+// meaning directly into a view then pass a renderPassDescriptor.
+// A 2 stage render would pass nil for renderPassDescriptor.
 
 - (BOOL) decodeBT709:(CVPixelBufferRef)yCbCrInputTexture
      bgraSRGBTexture:(id<MTLTexture>)bgraSRGBTexture
        commandBuffer:(id<MTLCommandBuffer>)commandBuffer
+renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
+         renderWidth:(int)renderWidth
+        renderHeight:(int)renderHeight
   waitUntilCompleted:(BOOL)waitUntilCompleted;
 
 @end
