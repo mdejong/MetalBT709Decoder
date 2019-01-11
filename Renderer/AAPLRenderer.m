@@ -88,12 +88,6 @@ void validate_storage_mode(id<MTLTexture> texture)
   // that can then be sampled to resize render into the view.
   id<MTLTexture> _resizeTexture;
   
-  // The Metal buffer in which we store our vertex data
-  id<MTLBuffer> _vertices;
-  
-  // The number of vertices in our vertex buffer
-  NSUInteger _numVertices;
-  
   // The current size of our view so we can use this in our render pipeline
   vector_uint2 _viewportSize;
   
@@ -203,27 +197,6 @@ void validate_storage_mode(id<MTLTexture> texture)
 # endif // DEBUG
     }
     
-    // Set up a simple MTLBuffer with our vertices which include texture coordinates
-    static const AAPLVertex quadVertices[] =
-    {
-      // Pixel positions, Texture coordinates
-      { {  250,  -250 },  { 1.f, 0.f } },
-      { { -250,  -250 },  { 0.f, 0.f } },
-      { { -250,   250 },  { 0.f, 1.f } },
-      
-      { {  250,  -250 },  { 1.f, 0.f } },
-      { { -250,   250 },  { 0.f, 1.f } },
-      { {  250,   250 },  { 1.f, 1.f } },
-    };
-    
-    // Create our vertex buffer, and initialize it with our quadVertices array
-    _vertices = [_device newBufferWithBytes:quadVertices
-                                     length:sizeof(quadVertices)
-                                    options:MTLResourceStorageModeShared];
-    
-    // Calculate the number of vertices by dividing the byte length by the size of each vertex
-    _numVertices = sizeof(quadVertices) / sizeof(AAPLVertex);
-    
     /// Create render pipeline
     
     // Create the command queue
@@ -266,7 +239,7 @@ void validate_storage_mode(id<MTLTexture> texture)
     
     {
       // Load the vertex function from the library
-      id<MTLFunction> vertexFunction = [defaultLibrary newFunctionWithName:@"vertexShader"];
+      id<MTLFunction> vertexFunction = [defaultLibrary newFunctionWithName:@"identityVertexShader"];
       
       // Load the fragment function from the library
       id<MTLFunction> fragmentFunction = [defaultLibrary newFunctionWithName:@"samplingShader"];
@@ -411,6 +384,8 @@ void validate_storage_mode(id<MTLTexture> texture)
 {
   BOOL worked;
 
+  MetalRenderContext *mrc = self.metalBT709Decoder.metalRenderContext;
+  
   // Create a new command buffer for each render pass to the current drawable
   id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
   commandBuffer.label = @"BT709 Render";
@@ -443,13 +418,9 @@ void validate_storage_mode(id<MTLTexture> texture)
     
     [renderEncoder setRenderPipelineState:_pipelineState];
     
-    [renderEncoder setVertexBuffer:_vertices
+    [renderEncoder setVertexBuffer:mrc.identityVerticesBuffer
                             offset:0
                            atIndex:AAPLVertexInputIndexVertices];
-    
-    [renderEncoder setVertexBytes:&_viewportSize
-                           length:sizeof(_viewportSize)
-                          atIndex:AAPLVertexInputIndexViewportSize];
     
     // Set the texture object.  The AAPLTextureIndexBaseColor enum value corresponds
     ///  to the 'colorMap' argument in our 'samplingShader' function because its
@@ -460,7 +431,7 @@ void validate_storage_mode(id<MTLTexture> texture)
     // Draw the vertices of our triangles
     [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                       vertexStart:0
-                      vertexCount:_numVertices];
+                      vertexCount:mrc.identityNumVertices];
     
     [renderEncoder endEncoding];
     

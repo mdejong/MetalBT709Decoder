@@ -15,7 +15,6 @@ Header containing types and enum constants shared between Metal shaders and C/Ob
 typedef enum AAPLVertexInputIndex
 {
     AAPLVertexInputIndexVertices     = 0,
-    AAPLVertexInputIndexViewportSize = 1,
 } AAPLVertexInputIndex;
 
 // Texture index values shared between shader and C code to ensure Metal shader buffer inputs match
