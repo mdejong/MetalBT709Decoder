@@ -59,24 +59,6 @@ void validate_storage_mode(id<MTLTexture> texture)
 #endif // TARGET_OS_IOS
   
 #endif // STORAGE_MODE_PRIVATE
-  
-  // Debug print size of intermediate render texture
-  
-# if defined(DEBUG)
-  {
-    int numBytesPerPixel;
-    
-#if TARGET_OS_IOS
-    numBytesPerPixel = sizeof(uint8_t) * 4;
-#else
-    numBytesPerPixel = sizeof(uint16_t) * 4;
-#endif // TARGET_OS_IOS
-    
-    int numBytes = (int) (texture.width * texture.height * numBytesPerPixel);
-    
-    printf("intermediate render texture num bytes %d kB : %.2f mB\n", (int)(numBytes / 1000), numBytes / 1000000.0f);
-  }
-# endif // DEBUG
 }
 
 
@@ -114,6 +96,8 @@ void validate_storage_mode(id<MTLTexture> texture)
   
   // The current size of our view so we can use this in our render pipeline
   vector_uint2 _viewportSize;
+  
+  int hasWriteSRGBTextureSupport;
 }
 
 /// Initialize with the MetalKit view from which we'll obtain our Metal device
@@ -140,9 +124,7 @@ void validate_storage_mode(id<MTLTexture> texture)
     
     // Configure Metal view so that it treats pixels as sRGB values.
     
-//#if TARGET_OS_IOS
     mtkView.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
-//#endif // TARGET_OS_IOS
     
     {
       // Init render texture that will hold resize render intermediate
@@ -153,15 +135,35 @@ void validate_storage_mode(id<MTLTexture> texture)
       textureDescriptor.textureType = MTLTextureType2D;
       
       // Indicate that each pixel has a blue, green, red, and alpha channel, where each channel is
-      // an 8-bit unsigned normalized value (i.e. 0 maps to 0.0 and 255 maps to 1.0)
+      // an 8-bit unsigned normalized value (i.e. 0 maps to 0.0 and 255 maps to 1.0) as sRGB
+
+#if TARGET_OS_IOS
+      hasWriteSRGBTextureSupport = 1;
+#else
+      // MacOSX 10.14 or newer needed to support sRGB texture writes
       
-      // FIXME: write to sRGB texture seems to require MacOSX 10.14
+      NSOperatingSystemVersion version = [[NSProcessInfo processInfo] operatingSystemVersion];
+      
+      if (version.majorVersion >= 10 && version.minorVersion >= 14) {
+        // Supports sRGB texture write feature.
+        hasWriteSRGBTextureSupport = 1;
+      } else {
+        hasWriteSRGBTextureSupport = 0;
+      }
+      
+      // Force 16 bit float texture to be used (about 2x slower for IO bound shader)
+      //hasWriteSRGBTextureSupport = 0;
+#endif // TARGET_OS_IOS
+      
 #if TARGET_OS_IOS
       textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
 #else
-      // Render to 16 bit float intermediate texture to avoid precision loss
-      //textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
-      textureDescriptor.pixelFormat = MTLPixelFormatRGBA16Float;
+      // MacOSX
+      if (hasWriteSRGBTextureSupport) {
+        textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
+      } else {
+        textureDescriptor.pixelFormat = MTLPixelFormatRGBA16Float;
+      }
 #endif // TARGET_OS_IOS
       
       // Set the pixel dimensions of the texture
@@ -181,6 +183,24 @@ void validate_storage_mode(id<MTLTexture> texture)
       NSAssert(_resizeTexture, @"_resizeTexture");
       
       validate_storage_mode(_resizeTexture);
+      
+      // Debug print size of intermediate render texture
+      
+# if defined(DEBUG)
+      {
+        int numBytesPerPixel;
+        
+        if (hasWriteSRGBTextureSupport) {
+          numBytesPerPixel = 4;
+        } else {
+          numBytesPerPixel = 8;
+        }
+        
+        int numBytes = (int) (width * height * numBytesPerPixel);
+        
+        printf("intermediate render texture num bytes %d kB : %.2f mB\n", (int)(numBytes / 1000), numBytes / 1000000.0f);
+      }
+# endif // DEBUG
     }
     
     // Set up a simple MTLBuffer with our vertices which include texture coordinates
@@ -231,12 +251,17 @@ void validate_storage_mode(id<MTLTexture> texture)
     // sRGB texture
     self.metalBT709Decoder.colorPixelFormat = mtkView.colorPixelFormat;
 #else
-    self.metalBT709Decoder.colorPixelFormat = MTLPixelFormatRGBA16Float;
+    if (hasWriteSRGBTextureSupport) {
+      self.metalBT709Decoder.colorPixelFormat = mtkView.colorPixelFormat;
+    } else {
+      self.metalBT709Decoder.colorPixelFormat = MTLPixelFormatRGBA16Float;
+    }
 #endif // TARGET_OS_IOS
     
     //self.metalBT709Decoder.useComputeRenderer = TRUE;
     
     BOOL worked = [self.metalBT709Decoder setupMetal];
+    worked = worked;
     NSAssert(worked, @"worked");
     
     {
