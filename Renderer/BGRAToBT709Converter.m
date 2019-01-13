@@ -308,6 +308,11 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   BOOL worked = [self setBT709Attributes:cvPixelBuffer];
   NSAssert(worked, @"worked");
+  
+  // Explicitly set BT.709 as the colorspace of the pixels
+  
+  worked = [self setBT709Colorspace:cvPixelBuffer];
+  NSAssert(worked, @"worked");
 
   // Write input YCBCr pixels as subsampled planes in the CoreVideo buffer
   

@@ -245,6 +245,9 @@ uint32_t grayToPixel(uint32_t gray)
   worked = [metalDecoder decodeBT709:yCbCrBuffer
                      bgraSRGBTexture:bgraSRGBTexture
                        commandBuffer:commandBuffer
+                renderPassDescriptor:nil
+                         renderWidth:width
+                        renderHeight:height
                   waitUntilCompleted:TRUE];
   XCTAssert(worked, @"decodeBT709");
   
@@ -1513,6 +1516,93 @@ uint32_t grayToPixel(uint32_t gray)
   
   pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
  
+  {
+    int v = Rout;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+}
+
+// This test makes sure encode/decode path for vImage is setting
+// colorspace correctly.
+
+- (void)testMetalBT709Decoder_SMPTE_Gray_0xc0c0c0_linear_vImage {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray 75% linear intensity
+  //
+  // sRGB (225 225 225) -> Linear RGB (192 192 192) -> REC.709 (211 128 128)
+  
+  //  Rin = 224; // 190.07 = 0.7454 -> (205 128 128)
+  //  Gin = 224;
+  //  Bin = 224;
+  
+  Rin = 225; // 192.0 = 0.7529 -> (206 128 128)
+  Gin = 225;
+  Bin = 225;
+  
+  // Encoded example bars: pixel (Y Cb Cr) (179 127 127)
+  // C (no gamma) code Linear RGB (191 191 191) -> REC.709 (180 128 128)
+  
+  // The bars_709_Frame01.m4v example:
+  // gray 75% level : (Y Cb Cr) (179 127 127)
+  // but should be  : (Y Cb Cr) (180 128 128)
+  
+  // When written by AVFoundation (with gamma)
+  // sRGB (R G B) (225 225 225)
+  // linRGB (R G B) (192 192 192)
+  // BT.709 (211 128 128)
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  // But, writing H.264 data as 4:2:0 emits Y = 210 ???
+  
+  {
+    int v = Y;
+    int expectedVal = 206;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
   {
     int v = Rout;
     int expectedVal = Rin;
