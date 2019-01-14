@@ -104,6 +104,78 @@ float BT709_nonLinearNormToLinear(float normV) {
   return normV;
 }
 
+#define APPLE_GAMMA_ADJUST (1.961f)
+
+static inline
+float AppleGamma196_nonLinearNormToLinear(float normV) {
+  const float gamma = APPLE_GAMMA_ADJUST;
+  normV = pow(normV, gamma);
+  return normV;
+}
+
+/*
+
+// Exactly reverse the linear region, but the exponent is off a lot
+ 
+static inline
+float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
+  
+  if (normV < 0.081f) {
+    normV *= (1.0f / 4.5f);
+  } else {
+    const float a = 0.055f;
+    const float gamma = APPLE_GAMMA_ADJUST;
+    normV = (normV + a) * (1.0f / (1.0f + a));
+    normV = pow(normV, gamma);
+  }
+  
+  return normV;
+}
+*/
+
+
+/*
+// About 1/2 the difference between the log 1.961 amount
+// and the 2.2 amount at X = 0.081
+// halfway between (0.081,0.018) and (0.081,0.00706)
+
+static inline
+float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
+  const float xIntercept = 0.14259f;
+  const float yIntercept = 0.02194f;
+  
+  if (normV < xIntercept) {
+    normV *= (1.0f / 6.5f);
+  } else {
+    const float gamma = APPLE_GAMMA_ADJUST;
+    normV = pow(normV, gamma);
+  }
+  
+  return normV;
+}
+*/
+
+/*
+ 
+// Straight line segment passing through the point where log(1.961)
+// would cross the x cutoff of the encoding at (0.081,0.00706)
+
+static inline
+float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
+  const float xIntercept = 0.018f;
+  const float yIntercept = 0.007237f;
+  
+  if (normV < xIntercept) {
+    normV *= (1.0f / 11.193f);
+  } else {
+    const float gamma = APPLE_GAMMA_ADJUST;
+    normV = pow(normV, gamma);
+  }
+  
+  return normV;
+}
+*/
+
 // Convert a non-linear log value to a linear value.
 // Note that normV must be normalized in the range [0.0 1.0].
 
@@ -281,6 +353,14 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
     rgb.r = BT709_nonLinearNormToLinear(rgb.r);
     rgb.g = BT709_nonLinearNormToLinear(rgb.g);
     rgb.b = BT709_nonLinearNormToLinear(rgb.b);
+
+//    rgb.r = AppleGamma196_nonLinearNormToLinear(rgb.r);
+//    rgb.g = AppleGamma196_nonLinearNormToLinear(rgb.g);
+//    rgb.b = AppleGamma196_nonLinearNormToLinear(rgb.b);
+
+//    rgb.r = AppleGamma196_sloped_nonLinearNormToLinear(rgb.r);
+//    rgb.g = AppleGamma196_sloped_nonLinearNormToLinear(rgb.g);
+//    rgb.b = AppleGamma196_sloped_nonLinearNormToLinear(rgb.b);
   }
   
   float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);

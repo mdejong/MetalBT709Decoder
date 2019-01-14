@@ -280,14 +280,36 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeQuicktimeTestPattern];
   //cvPixelBufer = [self decodeSMPTEGray75Perent];
   //cvPixelBufer = [self decodeH264YCbCr_bars256];
-  cvPixelBufer = [self decodeH264YCbCr_bars_iPadFullScreen];
+  //cvPixelBufer = [self decodeH264YCbCr_bars_iPadFullScreen];
   //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
+  cvPixelBufer = [self decodeCloudsiPadImage];
 
   if (debugDumpYCbCr) {
     [BGRAToBT709Converter dumpYCBCr:cvPixelBufer];
   }
   
   return cvPixelBufer;
+}
+
+// iPad full screen size high def image
+
+- (CVPixelBufferRef) decodeCloudsiPadImage
+{
+  NSString *resFilename = @"clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v";
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(2048, 1536)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  return cvPixelBuffer;
 }
 
 // Quicktime test pattern
