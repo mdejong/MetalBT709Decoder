@@ -155,8 +155,6 @@ float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
 }
 */
 
-/*
- 
 // Straight line segment passing through the point where log(1.961)
 // would cross the x cutoff of the encoding at (0.081,0.00706)
 
@@ -174,7 +172,6 @@ float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
   
   return normV;
 }
-*/
 
 // Convert a non-linear log value to a linear value.
 // Note that normV must be normalized in the range [0.0 1.0].
@@ -350,17 +347,17 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
     
     // Convert BT.709 to linear
     
-    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
-    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
-    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
+//    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
+//    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
+//    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
 
 //    rgb.r = AppleGamma196_nonLinearNormToLinear(rgb.r);
 //    rgb.g = AppleGamma196_nonLinearNormToLinear(rgb.g);
 //    rgb.b = AppleGamma196_nonLinearNormToLinear(rgb.b);
 
-//    rgb.r = AppleGamma196_sloped_nonLinearNormToLinear(rgb.r);
-//    rgb.g = AppleGamma196_sloped_nonLinearNormToLinear(rgb.g);
-//    rgb.b = AppleGamma196_sloped_nonLinearNormToLinear(rgb.b);
+    rgb.r = AppleGamma196_sloped_nonLinearNormToLinear(rgb.r);
+    rgb.g = AppleGamma196_sloped_nonLinearNormToLinear(rgb.g);
+    rgb.b = AppleGamma196_sloped_nonLinearNormToLinear(rgb.b);
   }
   
   float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);

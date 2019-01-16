@@ -282,13 +282,37 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeH264YCbCr_bars256];
   //cvPixelBufer = [self decodeH264YCbCr_bars_iPadFullScreen];
   //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
-  cvPixelBufer = [self decodeCloudsiPadImage];
+  //cvPixelBufer = [self decodeCloudsiPadImage];
+  cvPixelBufer = [self decodeTest709Frame];
 
   if (debugDumpYCbCr) {
     [BGRAToBT709Converter dumpYCBCr:cvPixelBufer];
   }
   
   return cvPixelBufer;
+}
+
+// Rec 709 encoded frame that shows skin tones
+
+- (CVPixelBufferRef) decodeTest709Frame
+{
+  NSString *resFilename = @"Rec709Sample.mp4";
+  
+  // (1920, 1080)
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(1920, 1080)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  return cvPixelBuffer;
 }
 
 // iPad full screen size high def image

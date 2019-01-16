@@ -293,12 +293,8 @@ static const int dumpFramesImages = 0;
   
   NSArray *videoTracks = [avUrlAsset tracksWithMediaType:AVMediaTypeVideo];
   
-  if ([videoTracks count] != 1) {
-    NSLog(@"must contain 1 video track but got %d tracks for \"%@\"", (int)[videoTracks count], movPath);
-    return FALSE;
-  }
-  
-  AVAssetTrack *videoTrack = [videoTracks objectAtIndex:0];
+  const int videoTrackOffset = 0;
+  AVAssetTrack *videoTrack = [videoTracks objectAtIndex:videoTrackOffset];
   
 #if defined(LOGGING_EVERY_FRAME)
   NSArray *availableMetadataFormats = videoTrack.availableMetadataFormats;
@@ -568,7 +564,7 @@ static const int dumpFramesImages = 0;
     }
     int totalkb = totalEncodeNumBytes / 1000;
     int totalmb = totalkb / 1000;
-    NSLog(@"decoded \"%@\" as %d frames", [resourceName lastPathComponent], (int)encodedH264Buffers.count);
+    NSLog(@"decoded \"%@\" as %d frames : %d x %d", [resourceName lastPathComponent], (int)encodedH264Buffers.count, (int)renderSize.width, (int)renderSize.height);
     NSLog(@"total encoded num bytes %d, %d kB, %d mB", totalEncodeNumBytes, totalkb, totalmb);
 #endif // LOGGING
   }

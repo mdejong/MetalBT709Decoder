@@ -81,6 +81,9 @@
 		3C8219D921E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C8219D821E950A5006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v */; };
 		3C8219DA21E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C8219D821E950A5006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v */; };
 		3C8219DB21E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C8219D821E950A5006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v */; };
+		3C821A3D21ED84DE006D516F /* Rec709Sample.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */; };
+		3C821A3E21ED84DE006D516F /* Rec709Sample.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */; };
+		3C821A3F21ED84DE006D516F /* Rec709Sample.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */; };
 		3CA8B6C121E03A5300D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
 		3CA8B6C221E03A5300D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
 		3CA8B6C521E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
@@ -213,6 +216,7 @@
 		3C4A77C021DEA5280041ACE3 /* encode_h264.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = encode_h264.m; sourceTree = "<group>"; };
 		3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = osxcolor_test_image_iPad_2048_1536.m4v; sourceTree = "<group>"; };
 		3C8219D821E950A5006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = "clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v"; sourceTree = "<group>"; };
+		3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = Rec709Sample.mp4; sourceTree = "<group>"; };
 		3CA8B6C321E1682500D2B853 /* H264Encoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = H264Encoder.h; sourceTree = "<group>"; };
 		3CA8B6C421E1682600D2B853 /* H264Encoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = H264Encoder.m; sourceTree = "<group>"; };
 		3CA8B6D021E199C700D2B853 /* gamma_write */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = gamma_write; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -344,6 +348,7 @@
 				3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */,
 				3C4A77B321DD87D60041ACE3 /* QuickTime_Test_Pattern_HD.mov */,
 				3C4A77B221DD87D50041ACE3 /* QuickTime_Test_Pattern_SD.mov */,
+				3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */,
 				3AF7E9BE1EB64A46003BB06D /* AAPLRenderer.h */,
 				3AF7E9BF1EB64A46003BB06D /* AAPLRenderer.m */,
 				3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */,
@@ -708,6 +713,7 @@
 				3A1857F01EB7AF9E007D4F50 /* Image.tga in Resources */,
 				3C4A77A821DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3AFD65631F71A7240008A125 /* LaunchScreen.storyboard in Resources */,
+				3C821A3E21ED84DE006D516F /* Rec709Sample.mp4 in Resources */,
 				3CB6E80621D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 				3C4A774A21D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */,
 			);
@@ -726,6 +732,7 @@
 				3C8219D721E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
 				3C4A774B21D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */,
 				3C4A77B621DD87DA0041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
+				3C821A3F21ED84DE006D516F /* Rec709Sample.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -742,6 +749,7 @@
 				3C8219D521E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
 				3C4A774921D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */,
 				3C4A77B421DD87D80041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
+				3C821A3D21ED84DE006D516F /* Rec709Sample.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
