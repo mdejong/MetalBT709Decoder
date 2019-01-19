@@ -197,12 +197,21 @@ static const int dumpFramesImages = 0;
   NSNumber *widthNum = [NSNumber numberWithUnsignedInteger:width];
   NSNumber *heightNum = [NSNumber numberWithUnsignedInteger:height];
   
-  NSDictionary *videoSettings = [NSDictionary dictionaryWithObjectsAndKeys:
-                                 AVVideoCodecTypeH264, AVVideoCodecKey,
-                                 widthNum, AVVideoWidthKey,
-                                 heightNum, AVVideoHeightKey,
-                                 nil];
-  NSAssert(videoSettings, @"videoSettings");
+  // Supports only HD video output settings, it is critical that iOS
+  // does not guess the YCbCr transform incorrectly.
+  
+  NSDictionary *hdVideoProperties = @{
+                                      AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_709_2,
+                                      AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_709_2,
+                                      AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2,
+                                      };
+
+  NSDictionary *videoSettings = @{
+                                  AVVideoCodecKey: AVVideoCodecTypeH264,
+                                  AVVideoWidthKey: widthNum,
+                                  AVVideoHeightKey: heightNum,
+                                  AVVideoColorPropertiesKey: hdVideoProperties,
+                                  };
   
   AVAssetWriterInput* videoWriterInput = [AVAssetWriterInput
                                           assetWriterInputWithMediaType:AVMediaTypeVideo
