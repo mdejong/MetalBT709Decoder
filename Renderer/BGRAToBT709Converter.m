@@ -791,17 +791,17 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   // FIXME: pixel buffer pool here?
   
   CVPixelBufferRef cvPixelBuffer = [self createCoreVideoYCbCrBuffer:size];
-
-  // Note that a colorspace is not being set of the CoreVideo buffer
-  // here, the default (no colorspace) interpretation is expected
-  // to be interpreted correctly if passed to CoreVideo.
   
   BOOL worked;
   
   worked = [self setBT709Attributes:cvPixelBuffer];
   NSAssert(worked, @"worked");
 
-  // Explicitly set BT.709 as the colorspace of the pixels
+  // Explicitly set BT.709 as the colorspace of the pixels, this logic
+  // will convert from the input colorspace and gamma settings to the
+  // BT.709 defined gamma space. Note that sRGB and BT.709 share the
+  // same color primaries so typically only the gamma is adjusted
+  // in this type of conversion.
   
   worked = [self setBT709Colorspace:cvPixelBuffer];
   NSAssert(worked, @"worked");

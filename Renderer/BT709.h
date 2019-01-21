@@ -93,6 +93,33 @@ float BT709_linearNormToNonLinear(float normV) {
   return normV;
 }
 
+// 3 segment linear approx of what apple describes as 1.961
+// but seems to be closer to 3 linear segments applied to
+// the result of transforming a gamma adjusted BT.709 value
+// to linear with BT709_nonLinearNormToLinear() and then
+// this function converts to a more correct linear light
+// output for video.
+
+static inline
+float BT709_lowlin_linearNormToLinear(float normV) {
+  const float elbowValue = 0.081f - ((0.081f / 4.5f) / 2.0f);
+  
+  if (normV < 0.081f) {
+    normV *= (1.0f / 4.5f);
+  } else if (normV < 0.5f) {
+    // Linear mix between elbowValue and X=Y over the range [0.081, 0.5]
+    
+    float amountUntilHalf = 0.5f - normV;
+    float amountN = amountUntilHalf * 2.0f;
+    normV = normV - (elbowValue * amountN);
+  } else {
+    // nop above 0.5, leave on X=Y line
+  }
+  
+  return normV;
+}
+
+
 #define APPLE_GAMMA_ADJUST (1.961f)
 
 /*

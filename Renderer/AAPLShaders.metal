@@ -157,6 +157,9 @@ float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
 
 // Straight line segment passing through the point where log(1.961)
 // would cross the x cutoff of the encoding at (0.081,0.00706)
+//
+// https://www.khronos.org/registry/DataFormat/specs/1.2/dataformat.1.2.html#TRANSFER_ITU
+// (a x (B ^ 0.45)) - (a - 1) = 0.081
 
 static inline
 float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
