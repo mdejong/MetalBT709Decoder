@@ -222,43 +222,6 @@ CGImageRef makeImageFromFile(NSString *filenameStr)
   return imageRef;
 }
 
-// Export a video to H.264
-
-static inline
-void exportVideo(CGImageRef inCGImage, NSString *outPath) {
-  // Allocate a H264Encoder instance and declare a util
-  // object that feeds CoreGraphics images to the encoder
-  // and take care of reporting an error condition.
-  
-  H264Encoder *encoder = [H264Encoder h264Encoder];
-  
-  EncoderImpl *impl = [[EncoderImpl alloc] init];
-  
-  encoder.frameSource = impl;
-  encoder.encoderResult = impl;
-  
-  impl.frames = [NSMutableArray array];
-  [impl.frames addObject:(__bridge id)inCGImage];
-  
-  float fps = 1.0f; // 1 FPS
-  
-  int width = (int) CGImageGetWidth(inCGImage);
-  int height = (int) CGImageGetHeight(inCGImage);
-  
-  CGSize renderSize = CGSizeMake(width, height);
-  
-  [encoder encodeframes:outPath
-          frameDuration:fps
-             renderSize:renderSize
-             aveBitrate:0];
-  
-  // Wait until the encoding operation is complet
-  
-  [encoder blockUntilFinished];
-  
-  NSLog(@"wrote %@", outPath);
-}
-
 int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
   // Read PNG
   
@@ -281,7 +244,8 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     
     CGFrameBuffer *identityFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
     
-    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    //CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
     identityFB.colorspace = cs;
     CGColorSpaceRelease(cs);
     
@@ -333,7 +297,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       }
     }
     
-    if ((1)) {
+    if ((0)) {
       // Emit png with linear colorspace
       
       NSString *filename = [NSString stringWithFormat:@"TestHDFirst20PerSRGB.png"];
@@ -382,7 +346,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     
     CGColorSpaceRelease(bt709cs);
     
-    if ((0)) {
+    if ((1)) {
       // Emit png in BT.709 colorspace
       
       NSString *filename = [NSString stringWithFormat:@"TestHDAsBT709.png"];
@@ -505,7 +469,58 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       
       [EncoderImpl writeTableToCSV:@"Encode_lin_to_sRGB_GR.csv" labelsArr:labels valuesArr:yPairsArr];
     }
+
+    // Emit CSV mapping of the grayscale values to 1.961 power function
     
+    if ((1))
+    {
+      NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"sRGB" ];
+      
+      NSMutableArray *yPairsArr = [NSMutableArray array];
+      
+      // CSV generation logic below depends on getting 256 values that
+      // represent the range.
+      
+      uint32_t *pixelPtr = (uint32_t *) sRGBFB.pixels;
+      
+      NSMutableArray *mSamples = [NSMutableArray array];
+      
+      for (int i = 0; i < genWidth; i += 2) {
+        uint32_t pixel = pixelPtr[i];
+        int grayVal = pixel & 0xFF;
+        [mSamples addObject:@(grayVal)];
+      }
+      
+      assert([mSamples count] == 256);
+      
+      NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
+      
+      for (int i = 0; i < 256; i++) {
+        int grayVal = [mSamples[i] intValue];
+        rangeMap[@(i)] = @(grayVal);
+        
+        // Use (Y 128 128) to decode grayscale value to a RGB value.
+        // Since the values for Y are setup with a gamma, need to
+        // know the gamma to be able to decode ?
+        
+        // Float amount of the grayscale range that input grayscale
+        // value corresponds to.
+        
+        float percentOfGrayscale = i / 255.0f;
+        float percentOfRange = grayVal / 255.0f;
+        
+        float appleGammaAdjusted = 0.0f;
+        
+        float sRGBGammaAdjusted = sRGB_linearNormToNonLinear(percentOfGrayscale);
+        
+        [yPairsArr addObject:@[@(i), @(grayVal), @(percentOfGrayscale), @(percentOfRange), @(appleGammaAdjusted), @(sRGBGammaAdjusted)]];
+      }
+      
+      NSLog(@"rangeMap contains %d values", (int)rangeMap.count);
+      NSLog(@"");
+      
+      [EncoderImpl writeTableToCSV:@"Encode_lin_to_sRGB_GR.csv" labelsArr:labels valuesArr:yPairsArr];
+    }
   }
   
   return 1;

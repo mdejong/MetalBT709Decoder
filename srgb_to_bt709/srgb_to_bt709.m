@@ -134,6 +134,7 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
   BOOL inputIsRGBColorspace = FALSE;
   BOOL inputIsSRGBColorspace = FALSE;
   BOOL inputIsGrayColorspace = FALSE;
+  BOOL inputIsBT709Colorspace = FALSE;
   
   {
     CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
@@ -180,6 +181,19 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
     
     CGColorSpaceRelease(colorspace);
   }
+  
+  {
+    CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+    
+    NSString *colorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(colorspace);
+    NSString *inputColorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(inputColorspace);
+    
+    if ([colorspaceDescription isEqualToString:inputColorspaceDescription]) {
+      inputIsBT709Colorspace = TRUE;
+    }
+    
+    CGColorSpaceRelease(colorspace);
+  }
 
   if (inputIsRGBColorspace) {
     printf("untagged RGB colorspace is not supported as input\n");
@@ -188,6 +202,8 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
     printf("input is sRGB colorspace\n");
   } else if (inputIsGrayColorspace) {
     printf("input is grayscale colorspace\n");
+  } else if (inputIsBT709Colorspace) {
+    printf("input is already in BT.709 colorspace\n");
   } else {
     printf("will convert from input colorspace to BT709 gamma encoded space:\n");
     NSString *desc = [(__bridge id)inputColorspace description];
