@@ -32,6 +32,14 @@
 		3AFD65721F71A8A10008A125 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD65691F71A8900008A125 /* main.m */; };
 		3AFD65731F71A8A10008A125 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD65691F71A8900008A125 /* main.m */; };
 		3C013D2B21E6F7C200C0807C /* MetalSRGBDecoderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C013D2A21E6F7C200C0807C /* MetalSRGBDecoderTests.m */; };
+		3C0C3EF921F8FA1A00C498D3 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C3EF821F8FA1A00C498D3 /* AppDelegate.m */; };
+		3C0C3EFC21F8FA1A00C498D3 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C3EFB21F8FA1A00C498D3 /* ViewController.m */; };
+		3C0C3EFF21F8FA1A00C498D3 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3C0C3EFD21F8FA1A00C498D3 /* Main.storyboard */; };
+		3C0C3F0121F8FA2000C498D3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3C0C3F0021F8FA2000C498D3 /* Assets.xcassets */; };
+		3C0C3F0421F8FA2000C498D3 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3C0C3F0221F8FA2000C498D3 /* LaunchScreen.storyboard */; };
+		3C0C3F0721F8FA2000C498D3 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C3F0621F8FA2000C498D3 /* main.m */; };
+		3C0C3F0B21F8FA6E00C498D3 /* Rec709Sample.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */; };
+		3C0C3F0C21F8FA7500C498D3 /* QuickTime_Test_Pattern_HD.mov in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77B321DD87D60041ACE3 /* QuickTime_Test_Pattern_HD.mov */; };
 		3C4A770321D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
 		3C4A770421D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
 		3C4A770521D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
@@ -185,6 +193,16 @@
 		3AFD65741F71A8A70008A125 /* AAPLAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AAPLAppDelegate.h; sourceTree = "<group>"; };
 		3AFD65751F71A8AB0008A125 /* AAPLViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AAPLViewController.h; sourceTree = "<group>"; };
 		3C013D2A21E6F7C200C0807C /* MetalSRGBDecoderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalSRGBDecoderTests.m; sourceTree = "<group>"; };
+		3C0C3EF521F8FA1900C498D3 /* CoreVideoDecodeiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoreVideoDecodeiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C0C3EF721F8FA1A00C498D3 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		3C0C3EF821F8FA1A00C498D3 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		3C0C3EFA21F8FA1A00C498D3 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		3C0C3EFB21F8FA1A00C498D3 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		3C0C3EFE21F8FA1A00C498D3 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		3C0C3F0021F8FA2000C498D3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		3C0C3F0321F8FA2000C498D3 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		3C0C3F0521F8FA2000C498D3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3C0C3F0621F8FA2000C498D3 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalRenderContext.m; sourceTree = "<group>"; };
 		3C4A770221D8498E0041ACE3 /* MetalRenderContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalRenderContext.h; sourceTree = "<group>"; };
 		3C4A770A21D892BA0041ACE3 /* EmptyiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EmptyiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -252,6 +270,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				3ABBE27C1F7319950080C72C /* MetalKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3C0C3EF221F8FA1900C498D3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -330,6 +355,7 @@
 				3C4A775221DACE890041ACE3 /* srgb_to_bt709 */,
 				3C4A77BF21DEA5280041ACE3 /* encode_h264 */,
 				3CA8B6D121E199CB00D2B853 /* gamma_write */,
+				3C0C3EF621F8FA1A00C498D3 /* CoreVideoDecodeiOS */,
 				3ABBE2751F73196D0080C72C /* Frameworks */,
 				3AF7E9C91EB64A46003BB06D /* Products */,
 				2584CCE02584A3B000000001 /* Configuration */,
@@ -384,6 +410,7 @@
 				3C4A775121DACE880041ACE3 /* srgb_to_bt709 */,
 				3C4A77BE21DEA50F0041ACE3 /* encode_h264 */,
 				3CA8B6D021E199C700D2B853 /* gamma_write */,
+				3C0C3EF521F8FA1900C498D3 /* CoreVideoDecodeiOS.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -429,6 +456,22 @@
 				3AFD655B1F71A7070008A125 /* Info.plist */,
 			);
 			path = macOS;
+			sourceTree = "<group>";
+		};
+		3C0C3EF621F8FA1A00C498D3 /* CoreVideoDecodeiOS */ = {
+			isa = PBXGroup;
+			children = (
+				3C0C3EF721F8FA1A00C498D3 /* AppDelegate.h */,
+				3C0C3EF821F8FA1A00C498D3 /* AppDelegate.m */,
+				3C0C3EFA21F8FA1A00C498D3 /* ViewController.h */,
+				3C0C3EFB21F8FA1A00C498D3 /* ViewController.m */,
+				3C0C3EFD21F8FA1A00C498D3 /* Main.storyboard */,
+				3C0C3F0021F8FA2000C498D3 /* Assets.xcassets */,
+				3C0C3F0221F8FA2000C498D3 /* LaunchScreen.storyboard */,
+				3C0C3F0521F8FA2000C498D3 /* Info.plist */,
+				3C0C3F0621F8FA2000C498D3 /* main.m */,
+			);
+			path = CoreVideoDecodeiOS;
 			sourceTree = "<group>";
 		};
 		3C4A770B21D892BA0041ACE3 /* EmptyiOS */ = {
@@ -535,6 +578,23 @@
 			name = "MetalBT709Decoder-macOS";
 			productName = macOS;
 			productReference = 3AF7E9F81EB64A46003BB06D /* MetalBT709Decoder.app */;
+			productType = "com.apple.product-type.application";
+		};
+		3C0C3EF421F8FA1900C498D3 /* CoreVideoDecodeiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3C0C3F0A21F8FA2000C498D3 /* Build configuration list for PBXNativeTarget "CoreVideoDecodeiOS" */;
+			buildPhases = (
+				3C0C3EF121F8FA1900C498D3 /* Sources */,
+				3C0C3EF221F8FA1900C498D3 /* Frameworks */,
+				3C0C3EF321F8FA1900C498D3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CoreVideoDecodeiOS;
+			productName = CoreVideoDecodeiOS;
+			productReference = 3C0C3EF521F8FA1900C498D3 /* CoreVideoDecodeiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 		3C4A770921D892BA0041ACE3 /* EmptyiOS */ = {
@@ -647,6 +707,11 @@
 						DevelopmentTeam = 9F74CLHA49;
 						ProvisioningStyle = Automatic;
 					};
+					3C0C3EF421F8FA1900C498D3 = {
+						CreatedOnToolsVersion = 10.1;
+						DevelopmentTeam = 9F74CLHA49;
+						ProvisioningStyle = Automatic;
+					};
 					3C4A770921D892BA0041ACE3 = {
 						CreatedOnToolsVersion = 10.1;
 						DevelopmentTeam = 9F74CLHA49;
@@ -696,6 +761,7 @@
 				3C4A775021DACE880041ACE3 /* srgb_to_bt709 */,
 				3C4A77BD21DEA50F0041ACE3 /* encode_h264 */,
 				3CA8B6CF21E199C700D2B853 /* gamma_write */,
+				3C0C3EF421F8FA1900C498D3 /* CoreVideoDecodeiOS */,
 			);
 		};
 /* End PBXProject section */
@@ -750,6 +816,18 @@
 				3C4A774921D8C3BD0041ACE3 /* bars_709_Frame01.m4v in Resources */,
 				3C4A77B421DD87D80041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
 				3C821A3D21ED84DE006D516F /* Rec709Sample.mp4 in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3C0C3EF321F8FA1900C498D3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3C0C3F0421F8FA2000C498D3 /* LaunchScreen.storyboard in Resources */,
+				3C0C3F0121F8FA2000C498D3 /* Assets.xcassets in Resources */,
+				3C0C3F0C21F8FA7500C498D3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
+				3C0C3EFF21F8FA1A00C498D3 /* Main.storyboard in Resources */,
+				3C0C3F0B21F8FA6E00C498D3 /* Rec709Sample.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -828,6 +906,16 @@
 				3A30EDFE1EB698AD00B4FC0B /* AAPLImage.m in Sources */,
 				3AF7EA0C1EB64A46003BB06D /* AAPLRenderer.m in Sources */,
 				3CB6E80A21D6D15F005424E6 /* BGDecodeEncode.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3C0C3EF121F8FA1900C498D3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3C0C3EFC21F8FA1A00C498D3 /* ViewController.m in Sources */,
+				3C0C3F0721F8FA2000C498D3 /* main.m in Sources */,
+				3C0C3EF921F8FA1A00C498D3 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -939,6 +1027,22 @@
 				3AFD655A1F71A7070008A125 /* Base */,
 			);
 			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		3C0C3EFD21F8FA1A00C498D3 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				3C0C3EFE21F8FA1A00C498D3 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		3C0C3F0221F8FA2000C498D3 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				3C0C3F0321F8FA2000C498D3 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
 		};
 		3C4A771221D892BA0041ACE3 /* Main.storyboard */ = {
@@ -1184,6 +1288,52 @@
 			};
 			name = Release;
 		};
+		3C0C3F0821F8FA2000C498D3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9F74CLHA49;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = CoreVideoDecodeiOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.helpurock.CoreVideoDecodeiOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3C0C3F0921F8FA2000C498D3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9F74CLHA49;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = CoreVideoDecodeiOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.helpurock.CoreVideoDecodeiOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		3C4A772921D892C00041ACE3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1418,6 +1568,15 @@
 			buildConfigurations = (
 				3AF7EA221EB64A46003BB06D /* Debug */,
 				3AF7EA231EB64A46003BB06D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3C0C3F0A21F8FA2000C498D3 /* Build configuration list for PBXNativeTarget "CoreVideoDecodeiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3C0C3F0821F8FA2000C498D3 /* Debug */,
+				3C0C3F0921F8FA2000C498D3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
