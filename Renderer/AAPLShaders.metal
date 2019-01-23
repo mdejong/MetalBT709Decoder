@@ -87,7 +87,9 @@ samplingShader(RasterizerData in [[stage_in]],
 // BT.709 rendering fragment shader
 
 // FIXME: note that Metal "fast math" option would automatically
-// replace pow() with exp2(y * log2(x))
+// replace pow() with exp2(y * log2(x)). This may or may not matter,
+// an actual 2x performance improvement can be enabled by simply
+// doing 1 render pass instead of 2 when rendering at exact pixel size.
 
 static inline
 float BT709_nonLinearNormToLinear(float normV) {
@@ -104,72 +106,16 @@ float BT709_nonLinearNormToLinear(float normV) {
   return normV;
 }
 
-#define APPLE_GAMMA_ADJUST (1.961f)
+#define APPLE_GAMMA_196 (1.960938f)
 
 static inline
 float AppleGamma196_nonLinearNormToLinear(float normV) {
-  const float gamma = APPLE_GAMMA_ADJUST;
-  normV = pow(normV, gamma);
-  return normV;
-}
-
-/*
-
-// Exactly reverse the linear region, but the exponent is off a lot
- 
-static inline
-float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
-  
-  if (normV < 0.081f) {
-    normV *= (1.0f / 4.5f);
-  } else {
-    const float a = 0.055f;
-    const float gamma = APPLE_GAMMA_ADJUST;
-    normV = (normV + a) * (1.0f / (1.0f + a));
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-*/
-
-
-/*
-// About 1/2 the difference between the log 1.961 amount
-// and the 2.2 amount at X = 0.081
-// halfway between (0.081,0.018) and (0.081,0.00706)
-
-static inline
-float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
-  const float xIntercept = 0.14259f;
-  const float yIntercept = 0.02194f;
+  const float xIntercept = 0.05583828f;
   
   if (normV < xIntercept) {
-    normV *= (1.0f / 6.5f);
+    normV *= (1.0f / 16.0f);
   } else {
-    const float gamma = APPLE_GAMMA_ADJUST;
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-*/
-
-// Straight line segment passing through the point where log(1.961)
-// would cross the x cutoff of the encoding at (0.081,0.00706)
-//
-// https://www.khronos.org/registry/DataFormat/specs/1.2/dataformat.1.2.html#TRANSFER_ITU
-// (a x (B ^ 0.45)) - (a - 1) = 0.081
-
-static inline
-float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
-  const float xIntercept = 0.018f;
-  const float yIntercept = 0.007237f;
-  
-  if (normV < xIntercept) {
-    normV *= (1.0f / 11.193f);
-  } else {
-    const float gamma = APPLE_GAMMA_ADJUST;
+    const float gamma = APPLE_GAMMA_196;
     normV = pow(normV, gamma);
   }
   
@@ -195,81 +141,6 @@ float sRGB_nonLinearNormToLinear(float normV)
   return normV;
 }
 
-//#define APPLE_GAMMA_ADJUST_BOOST_LINEAR (1.0f / 0.8782f) // aka 1.1386
-//
-//static inline
-//float AppleGamma196_unboost_linearNorm(float normV) {
-//  const float gamma = APPLE_GAMMA_ADJUST_BOOST_LINEAR;
-//  normV = pow(normV, gamma);
-//  return normV;
-//}
-
-/*
-
-#define BT709_G22_GAMMA 2.2177f
-
-static inline
-float BT709_G22_nonLinearNormToLinear(float normV) {
-  const float gamma = BT709_G22_GAMMA;
-  normV = pow(normV, gamma);
-  return normV;
-}
-
-*/
-
-/*
-
-// Undo a boost to sRGB values by applying a 2.2 like gamma.
-// This should return a sRGB boosted value to linear when
-// a 2.2 monitor gamma is applied.
-//
-// Note that converting from non-linear to linear
-// with a form like pow(x, Gamma) will reduce the signal strength.
-
-#define BT709_B22_GAMMA 2.233f
-#define BT709_B22_MULT (1.0f / 0.08365f) // about 11.95
-
-static inline
-float BT709_B22_nonLinearNormToLinear(float normV) {
-  const float xCrossing = 0.13369f;
-  
-  if (normV < xCrossing) {
-    normV *= (1.0f / BT709_B22_MULT);
-  } else {
-    const float gamma = BT709_B22_GAMMA;
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-
-*/
-
-/*
-
-#define BT709_B22_GAMMA 2.233f
-#define BT709_B22_MULT 9.05f
-
-// f1 = x / BT709_B22_MULT
-// f2 = pow(x, 2.233)
-// intercept = ( 0.16754, 0.01851 )
-
-static inline
-float BT709_B22_nonLinearNormToLinear(float normV) {
-  const float xCrossing = 0.16754f;
-  
-  if (normV < xCrossing) {
-    normV *= (1.0f / BT709_B22_MULT);
-  } else {
-    const float gamma = BT709_B22_GAMMA;
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-
-*/
- 
 // Extract common BT.709 decode logic from the 2 implementations
 
 static inline
@@ -354,13 +225,9 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
 //    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
 //    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
 
-//    rgb.r = AppleGamma196_nonLinearNormToLinear(rgb.r);
-//    rgb.g = AppleGamma196_nonLinearNormToLinear(rgb.g);
-//    rgb.b = AppleGamma196_nonLinearNormToLinear(rgb.b);
-
-    rgb.r = AppleGamma196_sloped_nonLinearNormToLinear(rgb.r);
-    rgb.g = AppleGamma196_sloped_nonLinearNormToLinear(rgb.g);
-    rgb.b = AppleGamma196_sloped_nonLinearNormToLinear(rgb.b);
+    rgb.r = AppleGamma196_nonLinearNormToLinear(rgb.r);
+    rgb.g = AppleGamma196_nonLinearNormToLinear(rgb.g);
+    rgb.b = AppleGamma196_nonLinearNormToLinear(rgb.b);
   }
   
   float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);

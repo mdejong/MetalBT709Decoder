@@ -7,6 +7,8 @@
 //  from sRGB to BT.709, and vice versa.
 //
 //  https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.709-6-201506-I!!PDF-E.pdf
+//  https://forums.creativecow.net/thread/2/1131717
+//  https://www.khronos.org/registry/DataFormat/specs/1.2/dataformat.1.2.html#TRANSFER_ITU
 //
 //  Licensed under BSD terms.
 
@@ -93,85 +95,34 @@ float BT709_linearNormToNonLinear(float normV) {
   return normV;
 }
 
-// 3 segment linear approx of what apple describes as 1.961
-// but seems to be closer to 3 linear segments applied to
-// the result of transforming a gamma adjusted BT.709 value
-// to linear with BT709_nonLinearNormToLinear() and then
-// this function converts to a more correct linear light
-// output for video.
+// Apple ColorSync defined gamma 1.961 combined with a straight line
+// with a slope of 16 (aka 0.0625) intersects at (0.00349, 0.05584)
+
+// [gamma a b c d e f]
+//
+// Curve Type 3 : Y = (aX+b)^gamma     [X >= d],     Y = cX [X < d]
+//
+// "com.apple.cmm.ParamCurve3" = (
+//                                       "1.960938", // gamma
+//                                       1, // a
+//                                       0, // b
+//                                       "0.0625", // c
+//                                       "0.05583828", // d
+//                                       0, // e
+//                                       0 // f
+//                                       );
+
+//#define APPLE_GAMMA_196 (1.961f)
+#define APPLE_GAMMA_196 (1.960938f)
 
 static inline
-float BT709_lowlin_linearNormToLinear(float normV) {
-  const float elbowValue = 0.081f - ((0.081f / 4.5f) / 2.0f);
-  
-  if (normV < 0.081f) {
-    normV *= (1.0f / 4.5f);
-  } else if (normV < 0.5f) {
-    // Linear mix between elbowValue and X=Y over the range [0.081, 0.5]
-    
-    float amountUntilHalf = 0.5f - normV;
-    float amountN = amountUntilHalf * 2.0f;
-    normV = normV - (elbowValue * amountN);
-  } else {
-    // nop above 0.5, leave on X=Y line
-  }
-  
-  return normV;
-}
-
-
-#define APPLE_GAMMA_ADJUST (1.961f)
-
-/*
-
-// Exact same linear range, then a reduce log (kind off off)
-
-static inline
-float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
-  
-  if (normV < 0.081f) {
-    normV *= (1.0f / 4.5f);
-  } else {
-    const float a = 0.055f;
-    const float gamma = APPLE_GAMMA_ADJUST;
-    normV = (normV + a) * (1.0f / (1.0f + a));
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-
-static inline
-float AppleGamma196_sloped_linearNormToNonLinear(float normV) {
-  
-  if (normV < 0.018f) {
-    normV *= 4.5f;
-  } else {
-    const float a = 0.055f;
-    const float gamma = 1.0f / APPLE_GAMMA_ADJUST;
-    normV = (1.0f + a) * pow(normV, gamma) - a;
-  }
-  
-  return normV;
-}
- 
-*/
-
-/*
-
-// About 1/2 the difference between the log 1.961 amount
-// and the 2.2 amount at X = 0.081
-// halfway between (0.081,0.018) and (0.081,0.00706)
-
-static inline
-float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
-  const float xIntercept = 0.14259f;
-  const float yIntercept = 0.02194f;
+float AppleGamma196_nonLinearNormToLinear(float normV) {
+  const float xIntercept = 0.05583828f;
   
   if (normV < xIntercept) {
-    normV *= (1.0f / 6.5f);
+    normV *= (1.0f / 16.0f);
   } else {
-    const float gamma = APPLE_GAMMA_ADJUST;
+    const float gamma = APPLE_GAMMA_196;
     normV = pow(normV, gamma);
   }
   
@@ -179,55 +130,18 @@ float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
 }
 
 static inline
-float AppleGamma196_sloped_linearNormToNonLinear(float normV) {
-  const float xIntercept = 0.14259f;
-  const float yIntercept = 0.02194f;
+float AppleGamma196_linearNormToNonLinear(float normV) {
+  const float yIntercept = 0.00349f;
   
   if (normV < yIntercept) {
-    normV *= 6.5f;
+    normV *= 16.0f;
   } else {
-    const float gamma = 1.0f / APPLE_GAMMA_ADJUST;
+    const float gamma = 1.0f / APPLE_GAMMA_196;
     normV = pow(normV, gamma);
   }
   
   return normV;
 }
-
-*/
-
-// Straight line segment passing through the point where log(1.961)
-// would cross the x cutoff of the encoding at (0.081,0.00706)
-
-static inline
-float AppleGamma196_sloped_nonLinearNormToLinear(float normV) {
-  const float xIntercept = 0.018f;
-  const float yIntercept = 0.007237f;
-  
-  if (normV < xIntercept) {
-    normV *= (1.0f / 11.193f);
-  } else {
-    const float gamma = APPLE_GAMMA_ADJUST;
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-
-static inline
-float AppleGamma196_sloped_linearNormToNonLinear(float normV) {
-  const float xIntercept = 0.018f;
-  const float yIntercept = 0.007237f;
-  
-  if (normV < yIntercept) {
-    normV *= 11.193f;
-  } else {
-    const float gamma = 1.0f / APPLE_GAMMA_ADJUST;
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-
 
 // Decode Gamma encoding to a byte value that is already normalized.
 // A decode converts from non-linear to linear.
@@ -268,235 +182,6 @@ int BT709_encodeGamma(int v, int minv, int maxv) {
   return rInt;
 }
 
-// https://forums.creativecow.net/thread/2/1131717
-
-// Apple seems to boost sRGB values after converting
-// to linear. This seems to adjust the sRGB
-// input so that when decoded the pixel intensities
-// will more closely match the original sRGB values.
-
-// CRT gamma / gamma boost ⇒ 2.45 / 1.25 = 1.96
-
-// What is weird is that the boosted values seem to
-// very closely fit a linear boost with 1.0/2.2
-// as the amount. Would this amount then reduced
-// by the 1.961 leave the boosted sRGB above the
-// tv levels?
-
-//#define APPLE_GAMMA_SIMPLIFIED_ADJUST 1.96f
-//#define APPLE_GAMMA_SIMPLIFIED_ADJUST 1.961f
-
-// Non-Linear to linear adjustment for vImage encoded video
-
-// Better at 75% but off at low values
-//#define APPLE_GAMMA_ADJUST_VIDEO 2.25f
-
-//#define APPLE_GAMMA_ADJUST_VIDEO (1.0f/0.4509f) // aka 2.217
-
-// (2.2 / 1.961) = 1.1218765935747068
-
-// When sRGB is converted to linear, this
-// boost amount is applied after the value
-// in linear but before the value is passed
-// through the BT.709 matrix transform.
-//
-// gamma = (1.0f / 0.8782f) // aka 1.1386
-// pow(x, gamma)
-//
-
-// Converting from sRGB on every value to liner seems
-// to have a best fit at 2.233
-//
-// With low values [0.0, 0.081]
-
-// a*x
-// line fit : a = 0.08365 = 11.95 slope? This is near sRGB 12.96 low slope
-
-// a*x + b
-// line 0.08692
-// b 0.0001836
-
-/*
-
-//#define APPLE_GAMMA_ADJUST_BOOST_LINEAR 1.14f
-#define APPLE_GAMMA_ADJUST_BOOST_LINEAR (1.0f / 0.8782f) // aka 1.1386
-
-//static inline
-//float AppleGamma196_boost_linearNorm(float normV) {
-//  const float gamma = 1.0f / APPLE_GAMMA_ADJUST_BOOST_LINEAR;
-//  normV = pow(normV, gamma);
-//  return normV;
-//}
-//
-
-static inline
-float AppleGamma196_unboost_linearNorm(float normV) {
-  const float gamma = APPLE_GAMMA_ADJUST_BOOST_LINEAR;
-  normV = pow(normV, gamma);
-  return normV;
-}
-
-*/
-
-// Simple Apple boost with Gamma 2.2 up, then
-// when 2.2 is removed the RGB colors are returned to
-// identity and video colors are also reduced.
-
-
-
-// A previous fit attempted to adjust sRGB
-// to the boosted value while it was in sRGB
-// gamma adjusted space. That gamma was 2.55
-//
-// Best Fit: 2.549 from http://www.lelandstanfordjunior.com/quickfit.html
-
-//#define APPLE_GAMMA_ADJUST_BOOST_SRGB 2.549f
-//
-//// Boosting a sRGB value directly before converting
-//// sRGB to linear.
-//
-//static inline
-//float AppleGamma196_boost_srgbNorm(float normV) {
-//  const float gamma = 1.0f / APPLE_GAMMA_ADJUST_BOOST_SRGB;
-//  normV = pow(normV, gamma);
-//  return normV;
-//}
-//
-//static inline
-//float AppleGamma196_unboost_srgbNorm(float normV) {
-//  const float gamma = APPLE_GAMMA_ADJUST_BOOST_SRGB;
-//  normV = pow(normV, gamma);
-//  return normV;
-//}
-
-/*
-
-// This simplified adjustment uses a pow()
-// to convert a 2 stage BT.709 encoded value
-// to a linear light value but without a
-// linear segment.
-
-#define APPLE_GAMMA_SIMPLIFIED_ADJUST 1.961f
-
-// Apple gamma adjustment that seems to remove "dark room"
-// levels from BT.709.
-
-static inline
-float AppleGamma196_nonLinearNormToLinear(float normV) {
-  const float gamma = APPLE_GAMMA_SIMPLIFIED_ADJUST;
-  normV = pow(normV, gamma);
-  return normV;
-}
- 
-*/
-
-/*
-
-// Use simple 2.2 gamma when operating on BGRA pixels
-// since these should be returned to identity values
-// when video data is dropped back down by 2.2
-
-// Is this 2.222... aka (1.0 / 0.45) ?
-
-#define BT709_G22_GAMMA 2.2f
-// better fit?
-//#define BT709_G22_GAMMA 2.2177f
-//#define BT709_G22_GAMMA 2.219f
-
-static inline
-float BT709_G22_nonLinearNormToLinear(float normV) {
-  const float gamma = BT709_G22_GAMMA;
-  normV = pow(normV, gamma);
-  return normV;
-}
-
-// Convert a linear log value to a non-linear value.
-// Note that normV must be normalized in the range [0.0 1.0]
-
-static inline
-float BT709_G22_linearNormToNonLinear(float normV) {
-  const float gamma = 1.0f / BT709_G22_GAMMA;
-  normV = pow(normV, gamma);
-  return normV;
-}
-
-*/
-
-/*
-
-// Undo a boost to sRGB values by applying a 2.2 like gamma.
-// This should return a sRGB boosted value to linear when
-// a 2.2 monitor gamma is applied.
-//
-// Note that converting from non-linear to linear
-// with a form like pow(x, Gamma) will reduce the signal strength.
-
-#define BT709_B22_GAMMA 2.233f
-//#define BT709_B22_MULT (1.0f / 0.08365f) // about 11.95
-//#define BT709_B22_MULT 8.85f
-#define BT709_B22_MULT 9.05f
-
-// f1 = x / BT709_B22_MULT
-// f2 = pow(x, 2.233)
-// intercept = ( 0.16754, 0.01851 )
-
-static inline
-float BT709_B22_nonLinearNormToLinear(float normV) {
-  const float xCrossing = 0.16754f;
-  
-  if (normV < xCrossing) {
-    //normV *= (1.0f / BT709_B22_MULT); // 27
-    //normV *= (1.0f / 12.92f); // 25
-    //normV *= (1.0f / 10.0f); // 30
-    //normV *= (1.0f / 8.0f); // 34
-    // Between 8.5 and 9.5 ?
-    //normV *= (1.0f / 9.0f); // 31.6 -> 32
-    //normV *= (1.0f / 9.5f); // 30.6 -> 31
-    //normV *= (1.0f / 8.5f); // 32.7 -> 33
-    //normV *= (1.0f / 8.75f); // 32.2 -> 32
-    //normV *= (1.0f / 8.85f); // 32.0039 -> 32
-    //normV *= (1.0f / BT709_B22_MULT); // 27
-    // Between 8.5 -> 8.9
-    //normV *= (1.0f / 8.9f); // 26.7 -> 27
-    //normV *= (1.0f / 8.95f); // 26.6 -> 27
-    //normV *= (1.0f / 8.99f); // 26.5 -> 27
-    //normV *= (1.0f / 9.0f); // 26.5 -> 27
-    //normV *= (1.0f / 9.1f); // 26.3 -> 26
-    //normV *= (1.0f / 9.05f); // 26.4 -> 26
-    
-    normV *= (1.0f / BT709_B22_MULT);
-  } else {
-    const float gamma = BT709_B22_GAMMA;
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-
-// Boost a linear signal with a Gamma 2.2 like piecewise function.
-// Note that converting from linear to non-linear
-// with a form like pow(x, 1/Gamma) will boost the signal up.
-
-// f1 = x * BT709_B22_MULT
-// f2 = pow(x, 1.0 / 2.233)
-// intercept = ( 0.01851, 0.16754 )
-
-static inline
-float BT709_B22_linearNormToNonLinear(float normV) {
-  const float xCrossing = 0.01851f;
-  
-  if (normV < xCrossing) {
-    normV *= BT709_B22_MULT;
-  } else {
-    const float gamma = 1.0f / BT709_B22_GAMMA;
-    normV = pow(normV, gamma);
-  }
-  
-  return normV;
-}
-
-*/
- 
 // Given a non-linear gamma encoded and normalized value,
 // pass through Y Cb Cr conversion matrix and generate
 // integer representations of the components. Note that
