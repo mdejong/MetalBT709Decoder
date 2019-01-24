@@ -103,7 +103,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
       
       int Y, Cb, Cr;
       
-      if (0) {
+      if (1) {
         // Boosted
         
         int result = BT709_boosted_from_sRGB_convertRGBToYCbCr(
@@ -162,7 +162,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
       
       int result;
       
-      if ((0)) {
+      if ((1)) {
         result = BT709_boosted_to_sRGB_convertYCbCrToRGB(
                                                          Y,
                                                          Cb,
