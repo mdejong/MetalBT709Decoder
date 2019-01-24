@@ -453,6 +453,8 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
 
     CGColorSpaceRef convertToColorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
     
+    //CGColorSpaceRef convertToColorspace = [H264Encoder createHDTVColorSpaceRef];
+    
     CGFrameBuffer *convertedFB = [EncoderImpl convertFromColorspaceToColorspace:inImage
                                                                             bpp:24
                                                             convertToColorspace:convertToColorspace];

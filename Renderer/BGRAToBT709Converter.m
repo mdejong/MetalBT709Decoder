@@ -10,6 +10,8 @@
 
 #import "BT709.h"
 
+#import "H264Encoder.h"
+
 @import Accelerate;
 @import CoreImage;
 
@@ -376,15 +378,17 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 {
   // FIXME: UHDTV : HEVC uses kCGColorSpaceITUR_2020
   
-  CGColorSpaceRef yuvColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+  //CGColorSpaceRef yuvColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+  
+  // FIXME: This call is not efficient, need to cache the HDTV colorspace
+  // ref across calls to this module for better performance.
+  
+  CGColorSpaceRef yuvColorSpace = [H264Encoder createHDTVColorSpaceRef];
   
   // Attach BT.709 info to pixel buffer
   
   //CFDataRef colorProfileData = CGColorSpaceCopyICCProfile(yuvColorSpace); // deprecated
   CFDataRef colorProfileData = CGColorSpaceCopyICCData(yuvColorSpace);
-  
-  // FIXME: "CVImageBufferChromaSubsampling" read from attached H.264 (.m4v) is "TopLeft"
-  // kCVImageBufferChromaLocationTopFieldKey = kCVImageBufferChromaLocation_TopLeft
   
   NSDictionary *pbAttachments = @{
                                   (__bridge NSString*)kCVImageBufferICCProfileKey: (__bridge NSData *)colorProfileData,
@@ -398,7 +402,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   // release below the colorProfileData must be 1.
   pbAttachments = nil;
   CFRelease(colorProfileData);
-  
+   
   CGColorSpaceRelease(yuvColorSpace);
   
   return TRUE;

@@ -1974,11 +1974,9 @@ uint32_t grayToPixel(uint32_t gray)
   //
   // sRGB (25 25 25) -> Linear RGB (2 2 2) -> REC.709 (35 128 128)
   //
-  // gamma : 0.0144 -> 0.0650 = (L * 4.5)
-  // It appears that simple linear does not match!
-  // Is there some other linear factor? Like from sRGB?
-  //
   // AVFoundation (44 128 128)
+  
+  // Note that this test case features a value that is above the linear cutoff
   
   Rin = 25;
   Gin = Rin;
@@ -2037,6 +2035,76 @@ uint32_t grayToPixel(uint32_t gray)
   }
 }
 
+- (void)testBT709Decoder_SMPTE_Gray_0x020202_linear_vImage {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray LT 1% linear intensity : 0.0144
+  //
+  // sRGB (25 25 25) -> Linear RGB (2 2 2) -> REC.709 (35 128 128)
+  //
+  // AVFoundation (44 128 128)
+  
+  // Note that this test case features a value that is above the linear cutoff
+  
+  Rin = 25;
+  Gin = Rin;
+  Bin = Rin;
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    //int expectedVal = 25;
+    int expectedVal = 37;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
 - (void)testBT709Decoder_SMPTE_Gray_0x010101_linear_software {
   uint32_t Rin, Gin, Bin;
   uint32_t Y, Cb, Cr, dummy;
@@ -2046,7 +2114,8 @@ uint32_t grayToPixel(uint32_t gray)
   //
   // sRGB (8 8 8) -> Linear RGB (1 1 1) -> REC.709 (19 128 128)
   //
-  // This does not appear to be a linear ramp at the small values
+  // Note that this test case features a value that is below
+  // the linear scale by 16 values for the Apple 196 curve.
   
   Rin = 8;
   Gin = Rin;
@@ -2105,6 +2174,75 @@ uint32_t grayToPixel(uint32_t gray)
   }
 }
 
+- (void)testBT709Decoder_SMPTE_Gray_0x010101_linear_vImage {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray LT 1% linear intensity : 0.0144
+  //
+  // sRGB (8 8 8) -> Linear RGB (1 1 1) -> REC.709 (19 128 128)
+  //
+  // Note that this test case features a value that is below
+  // the linear scale by 16 values for the Apple 196 curve.
+  
+  Rin = 8;
+  Gin = Rin;
+  Bin = Rin;
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    //int expectedVal = 19;
+    int expectedVal = 25;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
 - (void)testBT709Decoder_SMPTE_Gray_0x010101_n2_linear_software {
   uint32_t Rin, Gin, Bin;
   uint32_t Y, Cb, Cr, dummy;
@@ -2114,7 +2252,8 @@ uint32_t grayToPixel(uint32_t gray)
   //
   // sRGB (5 5 5) -> Linear RGB (1 1 1) -> REC.709 (18 128 128)
   //
-  // This does not appear to be a linear ramp at the small values
+  // Note that this test case features a value that is below
+  // the linear scale by 16 values for the Apple 196 curve.
   
   Rin = 5;
   Gin = Rin;
@@ -2174,6 +2313,76 @@ uint32_t grayToPixel(uint32_t gray)
   }
 }
 
+- (void)testBT709Decoder_SMPTE_Gray_0x010101_n2_linear_vImage {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray LT 1% linear intensity : 0.0144
+  //
+  // sRGB (5 5 5) -> Linear RGB (1 1 1) -> REC.709 (18 128 128)
+  //
+  // Note that this test case features a value that is below
+  // the linear scale by 16 values for the Apple 196 curve.
+  
+  Rin = 5;
+  Gin = Rin;
+  Bin = Rin;
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    //int expectedVal = 18;
+    // This input grayscale falls below the 1.961 cutoff and becomes (gray * 16)
+    int expectedVal = 21;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
 - (void)testBT709Decoder_SMPTE_Gray_0x010101_n3_linear_software {
   uint32_t Rin, Gin, Bin;
   uint32_t Y, Cb, Cr, dummy;
@@ -2183,7 +2392,8 @@ uint32_t grayToPixel(uint32_t gray)
   //
   // sRGB (2 2 2) -> Linear RGB (1 1 1) -> REC.709 (17 128 128)
   //
-  // This does not appear to be a linear ramp at the small values
+  // Note that this test case features a value that is below
+  // the linear scale by 16 values for the Apple 196 curve.
   
   Rin = 2;
   Gin = Rin;
@@ -2217,6 +2427,75 @@ uint32_t grayToPixel(uint32_t gray)
   
   BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
   //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+- (void)testBT709Decoder_SMPTE_Gray_0x010101_n3_linear_vImage {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray LT 1% linear intensity : 0.0144
+  //
+  // sRGB (2 2 2) -> Linear RGB (1 1 1) -> REC.709 (17 128 128)
+  //
+  // Note that this test case features a value that is below
+  // the linear scale by 16 values for the Apple 196 curve.
+  
+  Rin = 2;
+  Gin = Rin;
+  Bin = Rin;
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    //int expectedVal = 17;
+    int expectedVal = 18;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
   //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
   
   uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
@@ -2284,6 +2563,73 @@ uint32_t grayToPixel(uint32_t gray)
   
   BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
   //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+- (void)testBT709Decoder_SMPTE_Gray_0x010101_n4_linear_vImage {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray LT 1% linear intensity : 0.0144
+  //
+  // sRGB (1 1 1) -> Linear RGB (1 1 1) -> REC.709 (17 128 128)
+  //
+  // This does not appear to be a linear ramp at the small values
+  
+  Rin = 1;
+  Gin = Rin;
+  Bin = Rin;
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    int expectedVal = 17;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
   //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
   
   uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];

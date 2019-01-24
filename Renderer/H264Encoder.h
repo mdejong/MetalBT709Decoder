@@ -99,4 +99,10 @@ typedef enum
            renderSize:(CGSize)renderSize
            aveBitrate:(int)aveBitrate;
 
+// Generate a reference to the hidden "HDTV" colorspace that decodes already
+// "brightness adjusted" video data to light linear with a 1.961 gamma combined
+// with a linear segment with slope 16.
+
++ (CGColorSpaceRef) createHDTVColorSpaceRef;
+
 @end

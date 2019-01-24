@@ -33,6 +33,9 @@ static const int dumpFramesImages = 0;
 // Private API
 
 @interface H264Encoder ()
+
+@property (nonatomic, assign) CGColorSpaceRef encodedColorspace;
+
 @end
 
 @implementation H264Encoder
@@ -46,6 +49,16 @@ static const int dumpFramesImages = 0;
 #else
   return [[[H264Encoder alloc] init] autorelease];
 #endif // objc_arc
+}
+
+- (void) dealloc
+{
+  CGColorSpaceRef encodedColorspace = self.encodedColorspace;
+  
+  if (encodedColorspace != nil) {
+    CGColorSpaceRelease(encodedColorspace);
+    self.encodedColorspace = nil;
+  }
 }
 
 // convert error code to string
@@ -476,10 +489,18 @@ static const int dumpFramesImages = 0;
   }
 #endif // DEBUG
   
-  CGColorSpaceRef bt709ColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+  //CGColorSpaceRef bt709ColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+  //CGColorSpaceRef bt709ColorSpace = [H264Encoder createHDTVColorSpaceRef];
+
+  CGColorSpaceRef encodedColorspace = self.encodedColorspace;
+  
+  if (encodedColorspace == nil) {
+    encodedColorspace = [H264Encoder createHDTVColorSpaceRef];
+    self.encodedColorspace = encodedColorspace;
+  }
   
   CGContextRef bitmapContext =
-  CGBitmapContextCreate(pxdata, size.width, size.height, bitsPerComponent, bytesPerRow, bt709ColorSpace, bitmapInfo);
+  CGBitmapContextCreate(pxdata, size.width, size.height, bitsPerComponent, bytesPerRow, encodedColorspace, bitmapInfo);
   
   if (bitmapContext == NULL) {
     NSAssert(FALSE, @"CGBitmapContextCreate() failed");
@@ -513,9 +534,9 @@ static const int dumpFramesImages = 0;
   // terms of the BT.709 colorspace and gamma curve and that values
   // can be fed into the BT.709 matrix conversion directly.
   
-  [self setColorspace:cvPixelBuffer colorSpace:bt709ColorSpace];
+  [self setColorspace:cvPixelBuffer colorSpace:encodedColorspace];
   
-  CGColorSpaceRelease(bt709ColorSpace);
+  //CGColorSpaceRelease(bt709ColorSpace);
   
   return;
 }
@@ -553,6 +574,90 @@ static const int dumpFramesImages = 0;
   
   // Note that the passed in colorSpace is not created/retained here so do not relese.
   //CGColorSpaceRelease(colorSpace);
+  
+  return TRUE;
+}
+
+// Generate a reference to the hidden "HDTV" colorspace that decodes already brightness
+// adjusted video data to light linear with a 1.961 gamma.
+
++ (CGColorSpaceRef) createHDTVColorSpaceRef {
+  int width = 1920;
+  int height = 1080;
+  
+  NSDictionary *pixelAttributes = @{
+                                    (__bridge NSString*)kCVPixelBufferIOSurfacePropertiesKey : @{},
+                                    (__bridge NSString*)kCVPixelBufferCGImageCompatibilityKey : @(YES),
+                                    (__bridge NSString*)kCVPixelBufferCGBitmapContextCompatibilityKey : @(YES),
+                                    };
+  
+  CVPixelBufferRef cvPixelBuffer = NULL;
+  
+  uint32_t yuvImageFormatType;
+  //yuvImageFormatType = kCVPixelFormatType_420YpCbCr8BiPlanarFullRange; // luma (0, 255)
+  yuvImageFormatType = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange; // luma (16, 235)
+  
+  CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault,
+                                        width,
+                                        height,
+                                        yuvImageFormatType,
+                                        (__bridge CFDictionaryRef)(pixelAttributes),
+                                        &cvPixelBuffer);
+  
+  NSAssert(result == kCVReturnSuccess, @"CVPixelBufferCreate failed");
+  
+  // Define HDTV properties on pixel buffer, note that colorspace is not defined
+  // since the system defined "HDTV" is what we are after.
+  
+  BOOL worked = [self setBT709Attributes:cvPixelBuffer];
+  NSAssert(worked, @"worked");
+  
+  CIImage *rgbFromCVImage = [CIImage imageWithCVPixelBuffer:cvPixelBuffer];
+
+  CGColorSpaceRef hdcs = rgbFromCVImage.colorSpace;
+  
+  CGColorSpaceRetain(hdcs);
+  
+  CVPixelBufferRelease(cvPixelBuffer);
+  
+  return hdcs;
+}
+
++ (BOOL) setBT709Attributes:(CVPixelBufferRef)cvPixelBuffer
+{
+  // FIXME: UHDTV : HEVC uses kCGColorSpaceITUR_2020
+  
+  //CGColorSpaceRef yuvColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+  
+  // Attach BT.709 info to pixel buffer
+  
+  //CFDataRef colorProfileData = CGColorSpaceCopyICCProfile(yuvColorSpace); // deprecated
+  //CFDataRef colorProfileData = CGColorSpaceCopyICCData(yuvColorSpace);
+  
+  // FIXME: "CVImageBufferChromaSubsampling" read from attached H.264 (.m4v) is "TopLeft"
+  // kCVImageBufferChromaLocationTopFieldKey = kCVImageBufferChromaLocation_TopLeft
+  
+  NSDictionary *pbAttachments = @{
+                                  (__bridge NSString*)kCVImageBufferChromaLocationTopFieldKey: (__bridge NSString*)kCVImageBufferChromaLocation_Center,
+                                  (__bridge NSString*)kCVImageBufferAlphaChannelIsOpaque: (id)kCFBooleanTrue,
+                                  
+                                  (__bridge NSString*)kCVImageBufferYCbCrMatrixKey: (__bridge NSString*)kCVImageBufferYCbCrMatrix_ITU_R_709_2,
+                                  (__bridge NSString*)kCVImageBufferColorPrimariesKey: (__bridge NSString*)kCVImageBufferColorPrimaries_ITU_R_709_2,
+                                  (__bridge NSString*)kCVImageBufferTransferFunctionKey: (__bridge NSString*)kCVImageBufferTransferFunction_ITU_R_709_2,
+                                  // Note that icc profile is required to enable gamma mapping
+                                  //(__bridge NSString*)kCVImageBufferICCProfileKey: (__bridge NSData *)colorProfileData,
+                                  };
+  
+  CVBufferRef pixelBuffer = cvPixelBuffer;
+  
+  CVBufferSetAttachments(pixelBuffer, (__bridge CFDictionaryRef)pbAttachments, kCVAttachmentMode_ShouldPropagate);
+  
+  // Drop ref to NSDictionary to enable explicit checking of ref count of colorProfileData, after the
+  // release below the colorProfileData must be 1.
+  pbAttachments = nil;
+  //CFRelease(colorProfileData);
+  
+  //CGColorSpaceRelease(yuvColorSpace);
   
   return TRUE;
 }
