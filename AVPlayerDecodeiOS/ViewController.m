@@ -25,7 +25,6 @@
   UIView *view = self.view;
   
   NSString *resourceName = @"QuickTime_Test_Pattern_HD.mov";
-  //NSString *resourceName = @"bars_709_Frame01.m4v";
   
   NSString* movieFilePath = [[NSBundle mainBundle] pathForResource:resourceName ofType:nil];
   NSAssert(movieFilePath, @"movieFilePath is nil");

@@ -417,25 +417,6 @@ void validate_storage_mode(id<MTLTexture> texture)
   return cvPixelBuffer;
 }
 
-- (CVPixelBufferRef) decodeH264YCbCr_barsFullscreen
-{
-  NSString *resFilename = @"bars_709_Frame01.m4v";
-  
-  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
-                                                                    frameDuration:1.0/30
-                                                                       renderSize:CGSizeMake(1920, 1080)
-                                                                       aveBitrate:0];
-  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
-  
-  // Grab just the first texture, return retained ref
-  
-  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
-  
-  CVPixelBufferRetain(cvPixelBuffer);
-  
-  return cvPixelBuffer;
-}
-
 /// Called whenever view changes orientation or is resized
 - (void)mtkView:(nonnull MTKView *)view drawableSizeWillChange:(CGSize)size
 {
