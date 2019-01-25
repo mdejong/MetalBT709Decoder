@@ -1492,8 +1492,6 @@ uint32_t grayToPixel(uint32_t gray)
   
   pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
   
-  // But, writing H.264 data as 4:2:0 emits Y = 210 ???
-  
   {
     int v = Y;
     //int expectedVal = 206;
@@ -1536,6 +1534,75 @@ uint32_t grayToPixel(uint32_t gray)
   {
     int v = Bout;
     int expectedVal = Bin - 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+}
+
+- (void)testBT709Decoder_SMPTE_Gray_0xc0c0c0_linear_vImage {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray 75% linear intensity
+  //
+  // sRGB (225 225 225) -> Linear RGB (192 192 192) -> REC.709 (211 128 128)
+  
+  Rin = 225; // 192.0 = 0.7529 -> (206 128 128)
+  Gin = 225;
+  Bin = 225;
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  // Writing with vImage to correct 16-235 range generates Y = 206
+  
+  {
+    int v = Y;
+    int expectedVal = 206;
+    //int expectedVal = 205;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1609,6 +1676,76 @@ uint32_t grayToPixel(uint32_t gray)
   {
     int v = Bout;
     int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+- (void)testBT709Decoder_SMPTE_Gray_0x808080_linear_vImage {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray 50% linear intensity
+  //
+  // sRGB (188 188 188) -> Linear RGB (128 128 128) -> REC.709 (180 128 128)
+  //
+  // gamma 2.4 : 0.5029 -> 0.7510
+  //
+  // AVFoundation (179 128 128)
+  
+  Rin = 188;
+  Gin = 188;
+  Bin = 188;
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    int expectedVal = 171; // vImage
+    //int expectedVal = 170;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin + 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin + 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin + 1;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
 }

@@ -27,8 +27,9 @@
   
   // Decode a single frame of H264 video to YCbCr data contained in a CoreVideo buffer
   
-  NSString *resFilename = @"QuickTime_Test_Pattern_HD.mov";
+  //NSString *resFilename = @"QuickTime_Test_Pattern_HD.mov";
   //NSString *resFilename = @"Rec709Sample.mp4";
+  NSString *resFilename = @"Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v";
   
   NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
                                                                     frameDuration:1.0/30
