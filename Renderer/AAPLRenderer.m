@@ -281,8 +281,8 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeSMPTEGray75Perent];
   //cvPixelBufer = [self decodeH264YCbCr_bars256];
   //cvPixelBufer = [self decodeH264YCbCr_bars_iPadFullScreen];
-  //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
-  cvPixelBufer = [self decodeCloudsiPadImage];
+  cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
+  //cvPixelBufer = [self decodeCloudsiPadImage];
   //cvPixelBufer = [self decodeTest709Frame];
 
   if (debugDumpYCbCr) {
