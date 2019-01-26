@@ -67,7 +67,7 @@ identityVertexShader(uint vertexID [[ vertex_id ]],
 
 
 // Fragment shader that can do simple rescale, note that the input
-// and output if float here as opposed to half to support 16 bit
+// and output is float here as opposed to half to support 16 bit
 // float input texture.
 
 fragment float4
@@ -240,7 +240,7 @@ BT709ToLinearSRGBFragment(RasterizerData in [[stage_in]],
                           texture2d<half, access::sample>  inUVTexture [[texture(AAPLTextureIndexCbCrPlane)]]
                           )
 {
-  constexpr sampler textureSampler (mag_filter::linear, min_filter::linear);
+  constexpr sampler textureSampler (mag_filter::nearest, min_filter::nearest);
   
   float Y = float(inYTexture.sample(textureSampler, in.textureCoordinate).r);
   half2 uvSamples = inUVTexture.sample(textureSampler, in.textureCoordinate).rg;
