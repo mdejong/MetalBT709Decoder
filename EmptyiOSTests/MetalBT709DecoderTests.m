@@ -238,6 +238,9 @@ uint32_t grayToPixel(uint32_t gray)
   
   [BGRAToBT709Converter setBT709Attributes:yCbCrBuffer];
   
+  // Note that the Metal render target knows that the YCbCr input values
+  // are in the BT.709 colorspace already, so no need to set a colorspace
+  
   [BGRAToBT709Converter copyBT709ToCoreVideo:outBT709 cvPixelBuffer:yCbCrBuffer];
   
   id<MTLCommandBuffer> commandBuffer = [metalRenderContext.commandQueue commandBuffer];

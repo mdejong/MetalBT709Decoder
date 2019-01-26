@@ -278,9 +278,9 @@ void validate_storage_mode(id<MTLTexture> texture)
   CVPixelBufferRef cvPixelBufer;
   
   //cvPixelBufer = [self decodeQuicktimeTestPattern];
-  cvPixelBufer = [self decodeSMPTEGray75Perent];
+  //cvPixelBufer = [self decodeSMPTEGray75Perent];
   //cvPixelBufer = [self decodeH264YCbCr_bars256];
-  //cvPixelBufer = [self decodeH264YCbCr_bars_iPadFullScreen];
+  cvPixelBufer = [self decodeH264YCbCr_bars_iPadFullScreen];
   //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
   //cvPixelBufer = [self decodeCloudsiPadImage];
   //cvPixelBufer = [self decodeTest709Frame];
@@ -460,6 +460,23 @@ void validate_storage_mode(id<MTLTexture> texture)
   }
   
   if (isExactlySameSize) {
+    if (isCaptureRenderedTextureEnabled) {
+      // Debug render into the intermediate texture when capture is
+      // enabled to determine if there is any difference between
+      // rendering into a texture and rendering into the view.
+      
+      int renderWidth = (int) _resizeTexture.width;
+      int renderHeight = (int) _resizeTexture.height;
+      
+      [metalBT709Decoder decodeBT709:_yCbCrPixelBuffer
+                     bgraSRGBTexture:_resizeTexture
+                       commandBuffer:commandBuffer
+                renderPassDescriptor:nil
+                         renderWidth:renderWidth
+                        renderHeight:renderHeight
+                  waitUntilCompleted:FALSE];
+    }
+    
     // Render directly into the view, this optimization reduces IO
     // and results in a significant performance improvement.
 
@@ -585,8 +602,7 @@ void validate_storage_mode(id<MTLTexture> texture)
   }
   
   if (isCaptureRenderedTextureEnabled) {
-    // Capture output of the resize operation, this is a
-    // sRGB encoded value.
+    // Capture output of the resize operation as sRGB pixels
     
     id<MTLTexture> texture = renderPassDescriptor.colorAttachments[0].texture;
     

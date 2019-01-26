@@ -238,6 +238,9 @@ uint32_t grayToPixel(uint32_t gray)
   
   [BGRAToBT709Converter setBT709Attributes:yCbCrBuffer];
   
+  // Note that the Metal render target knows that the YCbCr input values
+  // are in the BT.709 colorspace already, so no need to set a colorspace
+  
   [BGRAToBT709Converter copyBT709ToCoreVideo:outBT709 cvPixelBuffer:yCbCrBuffer];
   
   id<MTLCommandBuffer> commandBuffer = [metalRenderContext.commandQueue commandBuffer];
@@ -255,6 +258,7 @@ uint32_t grayToPixel(uint32_t gray)
   
   NSData *pixelsAsBytes = [metalRenderContext getBGRATexturePixels:bgraSRGBTexture];
   
+  memset(outBGRA, 0, sizeof(outBGRA));
   memcpy(outBGRA, pixelsAsBytes.bytes, (int)pixelsAsBytes.length);
   
   // Convert back to BGRA
@@ -1749,6 +1753,210 @@ uint32_t grayToPixel(uint32_t gray)
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
 }
+
+// Linear * 0.33
+
+- (void)testBT709Decoder_SMPTE_Gray_0x555555_linear_software {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray 25% linear intensity
+  //
+  // sRGB (85 85 85) -> Linear RGB (23 23 23) -> REC.709 (80 128 128)
+  
+  // Why is AVFoundation value lower? It seems that gamma is off a bit
+  
+  Rin = 85;
+  Gin = 85;
+  Bin = 85;
+  
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    int expectedVal = 80;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin - 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin - 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin - 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+- (void)testBT709Decoder_SMPTE_Gray_0x555555_linear_vImage {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray 25% linear intensity
+  //
+  // sRGB (85 85 85) -> Linear RGB (23 23 23) -> REC.709 (80 128 128)
+  
+  // Why is AVFoundation value lower? It seems that gamma is off a bit
+  
+  Rin = 85;
+  Gin = 85;
+  Bin = 85;
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    int expectedVal = 80;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+- (void)testBT709Decoder_SMPTE_Gray_0x555555_linear_metal {
+  uint32_t Rin, Gin, Bin;
+  uint32_t Y, Cb, Cr, dummy;
+  uint32_t Rout, Gout, Bout;
+  
+  // Gray 25% linear intensity
+  //
+  // sRGB (85 85 85) -> Linear RGB (23 23 23) -> REC.709 (80 128 128)
+  
+  // Why is AVFoundation value lower? It seems that gamma is off a bit
+  
+  Rin = 85;
+  Gin = 85;
+  Bin = 85;
+  
+  //BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterSoftware;
+  BGRAToBT709ConverterTypeEnum encodeType = BGRAToBT709ConverterVImage;
+  
+  uint32_t yuvOutPixel = [self convert_srgb_to_bt709:rgbToPixel(Rin, Gin, Bin) type:encodeType];
+  
+  pixelToRGBA(yuvOutPixel, &Cr, &Cb, &Y, &dummy);
+  
+  {
+    int v = Y;
+    int expectedVal = 80;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterSoftware;
+  //BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterVImage;
+  BGRAToBT709ConverterTypeEnum decodeType = BGRAToBT709ConverterMetal;
+  
+  uint32_t bgraOutPixel = [self convert_bt709_to_srgb:yuvOutPixel type:decodeType];
+  
+  pixelToRGBA(bgraOutPixel, &Rout, &Gout, &Bout, &dummy);
+  
+  {
+    int v = Rout;
+    int expectedVal = Rin - 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Gout;
+    int expectedVal = Gin - 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Bout;
+    int expectedVal = Bin - 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
 
 // Linear * 0.25
 

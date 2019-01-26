@@ -29,11 +29,12 @@
   
   //NSString *resFilename = @"QuickTime_Test_Pattern_HD.mov";
   //NSString *resFilename = @"Rec709Sample.mp4";
-  NSString *resFilename = @"Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v";
+  //NSString *resFilename = @"Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v";
+  NSString *resFilename = @"osxcolor_test_image_iPad_2048_1536.m4v";
   
   NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
                                                                     frameDuration:1.0/30
-                                                                       renderSize:CGSizeMake(1920, 1080)
+                                                                       renderSize:CGSizeMake(2048, 1536)
                                                                        aveBitrate:0];
   
   CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
