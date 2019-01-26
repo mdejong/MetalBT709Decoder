@@ -106,9 +106,9 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
       int Y, Cb, Cr;
       
       if (1) {
-        // Boosted
+        // sRGB -> Apple 1.96 gamma curve -> YCbCr
         
-        int result = BT709_boosted_from_sRGB_convertRGBToYCbCr(
+        int result = Apple196_from_sRGB_convertRGBToYCbCr(
                                                                R,
                                                                G,
                                                                B,
@@ -118,7 +118,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
         
         assert(result == 0);
       } else {
-        // Not Boosted convertsion from sRGB -> BT.709
+        // convertsion from sRGB -> BT.709 gamma curve -> YCbCr
         
         int result = BT709_from_sRGB_convertRGBToYCbCr(
                                                                R,
@@ -165,7 +165,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
       int result;
       
       if ((1)) {
-        result = BT709_boosted_to_sRGB_convertYCbCrToRGB(
+        result = Apple196_to_sRGB_convertYCbCrToRGB(
                                                          Y,
                                                          Cb,
                                                          Cr,

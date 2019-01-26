@@ -116,7 +116,7 @@ float BT709_linearNormToNonLinear(float normV) {
 #define APPLE_GAMMA_196 (1.960938f)
 
 static inline
-float AppleGamma196_nonLinearNormToLinear(float normV) {
+float Apple196_nonLinearNormToLinear(float normV) {
   const float xIntercept = 0.05583828f;
   
   if (normV < xIntercept) {
@@ -130,7 +130,7 @@ float AppleGamma196_nonLinearNormToLinear(float normV) {
 }
 
 static inline
-float AppleGamma196_linearNormToNonLinear(float normV) {
+float Apple196_linearNormToNonLinear(float normV) {
   const float yIntercept = 0.00349f;
   
   if (normV < yIntercept) {
@@ -703,17 +703,11 @@ int BT709_to_sRGB_convertYCbCrToRGB(
   return 0;
 }
 
-// This "boosted" call just encodes the sRGB values
-// as already non-linear gamma adjusted into the SRGB colorspace.
-// This is what happens w
-
-// This boosted sRGB conversion is an Apple specific
-// method of encoding RGB values so that the decoded
-// values come out exactly the same when decoded with
-// apple 1.96 segmented gamma curve.
+// Apple specific gamma encoding curve from sRGB to 1.96
+// like encoding that can be exactly inverted with CoreVideo.
 
 static inline
-int BT709_boosted_from_sRGB_convertRGBToYCbCr(
+int Apple196_from_sRGB_convertRGBToYCbCr(
                                       int R,
                                       int G,
                                       int B,
@@ -775,9 +769,9 @@ int BT709_boosted_from_sRGB_convertRGBToYCbCr(
       printf("byte range     Rn Gn Bn : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
     }
     
-    Rn = AppleGamma196_linearNormToNonLinear(Rn);
-    Gn = AppleGamma196_linearNormToNonLinear(Gn);
-    Bn = AppleGamma196_linearNormToNonLinear(Bn);
+    Rn = Apple196_linearNormToNonLinear(Rn);
+    Gn = Apple196_linearNormToNonLinear(Gn);
+    Bn = Apple196_linearNormToNonLinear(Bn);
     
     if (debug) {
       printf("post to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
@@ -788,26 +782,10 @@ int BT709_boosted_from_sRGB_convertRGBToYCbCr(
   return BT709_convertNonLinearRGBToYCbCr(Rn, Gn, Bn, YPtr, CbPtr, CrPtr);
 }
 
-//// Convert from BT.709 YCbCr to unboosted linear RGB as a normalized float
-//
-//static inline
-//int BT709_boosted_convertYCbCrToLinearRGB(
-//                                  int Y,
-//                                  int Cb,
-//                                  int Cr,
-//                                  float *RPtr,
-//                                  float *GPtr,
-//                                  float *BPtr)
-//{
-//  BT709_convertYCbCrToNonLinearRGB(Y, Cb, Cr, RPtr, GPtr, BPtr);
-//
-//  return 0;
-//}
-
-// Convert BT.709 to sRGB in non-linear space
+// Convert from Apple 1.96 gamma encoded value to sRGB
 
 static inline
-int BT709_boosted_to_sRGB_convertYCbCrToRGB(
+int Apple196_to_sRGB_convertYCbCrToRGB(
                                     int Y,
                                     int Cb,
                                     int Cr,
@@ -832,23 +810,23 @@ int BT709_boosted_to_sRGB_convertYCbCrToRGB(
     
   BT709_convertYCbCrToNonLinearRGB(Y, Cb, Cr, &Rn, &Gn, &Bn);
   
-  // Convert linear RGB to non-linear sRGB
+  // Convert non-linear RGB to linear RGB
   
   if (applyGammaMap) {
     if (debug) {
       printf("pre  to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
     }
 
-    Rn = AppleGamma196_nonLinearNormToLinear(Rn);
-    Gn = AppleGamma196_nonLinearNormToLinear(Gn);
-    Bn = AppleGamma196_nonLinearNormToLinear(Bn);
+    Rn = Apple196_nonLinearNormToLinear(Rn);
+    Gn = Apple196_nonLinearNormToLinear(Gn);
+    Bn = Apple196_nonLinearNormToLinear(Bn);
 
     if (debug) {
       printf("post to linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
     }
   }
 
-  // Convert linear values to sRGB
+  // Convert linear RGB values to non-linear sRGB
   
   if (applyGammaMap) {
     if (debug) {
@@ -863,6 +841,101 @@ int BT709_boosted_to_sRGB_convertYCbCrToRGB(
       printf("post to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
     }
   }
+  
+  // Write RGB values as int in byte range [0 255]
+  
+  int R = (int) round(Rn * 255.0f);
+  int G = (int) round(Gn * 255.0f);
+  int B = (int) round(Bn * 255.0f);
+  
+  if (debug) {
+    printf("scaled up to byte range:\n");
+    printf("R %.4f\n", Rn * 255.0f);
+    printf("G %.4f\n", Gn * 255.0f);
+    printf("B %.4f\n", Bn * 255.0f);
+    
+    printf("rounded to int:\n");
+    printf("R %3d\n", R);
+    printf("G %3d\n", G);
+    printf("B %3d\n", B);
+  }
+  
+#if defined(DEBUG)
+  assert(R >= 0 && R <= 255);
+  assert(G >= 0 && G <= 255);
+  assert(B >= 0 && B <= 255);
+#endif // DEBUG
+  
+  *RPtr = R;
+  *GPtr = G;
+  *BPtr = B;
+  
+  return 0;
+}
+
+// When input RGB data is already encoded in sRGB colorspace
+// then the normalized float values can be passed directly
+// into YCbCr matrix transform.
+
+static inline
+int sRGB_from_sRGB_convertRGBToYCbCr(
+                                         int R,
+                                         int G,
+                                         int B,
+                                         int *YPtr,
+                                         int *CbPtr,
+                                         int *CrPtr)
+{
+  const int debug = 1;
+  
+#if defined(DEBUG)
+  assert(YPtr);
+  assert(CbPtr);
+  assert(CrPtr);
+  
+  assert(R >= 0 && R <= 255);
+  assert(G >= 0 && G <= 255);
+  assert(B >= 0 && B <= 255);
+#endif // DEBUG
+  
+  if (debug) {
+    printf("sRGB in : R G B : %3d %3d %3d\n", R, G, B);
+  }
+  
+  float Rn = byteNorm(R);
+  float Gn = byteNorm(G);
+  float Bn = byteNorm(B);
+  
+  return BT709_convertNonLinearRGBToYCbCr(Rn, Gn, Bn, YPtr, CbPtr, CrPtr);
+}
+
+// Convert from YCbCr encoded with sRGB gamma curve back to sRGB
+
+static inline
+int sRGB_to_sRGB_convertYCbCrToRGB(
+                                       int Y,
+                                       int Cb,
+                                       int Cr,
+                                       int *RPtr,
+                                       int *GPtr,
+                                       int *BPtr,
+                                       int applyGammaMap)
+{
+  const int debug = 1;
+  
+#if defined(DEBUG)
+  assert(RPtr);
+  assert(GPtr);
+  assert(BPtr);
+#endif // DEBUG
+  
+  if (debug) {
+    printf("Y Cb Cr : %3d %3d %3d\n", Y, Cb, Cr);
+  }
+  
+  float Rn, Gn, Bn;
+  
+  BT709_convertYCbCrToNonLinearRGB(Y, Cb, Cr, &Rn, &Gn, &Bn);
   
   // Write RGB values as int in byte range [0 255]
   

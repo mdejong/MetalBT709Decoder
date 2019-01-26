@@ -109,7 +109,7 @@ float BT709_nonLinearNormToLinear(float normV) {
 #define APPLE_GAMMA_196 (1.960938f)
 
 static inline
-float AppleGamma196_nonLinearNormToLinear(float normV) {
+float Apple196_nonLinearNormToLinear(float normV) {
   const float xIntercept = 0.05583828f;
   
   if (normV < xIntercept) {
@@ -225,9 +225,9 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
 //    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
 //    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
 
-    rgb.r = AppleGamma196_nonLinearNormToLinear(rgb.r);
-    rgb.g = AppleGamma196_nonLinearNormToLinear(rgb.g);
-    rgb.b = AppleGamma196_nonLinearNormToLinear(rgb.b);
+    rgb.r = Apple196_nonLinearNormToLinear(rgb.r);
+    rgb.g = Apple196_nonLinearNormToLinear(rgb.g);
+    rgb.b = Apple196_nonLinearNormToLinear(rgb.b);
   }
   
   float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);
