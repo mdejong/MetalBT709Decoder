@@ -244,8 +244,8 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     
     CGFrameBuffer *identityFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
     
-    //CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    //CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
     identityFB.colorspace = cs;
     CGColorSpaceRelease(cs);
     
@@ -323,7 +323,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     
     CGColorSpaceRelease(sRGBcs);
     
-    if ((0)) {
+    if ((1)) {
       // Emit png in sRGBcolorspace
       
       NSString *filename = [NSString stringWithFormat:@"TestHDAsSRGB.png"];
@@ -337,6 +337,8 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       
       NSLog(@"wrote %@", path);
     }
+    
+    /*
     
     // Convert grayscale range to BT.709 gamma adjusted values
     
@@ -361,9 +363,11 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       NSLog(@"wrote %@", path);
     }
     
+    */
+    
     // Gather value mappings over the entire byte range for lin -> 709
     
-    if ((1))
+    if ((0))
     {
       NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"709" ];
       
@@ -372,7 +376,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       // CSV generation logic below depends on getting 256 values that
       // represent the range.
       
-      uint32_t *pixelPtr = (uint32_t *) bt709FB.pixels;
+      uint32_t *pixelPtr = (uint32_t *) sRGBFB.pixels;
       
       NSMutableArray *mSamples = [NSMutableArray array];
       
@@ -400,7 +404,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
         float percentOfGrayscale = i / 255.0f;
         float percentOfRange = grayVal / 255.0f;
         
-        float appleGammaAdjusted = 0.0;
+        float appleGammaAdjusted = Apple196_linearNormToNonLinear(percentOfGrayscale);
         
         // This actually appears to be a better approximzation of the actualy current
         // output, so why would anything about the Apple 1961 be useful ??
@@ -415,12 +419,12 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
       NSLog(@"rangeMap contains %d values", (int)rangeMap.count);
       NSLog(@"");
       
-      [EncoderImpl writeTableToCSV:@"Encode_lin_to_709_GR.csv" labelsArr:labels valuesArr:yPairsArr];
+      [EncoderImpl writeTableToCSV:@"Encode_lin_to_sRGB.csv" labelsArr:labels valuesArr:yPairsArr];
     }
 
     // Gather value mappings over the entire byte range for lin -> sRGB
     
-    if ((1))
+    if ((0))
     {
       NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"sRGB" ];
       
@@ -474,7 +478,7 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
     
     if ((1))
     {
-      NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"AG", @"sRGB" ];
+      NSArray *labels = @[ @"G", @"R", @"PG", @"PR", @"sRGB", @"BT709", @"AG" ];
       
       NSMutableArray *yPairsArr = [NSMutableArray array];
       
@@ -509,11 +513,16 @@ int process(NSString *outPNGStr, ConfigurationStruct *configSPtr) {
         float percentOfGrayscale = i / 255.0f;
         float percentOfRange = grayVal / 255.0f;
         
-        float appleGammaAdjusted = 0.0f;
+        float appleGammaAdjusted = Apple196_linearNormToNonLinear(percentOfGrayscale);
         
         float sRGBGammaAdjusted = sRGB_linearNormToNonLinear(percentOfGrayscale);
         
-        [yPairsArr addObject:@[@(i), @(grayVal), @(percentOfGrayscale), @(percentOfRange), @(appleGammaAdjusted), @(sRGBGammaAdjusted)]];
+        float bt709GammaAdjusted = BT709_linearNormToNonLinear(percentOfGrayscale);
+        
+        [yPairsArr addObject:@[@(i), @(grayVal), @(percentOfGrayscale), @(percentOfRange),  @(sRGBGammaAdjusted),
+                               @(bt709GammaAdjusted),
+                               @(appleGammaAdjusted)
+                               ]];
       }
       
       NSLog(@"rangeMap contains %d values", (int)rangeMap.count);

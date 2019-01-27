@@ -216,6 +216,33 @@ CGImageRef makeImageFromFile(NSString *filenameStr)
   return imageRef;
 }
 
+// Util functions that deal with YCbCr stuff
+
+static inline
+float appleAVFoundationYRangeNormalize(int Y)
+{
+  // Weirdly, max seems to be 237 instead of 235 ? Why Apple?
+  
+  int minY = 16;
+  
+  int appleMaxY = 237;
+  
+  //float percentOfRange = (yVal - 16) / (237.0f - (16+2));
+  
+  float yAmount = (Y - minY);
+  float rRange = (appleMaxY - minY);
+  float yPercentOfRange = yAmount / rRange;
+  
+  if (yPercentOfRange < 0.0f) {
+    yPercentOfRange = 0.0f; // Why Apple?
+  }
+  if (yPercentOfRange > 1.0f) {
+    yPercentOfRange = 1.0f; // Why Apple?
+  }
+  
+  return yPercentOfRange;
+}
+
 // Export a video to H.264
 
 static inline
@@ -576,7 +603,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
   
   CGImageRelease(inImage);
   
-  if ((0)) {
+  if ((1)) {
     // Load Y Cb Cr values from movie that was just written by reading
     // values into a pixel buffer.
     
@@ -662,7 +689,7 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
     
     // Full mapping of output values to CSV file to determine gamma
     
-    if ((0)) {
+    if ((1)) {
     
     NSMutableDictionary *rangeMap = [NSMutableDictionary dictionary];
     
@@ -680,6 +707,10 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       
       float percentOfGrayscale = ((float)i) / 255.0f;
       
+      // Apple 196 curve generated from Linear
+      
+      float apple196FromLin = Apple196_linearNormToNonLinear(percentOfGrayscale);
+      
       // Exact sRGB curve generated from Linear float inputs
       
       float sRGBFromLin = sRGB_linearNormToNonLinear(percentOfGrayscale);
@@ -688,19 +719,12 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       
       float bt709FromLin = BT709_linearNormToNonLinear(percentOfGrayscale);
       
-      // Weirdly, max seems to be 237 instead of 235 ? Why Apple?
-      int minY = 16;
-      int maxY = 237;
+      // Plot the actual Y output of the AVFoundaiton encoding logic
       
-      //float percentOfRange = (yVal - 16) / (237.0f - (16+2));
-      float yPercentOfRange = (yVal - minY) / (float)(maxY - minY);
-
-      if (yPercentOfRange < 0.0f) {
-        yPercentOfRange = 0.0f; // Why Apple?
-      }
-      if (yPercentOfRange > 1.0f) {
-        yPercentOfRange = 1.0f; // Why Apple?
-      }
+      float yPercentOfRange = appleAVFoundationYRangeNormalize(yVal);
+      
+      // Map the Y generated from the gamma encoded matrix output
+      // to a normalized value.
       
       // Convert (Y Cb Cr) back to linRGB and then back to sRGB
       // so that the boosted RGB (grayscale) can be compared to
@@ -720,9 +744,32 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       
       // Convert Y back to BT.709 gamma encoded value (do not decode to linear and then to sRGB)
       
-      float boostedRN, boostedGN, boostedBN;
-      BT709_convertYCbCrToNonLinearRGB(yPercentOfRangeAsInt+16, 128, 128, &boostedRN, &boostedGN, &boostedBN);
-      float encodedGrayN = boostedRN;
+      //float boostedRN, boostedGN, boostedBN;
+      //BT709_convertYCbCrToNonLinearRGB(yPercentOfRangeAsInt+16, 128, 128, &boostedRN, &boostedGN, &boostedBN);
+      //float encodedGrayN = boostedRN;
+      
+      // Decode Y value back to a grayscale value based on gamma curve
+      
+      //int decR, decG, decB;
+      
+      //sRGB_to_sRGB_convertYCbCrToRGB((int)round((yPercentOfRange * 219.0) + 16), 128, 128, &decR, &decG, &decB, 1);
+      //float decY = decR / 255.0f;
+      
+      // Decode Y back to grayscale value based on Apple 196 gamma curve
+      
+      //Apple196_to_sRGB_convertYCbCrToRGB(16+yPercentOfRangeAsInt, 128, 128, &decR, &decG, &decB, 1);
+      //Apple196_to_sRGB_convertYCbCrToRGB(yVal, 128, 128, &decR, &decG, &decB, 1);
+      
+      // Does Apple decode method generate exact linear values when fed
+      // gamma adjusted input?
+      //Apple196_to_sRGB_convertYCbCrToRGB((int)round((apple196FromLin * 219.0) + 16), 128, 128, &decR, &decG, &decB, 1);
+      //float decY = decR / 255.0f;
+      
+//      Apple196_to_sRGB_convertYCbCrToRGB((int)round((yPercentOfRange * 219.0) + 16), 128, 128, &decR, &decG, &decB, 1);
+//      float decY = decR / 255.0f;
+      
+      //BT709_to_sRGB_convertYCbCrToRGB((int)round((yPercentOfRange * 219.0) + 16), 128, 128, &decR, &decG, &decB, 1);
+      //float decY = decR / 255.0f;
       
       //int boostedGray = ((int) round(boostedRn * 255.0f));
       
@@ -744,22 +791,24 @@ int process(NSString *inPNGStr, NSString *outM4vStr, ConfigurationStruct *config
       //float encodedGrayNMappedToLin = sRGB_nonLinearNormToLinear(encodedGrayN);
       
       // Convert encode grayscale value down to linear as if it was BT.709
-      float encodedGrayNMappedToLin = BT709_nonLinearNormToLinear(encodedGrayN);
+      //float encodedGrayNMappedToLin = BT709_nonLinearNormToLinear(encodedGrayN);
       
       [yPairsArr addObject:@[@(i), @(yVal), @(percentOfGrayscale),
+                             @(yPercentOfRange),
+                             @(apple196FromLin),
                              @(sRGBFromLin),
                              @(bt709FromLin),
-                             @(originalGrayPercent),
-                             @(encodedGrayN),
-                             @(encodedGrayNMappedToLin)]];
+                             @(originalGrayPercent)
+                             ]];
     }
 
     NSArray *labels = @[ @"G", @"R", @"PG",
+                         @"EncY",
+                         @"A196",
                          @"sRGB",
                          @"BT709",
-                         @"OG",
-                         @"BG",
-                         @"BG2Lin" ];
+                         @"OG"
+                         ];
     
     [EncoderImpl writeTableToCSV:@"EncodeGR.csv" labelsArr:labels valuesArr:yPairsArr];
     NSLog(@"");

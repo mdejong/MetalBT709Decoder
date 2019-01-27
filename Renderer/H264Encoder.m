@@ -488,12 +488,14 @@ static const int dumpFramesImages = 0;
     assert(inputIsSRGBColorspace == TRUE);
   }
 #endif // DEBUG
-  
-  //CGColorSpaceRef bt709ColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
-  //CGColorSpaceRef bt709ColorSpace = [H264Encoder createHDTVColorSpaceRef];
+
+  //CGColorSpaceRef encodedColorspace = CGImageGetColorSpace(imageRef);
+  //CGColorSpaceRef encodedColorspace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+  //CGColorSpaceRef encodedColorspace = CGColorSpaceCreateWithName(kCGColorSpaceITUR_709);
+  //CGColorSpaceRef encodedColorspace = [H264Encoder createHDTVColorSpaceRef];
 
   CGColorSpaceRef encodedColorspace = self.encodedColorspace;
-  
+
   if (encodedColorspace == nil) {
     encodedColorspace = [H264Encoder createHDTVColorSpaceRef];
     self.encodedColorspace = encodedColorspace;
