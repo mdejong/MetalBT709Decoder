@@ -10,7 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "CGFramebuffer.h"
+#import "CGFrameBuffer.h"
 #import "BGRAToBT709Converter.h"
 
 #import "sRGB.h"
