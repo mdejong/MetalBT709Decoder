@@ -30,26 +30,26 @@
 
 // Kr, Kg, Kb (709)
 
-const static float Kr = 0.2126f;
-const static float Kg = 0.7152f;
-const static float Kb = 0.0722f;
+const static float BT709_Kr = 0.2126f;
+const static float BT709_Kg = 0.7152f;
+const static float BT709_Kb = 0.0722f;
 
-const static float Er_minus_Ey_Range = 1.5748f; // 2*(1.0 - Kr)
-const static float Eb_minus_Ey_Range = 1.8556f; // 2*(1.0 - Kb)
+const static float BT709_Er_minus_Ey_Range = 1.5748f; // 2*(1.0 - Kr)
+const static float BT709_Eb_minus_Ey_Range = 1.8556f; // 2*(1.0 - Kb)
 
 //const static float Er_minus_Ey_Range = (2.0f * (1.0f - Kr));
 //const static float Eb_minus_Ey_Range = (2.0f * (1.0f - Kb));
 
 // Generic
 
-const static float Kr_over_Kg = Kr / Kg;
-const static float Kb_over_Kg = Kb / Kg;
+const static float BT709_Kr_over_Kg = BT709_Kr / BT709_Kg;
+const static float BT709_Kb_over_Kg = BT709_Kb / BT709_Kg;
 
-const static int YMin =  16;
-const static int YMax = 235;
+const static int BT709_YMin =  16;
+const static int BT709_YMax = 235;
 
-const static int UVMin =  16;
-const static int UVMax = 240;
+const static int BT709_UVMin =  16;
+const static int BT709_UVMax = 240;
 
 // BT.709
 
@@ -213,9 +213,9 @@ int BT709_convertNonLinearRGBToYCbCr(
   
   // https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.709-6-201506-I!!PDF-E.pdf
   
-  float Ey = (Kr * Rn) + (Kg * Gn) + (Kb * Bn);
-  float Eb = (Bn - Ey) / Eb_minus_Ey_Range;
-  float Er = (Rn - Ey) / Er_minus_Ey_Range;
+  float Ey = (BT709_Kr * Rn) + (BT709_Kg * Gn) + (BT709_Kb * Bn);
+  float Eb = (Bn - Ey) / BT709_Eb_minus_Ey_Range;
+  float Er = (Rn - Ey) / BT709_Er_minus_Ey_Range;
   
   if (debug) {
     printf("Ey Eb Er : %.4f %.4f %.4f\n", Ey, Eb, Er);
@@ -224,9 +224,9 @@ int BT709_convertNonLinearRGBToYCbCr(
   // Quant Y to range [16, 235] (inclusive 219 values)
   // Quant Eb, Er to range [16, 240] (inclusive 224 values, centered at 128)
   
-  float AdjEy = (Ey * (YMax-YMin)) + 16;
-  float AdjEb = (Eb * (UVMax-UVMin)) + 128;
-  float AdjEr = (Er * (UVMax-UVMin)) + 128;
+  float AdjEy = (Ey * (BT709_YMax-BT709_YMin)) + 16;
+  float AdjEb = (Eb * (BT709_UVMax-BT709_UVMin)) + 128;
+  float AdjEr = (Er * (BT709_UVMax-BT709_UVMin)) + 128;
   
   if (debug) {
     printf("unrounded:\n");
@@ -240,14 +240,14 @@ int BT709_convertNonLinearRGBToYCbCr(
   int Cr = (int) round(AdjEr);
   
 #if defined(DEBUG)
-  assert(Y >= YMin);
-  assert(Y <= YMax);
+  assert(Y >= BT709_YMin);
+  assert(Y <= BT709_YMax);
   
-  assert(Cb >= UVMin);
-  assert(Cb <= UVMax);
+  assert(Cb >= BT709_UVMin);
+  assert(Cb <= BT709_UVMax);
   
-  assert(Cr >= UVMin);
-  assert(Cr <= UVMax);
+  assert(Cr >= BT709_UVMin);
+  assert(Cr <= BT709_UVMax);
 #endif // DEBUG
   
   *YPtr = Y;
@@ -353,7 +353,7 @@ int BT709_convertYCbCrToNonLinearRGB(
   assert(GPtr);
   assert(BPtr);
   
-  assert(YMin <= Y && Y <= YMax);
+  assert(BT709_YMin <= Y && Y <= BT709_YMax);
 #endif // DEBUG
   
   // https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.709_conversion
@@ -412,14 +412,14 @@ int BT709_convertYCbCrToNonLinearRGB(
   // [1] : -1 * UVScale * Er_minus_Ey_Range * Kr_over_Kg
   // [2] : 0.0
   
-  const float YScale = 255.0f / (YMax-YMin);
-  const float UVScale = 255.0f / (UVMax-UVMin);
+  const float YScale = 255.0f / (BT709_YMax-BT709_YMin);
+  const float UVScale = 255.0f / (BT709_UVMax-BT709_UVMin);
   
   const
   float BT709Mat[] = {
-    YScale,   0.000f,  (UVScale * Er_minus_Ey_Range),
-    YScale, (-1.0f * UVScale * Eb_minus_Ey_Range * Kb_over_Kg),  (-1.0f * UVScale * Er_minus_Ey_Range * Kr_over_Kg),
-    YScale, (UVScale * Eb_minus_Ey_Range),  0.000f,
+    YScale,   0.000f,  (UVScale * BT709_Er_minus_Ey_Range),
+    YScale, (-1.0f * UVScale * BT709_Eb_minus_Ey_Range * BT709_Kb_over_Kg),  (-1.0f * UVScale * BT709_Er_minus_Ey_Range * BT709_Kr_over_Kg),
+    YScale, (UVScale * BT709_Eb_minus_Ey_Range),  0.000f,
   };
   
   if (debug) {
