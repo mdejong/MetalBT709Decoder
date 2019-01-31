@@ -78,7 +78,7 @@ void usage() {
   fflush(stdout);
 }
 
-// Laod PNG from the filesystem
+// Load PNG from the filesystem
 
 CGImageRef makeImageFromFile(NSString *filenameStr)
 {
@@ -109,6 +109,68 @@ CGImageRef makeImageFromFile(NSString *filenameStr)
   CFRelease(sourceRef);
   
   return imageRef;
+}
+
+// Emit a single frame to the output Y4M file.
+
+typedef struct {
+  uint8_t *yPtr;
+  int yLen;
+
+  uint8_t *uPtr;
+  int uLen;
+
+  uint8_t *vPtr;
+  int vLen;
+} FrameStruct;
+
+static inline
+int write_frame(FILE *outFile, FrameStruct *fsPtr) {
+  // FRAME marker
+  
+  {
+    char *segment = "FRAME\n";
+    int segmentLen = (int) strlen(segment);
+    int numWritten = (int) fwrite(segment, segmentLen, 1, outFile);
+    if (numWritten != 1) {
+      return 1;
+    }
+  }
+  
+  // Y
+  
+  {
+    uint8_t *segment = (uint8_t *) fsPtr->yPtr;
+    int segmentLen = (int) fsPtr->yLen;
+    int numWritten = (int) fwrite(segment, segmentLen, 1, outFile);
+    if (numWritten != 1) {
+      return 2;
+    }
+  }
+  
+  // U
+  
+  {
+    uint8_t *segment = (uint8_t *) fsPtr->uPtr;
+    int segmentLen = (int) fsPtr->uLen;
+    int numWritten = (int) fwrite(segment, segmentLen, 1, outFile);
+    if (numWritten != 1) {
+      return 3;
+    }
+  }
+
+  // V
+  
+  {
+    uint8_t *segment = (uint8_t *) fsPtr->vPtr;
+    int segmentLen = (int) fsPtr->vLen;
+    int numWritten = (int) fwrite(segment, segmentLen, 1, outFile);
+    if (numWritten != 1) {
+      return 4;
+    }
+  }
+
+  return 0;
 }
 
 int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *configSPtr) {
@@ -585,9 +647,13 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
   
   // Process YCbCr by writing to output y4m file
   
-  FILE *outFile = fopen([outY4mStr UTF8String], "w");
+  const char *outFilename = [outY4mStr UTF8String];
+  FILE *outFile = fopen(outFilename, "w");
   
-  assert(outFile);
+  if (outFile == NULL) {
+    fprintf(stderr, "could not open output Y4M file \"%s\"\n", outFilename);
+    return 1;
+  }
   
   {
     char *segment = "YUV4MPEG2 ";
@@ -653,43 +719,27 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
     fwrite(segment, segmentLen, 1, outFile);
   }
   
-  // N FRAMES
+  FrameStruct fs;
   
-  {
-    char *segment = "FRAME\n";
-    int segmentLen = (int) strlen(segment);
-    fwrite(segment, segmentLen, 1, outFile);
-  }
+  fs.yPtr = (uint8_t*) Y.bytes;
+  fs.yLen = (int) Y.length;
   
-  // Y bytes
-
-  {
-    uint8_t *segment = (uint8_t *) Y.bytes;
-    int segmentLen = (int) Y.length;
-    fwrite(segment, segmentLen, 1, outFile);
-  }
+  fs.uPtr = (uint8_t*) Cb.bytes;
+  fs.uLen = (int) Cb.length;
   
-  // Cb
-
-  {
-    uint8_t *segment = (uint8_t *) Cb.bytes;
-    int segmentLen = (int) Cb.length;
-    fwrite(segment, segmentLen, 1, outFile);
-  }
+  fs.vPtr = (uint8_t*) Cr.bytes;
+  fs.vLen = (int) Cr.length;
   
-  // Cr
-
-  {
-    uint8_t *segment = (uint8_t *) Cr.bytes;
-    int segmentLen = (int) Cr.length;
-    fwrite(segment, segmentLen, 1, outFile);
+  int write_frame_result = write_frame(outFile, &fs);
+  if (write_frame_result != 0) {
+    return write_frame_result;
   }
   
   fclose(outFile);
   
   CGImageRelease(inImage);
   
-  return 1;
+  return 0;
 }
 
 int main(int argc, const char * argv[]) {
