@@ -359,4 +359,475 @@ floatIsEqual(float f1, float f2)
   }
 }
 
+- (void)testConvertsLinearRGBToBT709_42PercentBlue_srgb {
+  
+  int Rin = 0;
+  int Gin = 0;
+  int Bin = 107;
+  
+  int Y, Cb, Cr;
+  int applyGammaMap = 1;
+  
+  int result;
+  
+  result = BT709_from_sRGB_convertRGBToYCbCr(Rin, Gin, Bin, &Y, &Cb, &Cr, 1);
+  XCTAssert(result == 0);
+  
+  {
+    int v = Y;
+    int expectedVal = 22;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 169;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 124;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  int R, G, B;
+  result = BT709_to_sRGB_convertYCbCrToRGB(Y, Cb, Cr, &R, &G, &B, applyGammaMap);
+  XCTAssert(result == 0);
+  
+  {
+    int v = R;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = G;
+    int expectedVal = Gin + 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = B;
+    int expectedVal = Bin + 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+// Round trip sRGB -> BT.709 with all R,G,B values
+
+- (void)testConvertsRGBTo709_RoundTripAll_WithGamma {
+  
+  // The sRGB space will contain more pixels than the BT.709
+  // space because of the compressed range of YCbCr vlaues.
+  
+  NSMutableDictionary *mDict = [NSMutableDictionary dictionary];
+  
+  mDict[@"exact"] = @(0);
+  mDict[@"off1"] = @(0);
+  mDict[@"off2"] = @(0);
+  mDict[@"off3"] = @(0);
+  mDict[@"off4"] = @(0);
+  mDict[@"off5"] = @(0);
+  mDict[@"off6"] = @(0);
+  mDict[@"off7"] = @(0);
+  mDict[@"off8"] = @(0);
+  mDict[@"off9"] = @(0);
+  mDict[@"offMore9"] = @(0);
+  
+  const int applyGammaMap = 1;
+  
+  for (int R = 0; R <= 255; R++) {
+    for (int G = 0; G <= 255; G++) {
+      for (int B = 0; B <= 255; B++) {
+        
+        int Y, Cb, Cr;
+        
+        int result;
+        
+        result = BT709_from_sRGB_convertRGBToYCbCr(R, G, B, &Y, &Cb, &Cr, applyGammaMap);
+        XCTAssert(result == 0);
+        
+        // Reverse encoding process to get back to original RGB
+        
+        int decR, decG, decB;
+        
+        result = BT709_to_sRGB_convertYCbCrToRGB(Y, Cb, Cr, &decR, &decG, &decB, applyGammaMap);
+        XCTAssert(result == 0);
+        
+        // Determine if the round trip is exact, off by 1, off by 2
+        // or off by more than 2.
+        
+        BOOL isTheSame = [self isExactlyTheSame:R G:G B:B decR:decR decG:decG decB:decB];
+        
+        if (isTheSame) {
+          // Increment count of values that are exactly the same
+          
+          NSString *key = @"exact";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:1]) {
+          NSString *key = @"off1";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:2]) {
+          NSString *key = @"off2";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:3]) {
+          NSString *key = @"off3";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:4]) {
+          NSString *key = @"off4";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:5]) {
+          NSString *key = @"off5";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:6]) {
+          NSString *key = @"off6";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:7]) {
+          NSString *key = @"off7";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:8]) {
+          NSString *key = @"off8";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:9]) {
+          NSString *key = @"off9";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else {
+          // Off by more than 3, save as a key
+          NSString *str = [NSString stringWithFormat:@"(%d %d %d) != (%d %d %d)", R, G, B, decR, decG, decB];
+          //          mDict[str] = @"";
+          
+          NSString *key = @"offMore9";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        }
+      }
+    }
+  }
+  
+  NSLog(@"mDict %@", mDict);
+  
+  // Lossy range conversion means a whole bunch of colors are not an exact match
+  
+  XCTAssert([mDict[@"exact"] intValue] == 2753221, @"all exact");
+  
+  return;
+}
+
+/* Round trip with software
+ 
+ exact =  2753221
+ off1 =  12653553
+ off2 =   1006705
+ off3 =    295446
+ off4 =     67339
+ off5 =       952
+ off6 =         0
+ off7 =         0
+ off8 =         0
+ off9 =         0
+ offMore9 =     0
+ 
+ */
+
+// Round trip sRGB -> Apple196 with all R,G,B values
+
+- (void)testConvertsRGBToApple196_RoundTripAll_WithGamma {
+  
+  // The sRGB space will contain more pixels than the BT.709
+  // space because of the compressed range of YCbCr vlaues.
+  
+  NSMutableDictionary *mDict = [NSMutableDictionary dictionary];
+  
+  mDict[@"exact"] = @(0);
+  mDict[@"off1"] = @(0);
+  mDict[@"off2"] = @(0);
+  mDict[@"off3"] = @(0);
+  mDict[@"off4"] = @(0);
+  mDict[@"off5"] = @(0);
+  mDict[@"off6"] = @(0);
+  mDict[@"off7"] = @(0);
+  mDict[@"off8"] = @(0);
+  mDict[@"off9"] = @(0);
+  mDict[@"offMore9"] = @(0);
+  
+  const int applyGammaMap = 1;
+  
+  for (int R = 0; R <= 255; R++) {
+    for (int G = 0; G <= 255; G++) {
+      for (int B = 0; B <= 255; B++) {
+        
+        int Y, Cb, Cr;
+        
+        int result;
+        
+        result = Apple196_from_sRGB_convertRGBToYCbCr(R, G, B, &Y, &Cb, &Cr);
+        XCTAssert(result == 0);
+        
+        // Reverse encoding process to get back to original RGB
+        
+        int decR, decG, decB;
+        
+        result = Apple196_to_sRGB_convertYCbCrToRGB(Y, Cb, Cr, &decR, &decG, &decB, applyGammaMap);
+        XCTAssert(result == 0);
+        
+        // Determine if the round trip is exact, off by 1, off by 2
+        // or off by more than 2.
+        
+        BOOL isTheSame = [self isExactlyTheSame:R G:G B:B decR:decR decG:decG decB:decB];
+        
+        if (isTheSame) {
+          // Increment count of values that are exactly the same
+          
+          NSString *key = @"exact";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:1]) {
+          NSString *key = @"off1";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:2]) {
+          NSString *key = @"off2";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:3]) {
+          NSString *key = @"off3";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:4]) {
+          NSString *key = @"off4";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:5]) {
+          NSString *key = @"off5";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:6]) {
+          NSString *key = @"off6";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:7]) {
+          NSString *key = @"off7";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:8]) {
+          NSString *key = @"off8";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:9]) {
+          NSString *key = @"off9";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else {
+          // Off by more than 3, save as a key
+          NSString *str = [NSString stringWithFormat:@"(%d %d %d) != (%d %d %d)", R, G, B, decR, decG, decB];
+          //          mDict[str] = @"";
+          
+          NSString *key = @"offMore9";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        }
+      }
+    }
+  }
+  
+  NSLog(@"mDict %@", mDict);
+  
+  // Lossy range conversion means a whole bunch of colors are not an exact match
+  
+  XCTAssert([mDict[@"exact"] intValue] == 2753405, @"all exact");
+  
+  return;
+}
+
+/*
+ Software results:
+ 
+ exact =  2753405;
+ off1  = 13499212;
+ off2  =   524599;
+ off3 = 0;
+ off4 = 0;
+ off5 = 0;
+ off6 = 0;
+ off7 = 0;
+ off8 = 0;
+ off9 = 0;
+ offMore9 = 0;
+ 
+ */
+
+
+// SRGB curve to represent gamma encoded value before matrix transform
+
+- (void)testConvertSRGBToSRGB_RoundTripAll_WithGamma {
+  
+  // The sRGB space will contain more pixels than the BT.709
+  // space because of the compressed range of YCbCr vlaues.
+  
+  NSMutableDictionary *mDict = [NSMutableDictionary dictionary];
+  
+  mDict[@"exact"] = @(0);
+  mDict[@"off1"] = @(0);
+  mDict[@"off2"] = @(0);
+  mDict[@"off3"] = @(0);
+  mDict[@"off4"] = @(0);
+  mDict[@"off5"] = @(0);
+  mDict[@"off6"] = @(0);
+  mDict[@"off7"] = @(0);
+  mDict[@"off8"] = @(0);
+  mDict[@"off9"] = @(0);
+  mDict[@"offMore9"] = @(0);
+  
+  const int applyGammaMap = 1;
+  
+  for (int R = 0; R <= 255; R++) {
+    for (int G = 0; G <= 255; G++) {
+      for (int B = 0; B <= 255; B++) {
+        
+        int Y, Cb, Cr;
+        
+        int result;
+        
+        result = sRGB_from_sRGB_convertRGBToYCbCr(R, G, B, &Y, &Cb, &Cr);
+        XCTAssert(result == 0);
+        
+        // Reverse encoding process to get back to original RGB
+        
+        int decR, decG, decB;
+        
+        result = sRGB_to_sRGB_convertYCbCrToRGB(Y, Cb, Cr, &decR, &decG, &decB, applyGammaMap);
+        XCTAssert(result == 0);
+        
+        // Determine if the round trip is exact, off by 1, off by 2
+        // or off by more than 2.
+        
+        BOOL isTheSame = [self isExactlyTheSame:R G:G B:B decR:decR decG:decG decB:decB];
+        
+        if (isTheSame) {
+          // Increment count of values that are exactly the same
+          
+          NSString *key = @"exact";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:1]) {
+          NSString *key = @"off1";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:2]) {
+          NSString *key = @"off2";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:3]) {
+          NSString *key = @"off3";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:4]) {
+          NSString *key = @"off4";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:5]) {
+          NSString *key = @"off5";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:6]) {
+          NSString *key = @"off6";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:7]) {
+          NSString *key = @"off7";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:8]) {
+          NSString *key = @"off8";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else if ([self isOffBy:R G:G B:B decR:decR decG:decG decB:decB delta:9]) {
+          NSString *key = @"off9";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        } else {
+          // Off by more than 3, save as a key
+          NSString *str = [NSString stringWithFormat:@"(%d %d %d) != (%d %d %d)", R, G, B, decR, decG, decB];
+          //          mDict[str] = @"";
+          
+          NSString *key = @"offMore9";
+          NSNumber *countNum = mDict[key];
+          int countPlusOne = [countNum intValue] + 1;
+          mDict[key] = @(countPlusOne);
+        }
+      }
+    }
+  }
+  
+  NSLog(@"mDict %@", mDict);
+  
+  // Lossy range conversion means a whole bunch of colors are not an exact match
+  
+  XCTAssert([mDict[@"exact"] intValue] == 2753405, @"all exact");
+  
+  return;
+}
+
+/*
+ 
+ Apple196 results:
+ 
+ exact =  2753405
+ off1  = 13499212
+ off2  =   524599
+ off3  =        0
+ 
+ sRGB encode/decode results:
+ 
+ exact =  2753772
+ off1 =  13893861
+ off2 =    129583
+ off3 =         0
+ 
+ */
+
+
 @end

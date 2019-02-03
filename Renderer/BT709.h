@@ -452,6 +452,13 @@ int BT709_convertYCbCrToNonLinearRGB(
   float Bn = (Yn * BT709Mat[6]) + (Cbn * BT709Mat[7]) + (Crn * BT709Mat[8]);
   
   if (debug) {
+    printf("RGB Matrix intermediates:\n");
+    printf("%.8f %.8f %.8f\n", (Yn * BT709Mat[0]), (Cbn * BT709Mat[1]), (Crn * BT709Mat[2]));
+    printf("%.8f %.8f %.8f\n", (Yn * BT709Mat[3]), (Cbn * BT709Mat[4]), (Crn * BT709Mat[5]));
+    printf("%.8f %.8f %.8f\n", (Yn * BT709Mat[6]), (Cbn * BT709Mat[7]), (Crn * BT709Mat[8]));
+  }
+  
+  if (debug) {
     printf("unclamped:\n");
     printf("Rn %.8f\n", Rn);
     printf("Gn %.8f\n", Gn);
