@@ -221,6 +221,7 @@
 		3C0C3F0521F8FA2000C498D3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3C0C3F0621F8FA2000C498D3 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		3C0C3F0F21FA642C00C498D3 /* AppleEncodeDecodeBT709Tests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppleEncodeDecodeBT709Tests.m; sourceTree = "<group>"; };
+		3C483FE82207A5A100AC51AC /* y4m_writer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = y4m_writer.h; sourceTree = "<group>"; };
 		3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalRenderContext.m; sourceTree = "<group>"; };
 		3C4A770221D8498E0041ACE3 /* MetalRenderContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalRenderContext.h; sourceTree = "<group>"; };
 		3C4A770A21D892BA0041ACE3 /* EmptyiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EmptyiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -421,6 +422,7 @@
 				3CB6E81321D73BB4005424E6 /* CGFrameBuffer.m */,
 				3C4A773621D8981F0041ACE3 /* sRGB.h */,
 				3C4A773721D8981F0041ACE3 /* BT709.h */,
+				3C483FE82207A5A100AC51AC /* y4m_writer.h */,
 				3C4A773021D894720041ACE3 /* BGRAToBT709Converter.h */,
 				3C4A773121D894720041ACE3 /* BGRAToBT709Converter.m */,
 				3CA8B6C321E1682500D2B853 /* H264Encoder.h */,

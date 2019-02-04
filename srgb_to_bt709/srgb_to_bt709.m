@@ -16,6 +16,8 @@
 #import "sRGB.h"
 #import "BT709.h"
 
+#import "y4m_writer.h"
+
 // Emit an array of float data as a CSV file, the
 // labels should be NSString, these define
 // the emitted labels in column 0.
@@ -111,76 +113,15 @@ CGImageRef makeImageFromFile(NSString *filenameStr)
   return imageRef;
 }
 
-// Emit a single frame to the output Y4M file.
-
-typedef struct {
-  uint8_t *yPtr;
-  int yLen;
-
-  uint8_t *uPtr;
-  int uLen;
-
-  uint8_t *vPtr;
-  int vLen;
-} FrameStruct;
-
-static inline
-int write_frame(FILE *outFile, FrameStruct *fsPtr) {
-  // FRAME marker
-  
-  {
-    char *segment = "FRAME\n";
-    int segmentLen = (int) strlen(segment);
-    int numWritten = (int) fwrite(segment, segmentLen, 1, outFile);
-    if (numWritten != 1) {
-      return 1;
-    }
-  }
-  
-  // Y
-  
-  {
-    uint8_t *segment = (uint8_t *) fsPtr->yPtr;
-    int segmentLen = (int) fsPtr->yLen;
-    int numWritten = (int) fwrite(segment, segmentLen, 1, outFile);
-    if (numWritten != 1) {
-      return 2;
-    }
-  }
-  
-  // U
-  
-  {
-    uint8_t *segment = (uint8_t *) fsPtr->uPtr;
-    int segmentLen = (int) fsPtr->uLen;
-    int numWritten = (int) fwrite(segment, segmentLen, 1, outFile);
-    if (numWritten != 1) {
-      return 3;
-    }
-  }
-
-  // V
-  
-  {
-    uint8_t *segment = (uint8_t *) fsPtr->vPtr;
-    int segmentLen = (int) fsPtr->vLen;
-    int numWritten = (int) fwrite(segment, segmentLen, 1, outFile);
-    if (numWritten != 1) {
-      return 4;
-    }
-  }
-
-  return 0;
-}
-
 int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *configSPtr) {
   // Read PNG
   
   printf("loading %s\n", [inPNGStr UTF8String]);
   
   CGImageRef inImage = makeImageFromFile(inPNGStr);
-//  if (inImage == NULL) {
-//  }
+  if (inImage == NULL) {
+    return 2;
+  }
   
   int width = (int) CGImageGetWidth(inImage);
   int height = (int) CGImageGetHeight(inImage);
@@ -313,6 +254,10 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
     int Cr = crPtr[0];
     printf(" -> (Y Cb Cr) (%d %d %d)\n", Y, Cb, Cr);
   }
+  
+  // Done with input image at this point
+  
+  CGImageRelease(inImage);
   
   if ((1)) {
     // Process YCbCr output with CoreImage to generate an output
@@ -645,81 +590,29 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
     }
   }
   
-  // Process YCbCr by writing to output y4m file
+  // Process YCbCr by writing to output YUV frame(s) to y4m file
   
   const char *outFilename = [outY4mStr UTF8String];
-  FILE *outFile = fopen(outFilename, "w");
+  FILE *outFile = y4m_open_file(outFilename);
   
   if (outFile == NULL) {
-    fprintf(stderr, "could not open output Y4M file \"%s\"\n", outFilename);
     return 1;
   }
-  
-  {
-    char *segment = "YUV4MPEG2 ";
-    int segmentLen = (int) strlen(segment);
-    fwrite(segment, segmentLen, 1, outFile);
-  }
-  
-  {
-    NSString *formatted = [NSString stringWithFormat:@"W%d ", width];
-    char *segment = (char*) [formatted UTF8String];
-    int segmentLen = (int) strlen(segment);
-    fwrite(segment, segmentLen, 1, outFile);
-  }
 
-  {
-    NSString *formatted = [NSString stringWithFormat:@"H%d ", height];
-    char *segment = (char*) [formatted UTF8String];
-    int segmentLen = (int) strlen(segment);
-    fwrite(segment, segmentLen, 1, outFile);
-  }
-
-  // Framerate :
-  // 'F30:1' = 30 FPS
-  // 'F30000:1001' = 29.97 FPS
-  // '1:1' = 1 FPS
+  Y4MHeaderStruct header;
   
-  {
-    //char *segment = "F30:1 ";
-    char *segment = "F1:1 ";
-    int segmentLen = (int) strlen(segment);
-    fwrite(segment, segmentLen, 1, outFile);
+  header.width = width;
+  header.height = height;
+  
+  header.fps = Y4MHeaderFPS_1;
+  //header.fps = Y4MHeaderFPS_30;
+  
+  int header_result = y4m_write_header(outFile, &header);
+  if (header_result != 0) {
+    return header_result;
   }
   
-  // interlacing progressive
-  
-  {
-    char *segment = "Ip ";
-    int segmentLen = (int) strlen(segment);
-    fwrite(segment, segmentLen, 1, outFile);
-  }
-  
-  // Pixel aspect ratio
-
-  {
-    char *segment = "A1:1 ";
-    int segmentLen = (int) strlen(segment);
-    fwrite(segment, segmentLen, 1, outFile);
-  }
-  
-  // Colour space
-  
-  {
-    char *segment = "C420jpeg\n";
-    int segmentLen = (int) strlen(segment);
-    fwrite(segment, segmentLen, 1, outFile);
-  }
-  
-  // Comment
-
-  {
-    char *segment = "XYSCSS=420JPEG\n";
-    int segmentLen = (int) strlen(segment);
-    fwrite(segment, segmentLen, 1, outFile);
-  }
-  
-  FrameStruct fs;
+  Y4MFrameStruct fs;
   
   fs.yPtr = (uint8_t*) Y.bytes;
   fs.yLen = (int) Y.length;
@@ -730,14 +623,12 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
   fs.vPtr = (uint8_t*) Cr.bytes;
   fs.vLen = (int) Cr.length;
   
-  int write_frame_result = write_frame(outFile, &fs);
+  int write_frame_result = y4m_write_frame(outFile, &fs);
   if (write_frame_result != 0) {
     return write_frame_result;
   }
   
   fclose(outFile);
-  
-  CGImageRelease(inImage);
   
   return 0;
 }
