@@ -783,16 +783,25 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 
 + (CVPixelBufferRef) createYCbCrFromCGImage:(CGImageRef)inputImageRef
 {
-  return [self createYCbCrFromCGImage:inputImageRef isLinear:FALSE];
+  return [self createYCbCrFromCGImage:inputImageRef isLinear:FALSE asSRGBGamma:FALSE];
 }
 
 // Given a CGImageRef, create a CVPixelBufferRef and render into it,
 // format input BGRA data into BT.709 formatted YCbCr at 4:2:0 subsampling.
 // This method returns a new CoreVideo buffer on success, otherwise failure.
+// The isLinear argument forces the conversion logic to treat input pixels
+// as linear SRGB with a gamma = 1.0. If instead, the asSRGBGamma flag
+// is set to TRUE then the sRGB gamma function is applied to values
+// before converting to BT.709 values.
 
 + (CVPixelBufferRef) createYCbCrFromCGImage:(CGImageRef)inputImageRef
                                    isLinear:(BOOL)isLinear
+                                   asSRGBGamma:(BOOL)asSRGBGamma
 {
+  if (isLinear) {
+    assert(asSRGBGamma == FALSE);
+  }
+
   int width = (int) CGImageGetWidth(inputImageRef);
   int height = (int) CGImageGetHeight(inputImageRef);
   
@@ -816,6 +825,10 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   if (isLinear) {
     CGColorSpaceRef inputCS = CGImageGetColorSpace(inputImageRef);
     worked = [self setColorspace:cvPixelBuffer colorSpace:inputCS];
+  } else if (asSRGBGamma) {
+    CGColorSpaceRef sRGBcs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    worked = [self setColorspace:cvPixelBuffer colorSpace:sRGBcs];
+    CGColorSpaceRelease(sRGBcs);
   } else {
     worked = [self setBT709Colorspace:cvPixelBuffer];
   }

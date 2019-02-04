@@ -71,10 +71,6 @@ BOOL writeTableToCSV(NSString *filename, NSArray* labelsArr, NSArray* valuesArr)
   return TRUE;
 }
 
-typedef struct {
-  int fps;
-} ConfigurationStruct;
-
 void usage() {
   printf("srgb_to_bt709 ?OPTIONS? INPUT.png OUTPUT.y4m\n");
   printf("OPTIONS:\n");
@@ -518,7 +514,7 @@ int process(NSDictionary *inDict) {
   NSString *gamma = inDict[@"-gamma"];
   
   NSNumber *fpsNum = inDict[@"-fps"];
-  int fps = [fpsNum intValue];
+  Y4MHeaderFPS fps = [fpsNum intValue];
   
   printf("loading %s\n", [inPNGStr UTF8String]);
   
@@ -640,10 +636,13 @@ int process(NSDictionary *inDict) {
   }
   
   BOOL isLinearGamma = FALSE;
+  BOOL isSRGBGamma = FALSE;
   
   if ([gamma isEqualToString:@"linear"]) {
     // Treat input image data as linear, grayscale input image data
     // must be tagged as sRGB with gamma = 1.0
+
+    // ffmpeg -i in.y4m -c:v libx264 -color_primaries bt709 -colorspace bt709 -color_trc linear out.m4v
 
     CGFrameBuffer *inputFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
 
@@ -668,6 +667,10 @@ int process(NSDictionary *inDict) {
     inImage = [linearFB createCGImageRef];
     
     isLinearGamma = TRUE;
+  } else if ([gamma isEqualToString:@"srgb"]) {
+    // ffmpeg -i in.y4m -c:v libx264 -color_primaries bt709 -colorspace bt709 -color_trc iec61966_2_1 out.m4v
+    
+    isSRGBGamma = TRUE;
   }
   
   // FIXME: should the format of the input image be constrained? If it is sRGB then
@@ -679,8 +682,10 @@ int process(NSDictionary *inDict) {
   //  *transfer_fnc = kCVImageBufferTransferFunction_UseGamma;
   //  +            *gamma_level = CFNumberCreate(NULL, kCFNumberFloat32Type, &gamma);
   
-  CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage isLinear:isLinearGamma];
-  
+  CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage
+                                                                       isLinear:isLinearGamma
+                                                                    asSRGBGamma:isSRGBGamma];
+
   NSMutableData *Y = [NSMutableData data];
   NSMutableData *Cb = [NSMutableData data];
   NSMutableData *Cr = [NSMutableData data];
@@ -707,8 +712,8 @@ int process(NSDictionary *inDict) {
   header.width = width;
   header.height = height;
   
-  header.fps = Y4MHeaderFPS_1;
-  //header.fps = Y4MHeaderFPS_30;
+  //header.fps = Y4MHeaderFPS_1;
+  header.fps = fps;
   
   int header_result = y4m_write_header(outFile, &header);
   if (header_result != 0) {
@@ -757,8 +762,11 @@ int main(int argc, const char * argv[]) {
     NSMutableDictionary *args = [NSMutableDictionary dictionary];
     
     // Defaults
+    
     args[@"-gamma"] = @"apple";
-    args[@"-fps"] = @30;
+    
+    //args[@"-fps"] = @(Y4MHeaderFPS_1);
+    args[@"-fps"] = @(Y4MHeaderFPS_30);
     
     for (int i = 1; i < argc; ) {
       char *arg = (char *) argv[i];
@@ -784,17 +792,17 @@ int main(int argc, const char * argv[]) {
           arg = (char *) argv[i];
           
           if (strcmp(arg, "1") == 0) {
-            args[@"-fps"] = @1;
+            args[@"-fps"] = @(Y4MHeaderFPS_1);
           } else if (strcmp(arg, "15") == 0) {
-            args[@"-fps"] = @15;
+            args[@"-fps"] = @(Y4MHeaderFPS_15);
           } else if (strcmp(arg, "24") == 0) {
-            args[@"-fps"] = @24;
+            args[@"-fps"] = @(Y4MHeaderFPS_24);
           } else if (strcmp(arg, "2997") == 0) {
-            args[@"-fps"] = @2997;
+            args[@"-fps"] = @(Y4MHeaderFPS_29_97);
           } else if (strcmp(arg, "30") == 0) {
-            args[@"-fps"] = @30;
+            args[@"-fps"] = @(Y4MHeaderFPS_30);
           } else if (strcmp(arg, "60") == 0) {
-            args[@"-fps"] = @60;
+            args[@"-fps"] = @(Y4MHeaderFPS_60);
           } else {
             printf("option -fps unknown value \"%s\"", arg);
             exit(3);

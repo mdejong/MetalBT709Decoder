@@ -161,7 +161,7 @@ int y4m_write_header(FILE *outFile, Y4MHeaderStruct *hsPtr) {
     }
   }
   
-  // Colour space
+  // Colour space = 4:2:0 subsampling
   
   {
     char *segment = "C420jpeg\n";

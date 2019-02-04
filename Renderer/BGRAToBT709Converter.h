@@ -94,8 +94,17 @@ typedef enum {
 
 + (CVPixelBufferRef) createYCbCrFromCGImage:(CGImageRef)inputImageRef;
 
+// Given a CGImageRef, create a CVPixelBufferRef and render into it,
+// format input BGRA data into BT.709 formatted YCbCr at 4:2:0 subsampling.
+// This method returns a new CoreVideo buffer on success, otherwise failure.
+// The isLinear argument forces the conversion logic to treat input pixels
+// as linear SRGB with a gamma = 1.0. If instead, the asSRGBGamma flag
+// is set to TRUE then the sRGB gamma function is applied to values
+// before converting to BT.709 values.
+
 + (CVPixelBufferRef) createYCbCrFromCGImage:(CGImageRef)inputImageRef
-                                   isLinear:(BOOL)isLinear;
+                                   isLinear:(BOOL)isLinear
+                                asSRGBGamma:(BOOL)asSRGBGamma;
 
 // Copy YCbCr data stored in BGRA pixels into Y CbCr planes in CoreVideo
 // pixel buffer.
