@@ -41,6 +41,7 @@
 		3C0C3F0D21F8FCA000C498D3 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
 		3C0C3F0E21F8FCA900C498D3 /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E81321D73BB4005424E6 /* CGFrameBuffer.m */; };
 		3C0C3F1021FA642D00C498D3 /* AppleEncodeDecodeBT709Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C3F0F21FA642C00C498D3 /* AppleEncodeDecodeBT709Tests.m */; };
+		3C483FF02207BCA300AC51AC /* write_full_range.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C483FEF2207BCA300AC51AC /* write_full_range.m */; };
 		3C4A770321D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
 		3C4A770421D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
 		3C4A770521D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
@@ -151,6 +152,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		3C483FEB2207BCA300AC51AC /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		3C4A774F21DACE880041ACE3 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -222,6 +232,8 @@
 		3C0C3F0621F8FA2000C498D3 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		3C0C3F0F21FA642C00C498D3 /* AppleEncodeDecodeBT709Tests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppleEncodeDecodeBT709Tests.m; sourceTree = "<group>"; };
 		3C483FE82207A5A100AC51AC /* y4m_writer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = y4m_writer.h; sourceTree = "<group>"; };
+		3C483FED2207BCA300AC51AC /* write_full_range */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = write_full_range; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C483FEF2207BCA300AC51AC /* write_full_range.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = write_full_range.m; sourceTree = "<group>"; };
 		3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalRenderContext.m; sourceTree = "<group>"; };
 		3C4A770221D8498E0041ACE3 /* MetalRenderContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalRenderContext.h; sourceTree = "<group>"; };
 		3C4A770A21D892BA0041ACE3 /* EmptyiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EmptyiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -302,6 +314,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		3C0C3EF221F8FA1900C498D3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3C483FEA2207BCA300AC51AC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -392,6 +411,7 @@
 				3CA8B6D121E199CB00D2B853 /* gamma_write */,
 				3C0C3EF621F8FA1A00C498D3 /* CoreVideoDecodeiOS */,
 				3CBDDDF221FAF8F7008E1E66 /* AVPlayerDecodeiOS */,
+				3C483FEE2207BCA300AC51AC /* write_full_range */,
 				3ABBE2751F73196D0080C72C /* Frameworks */,
 				3AF7E9C91EB64A46003BB06D /* Products */,
 				2584CCE02584A3B000000001 /* Configuration */,
@@ -448,6 +468,7 @@
 				3CA8B6D021E199C700D2B853 /* gamma_write */,
 				3C0C3EF521F8FA1900C498D3 /* CoreVideoDecodeiOS.app */,
 				3CBDDDF121FAF8F7008E1E66 /* AVPlayerDecodeiOS.app */,
+				3C483FED2207BCA300AC51AC /* write_full_range */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -509,6 +530,14 @@
 				3C0C3F0621F8FA2000C498D3 /* main.m */,
 			);
 			path = CoreVideoDecodeiOS;
+			sourceTree = "<group>";
+		};
+		3C483FEE2207BCA300AC51AC /* write_full_range */ = {
+			isa = PBXGroup;
+			children = (
+				3C483FEF2207BCA300AC51AC /* write_full_range.m */,
+			);
+			path = write_full_range;
 			sourceTree = "<group>";
 		};
 		3C4A770B21D892BA0041ACE3 /* EmptyiOS */ = {
@@ -651,6 +680,23 @@
 			productReference = 3C0C3EF521F8FA1900C498D3 /* CoreVideoDecodeiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		3C483FEC2207BCA300AC51AC /* write_full_range */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3C483FF12207BCA300AC51AC /* Build configuration list for PBXNativeTarget "write_full_range" */;
+			buildPhases = (
+				3C483FE92207BCA300AC51AC /* Sources */,
+				3C483FEA2207BCA300AC51AC /* Frameworks */,
+				3C483FEB2207BCA300AC51AC /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = write_full_range;
+			productName = write_full_range;
+			productReference = 3C483FED2207BCA300AC51AC /* write_full_range */;
+			productType = "com.apple.product-type.tool";
+		};
 		3C4A770921D892BA0041ACE3 /* EmptyiOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3C4A772821D892C00041ACE3 /* Build configuration list for PBXNativeTarget "EmptyiOS" */;
@@ -783,6 +829,11 @@
 						DevelopmentTeam = 9F74CLHA49;
 						ProvisioningStyle = Automatic;
 					};
+					3C483FEC2207BCA300AC51AC = {
+						CreatedOnToolsVersion = 10.1;
+						DevelopmentTeam = 9F74CLHA49;
+						ProvisioningStyle = Automatic;
+					};
 					3C4A770921D892BA0041ACE3 = {
 						CreatedOnToolsVersion = 10.1;
 						DevelopmentTeam = 9F74CLHA49;
@@ -839,6 +890,7 @@
 				3CA8B6CF21E199C700D2B853 /* gamma_write */,
 				3C0C3EF421F8FA1900C498D3 /* CoreVideoDecodeiOS */,
 				3CBDDDF021FAF8F7008E1E66 /* AVPlayerDecodeiOS */,
+				3C483FEC2207BCA300AC51AC /* write_full_range */,
 			);
 		};
 /* End PBXProject section */
@@ -1013,6 +1065,14 @@
 				3C0C3F0721F8FA2000C498D3 /* main.m in Sources */,
 				3C0C3F0D21F8FCA000C498D3 /* BGDecodeEncode.m in Sources */,
 				3C0C3EF921F8FA1A00C498D3 /* AppDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3C483FE92207BCA300AC51AC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3C483FF02207BCA300AC51AC /* write_full_range.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1458,6 +1518,41 @@
 			};
 			name = Release;
 		};
+		3C483FF22207BCA300AC51AC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9F74CLHA49;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		3C483FF32207BCA300AC51AC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9F74CLHA49;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 		3C4A772921D892C00041ACE3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1747,6 +1842,15 @@
 			buildConfigurations = (
 				3C0C3F0821F8FA2000C498D3 /* Debug */,
 				3C0C3F0921F8FA2000C498D3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3C483FF12207BCA300AC51AC /* Build configuration list for PBXNativeTarget "write_full_range" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3C483FF22207BCA300AC51AC /* Debug */,
+				3C483FF32207BCA300AC51AC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
