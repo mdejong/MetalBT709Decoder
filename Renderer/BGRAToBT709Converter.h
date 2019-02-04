@@ -94,6 +94,9 @@ typedef enum {
 
 + (CVPixelBufferRef) createYCbCrFromCGImage:(CGImageRef)inputImageRef;
 
++ (CVPixelBufferRef) createYCbCrFromCGImage:(CGImageRef)inputImageRef
+                                   isLinear:(BOOL)isLinear;
+
 // Copy YCbCr data stored in BGRA pixels into Y CbCr planes in CoreVideo
 // pixel buffer.
 

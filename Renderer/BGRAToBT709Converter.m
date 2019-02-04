@@ -781,11 +781,17 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   return TRUE;
 }
 
++ (CVPixelBufferRef) createYCbCrFromCGImage:(CGImageRef)inputImageRef
+{
+  return [self createYCbCrFromCGImage:inputImageRef isLinear:FALSE];
+}
+
 // Given a CGImageRef, create a CVPixelBufferRef and render into it,
 // format input BGRA data into BT.709 formatted YCbCr at 4:2:0 subsampling.
 // This method returns a new CoreVideo buffer on success, otherwise failure.
 
 + (CVPixelBufferRef) createYCbCrFromCGImage:(CGImageRef)inputImageRef
+                                   isLinear:(BOOL)isLinear
 {
   int width = (int) CGImageGetWidth(inputImageRef);
   int height = (int) CGImageGetHeight(inputImageRef);
@@ -807,9 +813,15 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   // same color primaries so typically only the gamma is adjusted
   // in this type of conversion.
   
-  worked = [self setBT709Colorspace:cvPixelBuffer];
-  NSAssert(worked, @"worked");
+  if (isLinear) {
+    CGColorSpaceRef inputCS = CGImageGetColorSpace(inputImageRef);
+    worked = [self setColorspace:cvPixelBuffer colorSpace:inputCS];
+  } else {
+    worked = [self setBT709Colorspace:cvPixelBuffer];
+  }
   
+  NSAssert(worked, @"worked");
+
   vImage_Buffer sourceBuffer;
   
   worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer bufferPtr:&sourceBuffer];

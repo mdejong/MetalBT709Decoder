@@ -78,8 +78,8 @@ typedef struct {
 void usage() {
   printf("srgb_to_bt709 ?OPTIONS? INPUT.png OUTPUT.y4m\n");
   printf("OPTIONS:\n");
-  printf("-gamma apple|srgb|linear\n");
-  printf("-fps 1|15|24|2997|30|60\n");
+  printf("-gamma apple|srgb|linear (default is apple)\n");
+  printf("-fps 1|15|24|2997|30|60 (default is 30)\n");
   fflush(stdout);
 }
 
@@ -121,6 +121,7 @@ int process(NSDictionary *inDict) {
   
   NSString *inPNGStr = inDict[@"input"];
   NSString *outY4mStr = inDict[@"output"];
+  NSString *gamma = inDict[@"-gamma"];
   
   printf("loading %s\n", [inPNGStr UTF8String]);
   
@@ -241,13 +242,47 @@ int process(NSDictionary *inDict) {
     printf("%s\n", [desc UTF8String]);
   }
   
+  BOOL isLinearGamma = FALSE;
+  
+  if ([gamma isEqualToString:@"linear"]) {
+    // Treat input image data as linear, grayscale input image data
+    // must be tagged as sRGB with gamma = 1.0
+
+    CGFrameBuffer *inputFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+
+    inputFB.colorspace = CGImageGetColorSpace(inImage);
+    
+    [inputFB renderCGImage:inImage];
+    
+    CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
+    
+    CGFrameBuffer *linearFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    linearFB.colorspace = colorspace;
+    
+    CGColorSpaceRelease(colorspace);
+    
+    // Copy pixel data
+    
+    memcpy(linearFB.pixels, inputFB.pixels, inputFB.numBytes);
+    
+    CGImageRelease(inImage);
+    
+    inImage = [linearFB createCGImageRef];
+    
+    isLinearGamma = TRUE;
+  }
+  
   // FIXME: should the format of the input image be constrained? If it is sRGB then
   // the boost is used, but what about linear input and BT.709 input?
   
   // FIXME: in the case where input is linear, need to use sRGB Linear colorspace
   // so that the RGB values correspond to known color coordinates.
   
-  CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage];
+  //  *transfer_fnc = kCVImageBufferTransferFunction_UseGamma;
+  //  +            *gamma_level = CFNumberCreate(NULL, kCFNumberFloat32Type, &gamma);
+  
+  CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage isLinear:isLinearGamma];
   
   // Copy (Y Cb Cr) as (c0 c1 c2) in (c3 c2 c1 c0)
   
@@ -732,6 +767,7 @@ int main(int argc, const char * argv[]) {
           printf("unknown option \"%s\"\n", arg);
           exit(3);
         }
+        i++;
       } else {
         // Filename
         if (inPNG == NULL) {
