@@ -76,7 +76,10 @@ typedef struct {
 } ConfigurationStruct;
 
 void usage() {
-  printf("srgb_to_bt709 ?OPTIONS? IN.png OUT.y4m\n");
+  printf("srgb_to_bt709 ?OPTIONS? INPUT.png OUTPUT.y4m\n");
+  printf("OPTIONS:\n");
+  printf("-gamma apple|srgb|linear\n");
+  printf("-fps 1|15|24|2997|30|60\n");
   fflush(stdout);
 }
 
@@ -113,8 +116,11 @@ CGImageRef makeImageFromFile(NSString *filenameStr)
   return imageRef;
 }
 
-int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *configSPtr) {
+int process(NSDictionary *inDict) {
   // Read PNG
+  
+  NSString *inPNGStr = inDict[@"input"];
+  NSString *outY4mStr = inDict[@"output"];
   
   printf("loading %s\n", [inPNGStr UTF8String]);
   
@@ -129,13 +135,20 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
   assert(width > 0);
   assert(height > 0);
   
-  assert((width % 2) == 0);
-  assert((height % 2) == 0);
+  BOOL widthDiv2 = ((width % 2) == 0);
+  BOOL heightDiv2 = ((height % 2) == 0);
+  
+  if (widthDiv2 && heightDiv2) {
+  } else {
+    printf("width and height must both be even\n");
+    return 2;
+  }
   
   CGColorSpaceRef inputColorspace = CGImageGetColorSpace(inImage);
   
   BOOL inputIsRGBColorspace = FALSE;
   BOOL inputIsSRGBColorspace = FALSE;
+  BOOL inputIsSRGBLinearColorspace = FALSE;
   BOOL inputIsGrayColorspace = FALSE;
   BOOL inputIsBT709Colorspace = FALSE;
   
@@ -160,6 +173,19 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
     
     if ([colorspaceDescription isEqualToString:inputColorspaceDescription]) {
       inputIsSRGBColorspace = TRUE;
+    }
+    
+    CGColorSpaceRelease(colorspace);
+  }
+
+  {
+    CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
+    
+    NSString *colorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(colorspace);
+    NSString *inputColorspaceDescription = (__bridge_transfer NSString*) CGColorSpaceCopyName(inputColorspace);
+    
+    if ([colorspaceDescription isEqualToString:inputColorspaceDescription]) {
+      inputIsSRGBLinearColorspace = TRUE;
     }
     
     CGColorSpaceRelease(colorspace);
@@ -200,21 +226,26 @@ int process(NSString *inPNGStr, NSString *outY4mStr, ConfigurationStruct *config
 
   if (inputIsRGBColorspace) {
     printf("untagged RGB colorspace is not supported as input\n");
-    exit(2);
+    exit(4);
   } else if (inputIsSRGBColorspace) {
     printf("input is sRGB colorspace\n");
+  } else if (inputIsSRGBLinearColorspace) {
+    printf("input is sRGBLinear colorspace\n");
   } else if (inputIsGrayColorspace) {
     printf("input is grayscale colorspace\n");
   } else if (inputIsBT709Colorspace) {
     printf("input is already in BT.709 colorspace\n");
   } else {
-    printf("will convert from input colorspace to BT709 gamma encoded space:\n");
+    printf("will convert from input colorspace to Apple gamma encoded space:\n");
     NSString *desc = [(__bridge id)inputColorspace description];
     printf("%s\n", [desc UTF8String]);
   }
   
   // FIXME: should the format of the input image be constrained? If it is sRGB then
   // the boost is used, but what about linear input and BT.709 input?
+  
+  // FIXME: in the case where input is linear, need to use sRGB Linear colorspace
+  // so that the RGB values correspond to known color coordinates.
   
   CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage];
   
@@ -640,25 +671,108 @@ int main(int argc, const char * argv[]) {
     char *inPNG = NULL;
     char *outY4m = NULL;
     
-    //int fps = 30; // Default to 30 frames per second
-    //int fps = 1;
-    
-    ConfigurationStruct configS;
-    configS.fps = 1;
-    
-    if (argc == 3) {
-      // No options, input and output files indicated
-      inPNG = (char *) argv[1];
-      outY4m = (char *) argv[2];
-    } else {
+    if (argc < 3) {
       usage();
       exit(1);
     }
     
-    NSString *inPNGStr = [NSString stringWithFormat:@"%s", inPNG];
-    NSString *outY4mStr = [NSString stringWithFormat:@"%s", outY4m];
+    // Process command line arguments
+    //
+    // -option ARG
+    //
+    // Followed by INPUT.png OUTPUT.y4m
     
-    retcode = process(inPNGStr, outY4mStr, &configS);
+    NSMutableDictionary *args = [NSMutableDictionary dictionary];
+    
+    // Defaults
+    args[@"-gamma"] = @"apple";
+    args[@"-fps"] = @30;
+    
+    for (int i = 1; i < argc; ) {
+      char *arg = (char *) argv[i];
+      
+      //printf("process option \"%s\"\n", arg);
+      
+      if (arg[0] == '-') {
+        // Start of an option
+        i++;
+        if (strcmp(arg, "-gamma") == 0) {
+          arg = (char *) argv[i];
+          if (strcmp(arg, "apple") == 0) {
+            args[@"-gamma"] = @"apple";
+          } else if (strcmp(arg, "srgb") == 0) {
+            args[@"-gamma"] = @"srgb";
+          } else if (strcmp(arg, "linear") == 0) {
+            args[@"-gamma"] = @"linear";
+          } else {
+            printf("option -gamma unknown value \"%s\"", arg);
+            exit(3);
+          }
+        } else if (strcmp(arg, "-fps") == 0) {
+          arg = (char *) argv[i];
+          
+          if (strcmp(arg, "1") == 0) {
+            args[@"-fps"] = @1;
+          } else if (strcmp(arg, "15") == 0) {
+            args[@"-fps"] = @15;
+          } else if (strcmp(arg, "24") == 0) {
+            args[@"-fps"] = @24;
+          } else if (strcmp(arg, "2997") == 0) {
+            args[@"-fps"] = @2997;
+          } else if (strcmp(arg, "30") == 0) {
+            args[@"-fps"] = @30;
+          } else if (strcmp(arg, "60") == 0) {
+            args[@"-fps"] = @60;
+          } else {
+            printf("option -fps unknown value \"%s\"", arg);
+            exit(3);
+          }
+        } else {
+          // Unmatched option
+          printf("unknown option \"%s\"\n", arg);
+          exit(3);
+        }
+      } else {
+        // Filename
+        if (inPNG == NULL) {
+          inPNG = arg;
+        } else {
+          // Output filename
+          if (outY4m != NULL) {
+            printf("output filename \"%s\" must appear just once\n", arg);
+            exit(3);
+          }
+          outY4m = arg;
+        }
+        i++;
+      }
+    }
+    
+    args[@"input"] = [NSString stringWithFormat:@"%s", inPNG];
+    args[@"output"] = [NSString stringWithFormat:@"%s", outY4m];
+    
+    // Input must be .png or .jpg
+    
+    BOOL isPNG = [args[@"input"] hasSuffix:@".png"];
+    BOOL isJPG = [args[@"input"] hasSuffix:@".jpg"] || [args[@"input"] hasSuffix:@".jpeg"];
+    
+    if (isPNG || isJPG) {
+      // input is good
+    } else {
+      printf("input filename \"%s\" must be .png or .jpg or .jpeg\n", inPNG);
+      exit(3);
+    }
+    
+    BOOL isY4m = [args[@"output"] hasSuffix:@".y4m"];
+    
+    if (isY4m) {
+      // output is good
+    } else {
+      printf("output filename \"%s\" must have extension .y4m\n", outY4m);
+      exit(3);
+    }
+    
+    retcode = process(args);
   }
   
   exit(retcode);
