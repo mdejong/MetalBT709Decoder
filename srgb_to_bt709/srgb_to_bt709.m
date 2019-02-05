@@ -72,10 +72,12 @@ BOOL writeTableToCSV(NSString *filename, NSArray* labelsArr, NSArray* valuesArr)
 }
 
 void usage() {
-  printf("srgb_to_bt709 ?OPTIONS? INPUT.png OUTPUT.y4m\n");
+  printf("srgb_to_bt709 ?OPTIONS? OUTPUT.y4m\n");
   printf("OPTIONS:\n");
+  printf("-frame F.png (input is a single frame)\n");
+  printf("-frames F0001.png (first frame of N input frames)\n");
   printf("-gamma apple|srgb|linear (default is apple)\n");
-  printf("-fps 1|15|24|2997|30|60 (default is 30)\n");
+  printf("-fps 1|15|24|2997|30|60 (default to 30 with -frames)\n");
   fflush(stdout);
 }
 
@@ -512,6 +514,9 @@ int process(NSDictionary *inDict) {
   NSString *inPNGStr = inDict[@"input"];
   NSString *outY4mStr = inDict[@"output"];
   NSString *gamma = inDict[@"-gamma"];
+
+  NSNumber *inputIsFramesPatternNum = inDict[@"inputIsFramesPattern"];
+  BOOL inputIsFramesPattern = [inputIsFramesPatternNum boolValue];
   
   NSNumber *fpsNum = inDict[@"-fps"];
   Y4MHeaderFPS fps = [fpsNum intValue];
@@ -673,15 +678,6 @@ int process(NSDictionary *inDict) {
     isSRGBGamma = TRUE;
   }
   
-  // FIXME: should the format of the input image be constrained? If it is sRGB then
-  // the boost is used, but what about linear input and BT.709 input?
-  
-  // FIXME: in the case where input is linear, need to use sRGB Linear colorspace
-  // so that the RGB values correspond to known color coordinates.
-  
-  //  *transfer_fnc = kCVImageBufferTransferFunction_UseGamma;
-  //  +            *gamma_level = CFNumberCreate(NULL, kCFNumberFloat32Type, &gamma);
-  
   CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage
                                                                        isLinear:isLinearGamma
                                                                     asSRGBGamma:isSRGBGamma];
@@ -712,7 +708,6 @@ int process(NSDictionary *inDict) {
   header.width = width;
   header.height = height;
   
-  //header.fps = Y4MHeaderFPS_1;
   header.fps = fps;
   
   int header_result = y4m_write_header(outFile, &header);
@@ -746,6 +741,7 @@ int main(int argc, const char * argv[]) {
   
   @autoreleasepool {
     char *inPNG = NULL;
+    BOOL inPNGIsFramesPattern = FALSE;
     char *outY4m = NULL;
     
     if (argc < 3) {
@@ -753,11 +749,11 @@ int main(int argc, const char * argv[]) {
       exit(1);
     }
     
-    // Process command line arguments
+    // Process command line argument(s)
     //
     // -option ARG
     //
-    // Followed by INPUT.png OUTPUT.y4m
+    // Followed by OUTPUT.y4m
     
     NSMutableDictionary *args = [NSMutableDictionary dictionary];
     
@@ -765,7 +761,6 @@ int main(int argc, const char * argv[]) {
     
     args[@"-gamma"] = @"apple";
     
-    //args[@"-fps"] = @(Y4MHeaderFPS_1);
     args[@"-fps"] = @(Y4MHeaderFPS_30);
     
     for (int i = 1; i < argc; ) {
@@ -774,10 +769,11 @@ int main(int argc, const char * argv[]) {
       //printf("process option \"%s\"\n", arg);
       
       if (arg[0] == '-') {
-        // Start of an option
-        i++;
         if (strcmp(arg, "-gamma") == 0) {
+          i++;
           arg = (char *) argv[i];
+          i++;
+          
           if (strcmp(arg, "apple") == 0) {
             args[@"-gamma"] = @"apple";
           } else if (strcmp(arg, "srgb") == 0) {
@@ -789,7 +785,9 @@ int main(int argc, const char * argv[]) {
             exit(3);
           }
         } else if (strcmp(arg, "-fps") == 0) {
+          i++;
           arg = (char *) argv[i];
+          i++;
           
           if (strcmp(arg, "1") == 0) {
             args[@"-fps"] = @(Y4MHeaderFPS_1);
@@ -807,26 +805,61 @@ int main(int argc, const char * argv[]) {
             printf("option -fps unknown value \"%s\"", arg);
             exit(3);
           }
+        } else if (strcmp(arg, "-frame") == 0) {
+          // Indicates a single frame of image data
+          i++;
+          arg = (char *) argv[i];
+          i++;
+          
+          if (inPNG != NULL) {
+            printf("-frame filename \"%s\" must appear just once\n", arg);
+            exit(3);
+          }
+          
+          inPNG = arg;
+          
+          // Default to 1 frame displayed for 1 second
+          args[@"-fps"] = @(Y4MHeaderFPS_1);
+        } else if (strcmp(arg, "-frames") == 0) {
+          // -frames F0001.png indicates the start
+          // of a frame input pattern that can indicate
+          // multiple frames to be encoded as video.
+          
+          i++;
+          arg = (char *) argv[i];
+          i++;
+          
+          if (inPNG != NULL) {
+            printf("-frames filename \"%s\" must appear just once\n", arg);
+            exit(3);
+          }
+          
+          inPNG = arg;
+          inPNGIsFramesPattern = TRUE;
         } else {
           // Unmatched option
           printf("unknown option \"%s\"\n", arg);
           exit(3);
         }
-        i++;
       } else {
-        // Filename
-        if (inPNG == NULL) {
-          inPNG = arg;
-        } else {
-          // Output filename
-          if (outY4m != NULL) {
-            printf("output filename \"%s\" must appear just once\n", arg);
-            exit(3);
-          }
-          outY4m = arg;
+        // Output filename is final argument
+        if (outY4m != NULL) {
+          printf("output filename \"%s\" must appear just once\n", arg);
+          exit(3);
         }
+        outY4m = arg;
         i++;
       }
+    }
+
+    if (inPNG == NULL) {
+      printf("int filename not found, either -frame or -frames must be used to indicate input image(s)\n");
+      exit(3);
+    }
+    
+    if (outY4m == NULL) {
+      printf("output filename not found, must be last argument\n");
+      exit(3);
     }
     
     args[@"input"] = [NSString stringWithFormat:@"%s", inPNG];
@@ -843,6 +876,8 @@ int main(int argc, const char * argv[]) {
       printf("input filename \"%s\" must be .png or .jpg or .jpeg\n", inPNG);
       exit(3);
     }
+    
+    args[@"inputIsFramesPattern"] = @(inPNGIsFramesPattern);
     
     BOOL isY4m = [args[@"output"] hasSuffix:@".y4m"];
     
