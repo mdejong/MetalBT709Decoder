@@ -280,10 +280,11 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeQuicktimeTestPattern];
   //cvPixelBufer = [self decodeSMPTEGray75Perent];
   //cvPixelBufer = [self decodeH264YCbCr_bars256];
-  cvPixelBufer = [self decodeH264YCbCr_bars_iPadFullScreen];
+  //cvPixelBufer = [self decodeH264YCbCr_bars_iPadFullScreen];
   //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
   //cvPixelBufer = [self decodeCloudsiPadImage];
   //cvPixelBufer = [self decodeTest709Frame];
+  cvPixelBufer = [self decodeDropOfWater];
 
   if (debugDumpYCbCr) {
     [BGRAToBT709Converter dumpYCBCr:cvPixelBufer];
@@ -401,6 +402,26 @@ void validate_storage_mode(id<MTLTexture> texture)
 - (CVPixelBufferRef) decodeH264YCbCr_bars_iPadFullScreen
 {
   NSString *resFilename = @"osxcolor_test_image_iPad_2048_1536.m4v";
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(2048, 1536)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  return cvPixelBuffer;
+}
+
+- (CVPixelBufferRef) decodeDropOfWater
+{
+  NSString *resFilename = @"drop-of-water-iPad-2048-1536-apple-crf20.m4v";
+  //NSString *resFilename = @"drop-of-water-iPad-2048-1536-sRGB-crf20.m4v";
   
   NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
                                                                     frameDuration:1.0/30

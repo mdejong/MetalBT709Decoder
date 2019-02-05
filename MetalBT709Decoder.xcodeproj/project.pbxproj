@@ -42,6 +42,10 @@
 		3C0C3F0E21F8FCA900C498D3 /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E81321D73BB4005424E6 /* CGFrameBuffer.m */; };
 		3C0C3F1021FA642D00C498D3 /* AppleEncodeDecodeBT709Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C3F0F21FA642C00C498D3 /* AppleEncodeDecodeBT709Tests.m */; };
 		3C483FF02207BCA300AC51AC /* write_full_range.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C483FEF2207BCA300AC51AC /* write_full_range.m */; };
+		3C483FF62209196E00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FF42209196A00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v */; };
+		3C483FF72209196F00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FF42209196A00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v */; };
+		3C483FF82209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FF52209196C00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v */; };
+		3C483FF92209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FF52209196C00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v */; };
 		3C4A770321D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
 		3C4A770421D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
 		3C4A770521D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
@@ -234,6 +238,8 @@
 		3C483FE82207A5A100AC51AC /* y4m_writer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = y4m_writer.h; sourceTree = "<group>"; };
 		3C483FED2207BCA300AC51AC /* write_full_range */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = write_full_range; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C483FEF2207BCA300AC51AC /* write_full_range.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = write_full_range.m; sourceTree = "<group>"; };
+		3C483FF42209196A00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = "drop-of-water-iPad-2048-1536-apple-crf20.m4v"; sourceTree = "<group>"; };
+		3C483FF52209196C00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = "drop-of-water-iPad-2048-1536-sRGB-crf20.m4v"; sourceTree = "<group>"; };
 		3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalRenderContext.m; sourceTree = "<group>"; };
 		3C4A770221D8498E0041ACE3 /* MetalRenderContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalRenderContext.h; sourceTree = "<group>"; };
 		3C4A770A21D892BA0041ACE3 /* EmptyiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EmptyiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -430,6 +436,8 @@
 				3C4A77B321DD87D60041ACE3 /* QuickTime_Test_Pattern_HD.mov */,
 				3C4A77B221DD87D50041ACE3 /* QuickTime_Test_Pattern_SD.mov */,
 				3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */,
+				3C483FF42209196A00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v */,
+				3C483FF52209196C00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v */,
 				3AF7E9BE1EB64A46003BB06D /* AAPLRenderer.h */,
 				3AF7E9BF1EB64A46003BB06D /* AAPLRenderer.m */,
 				3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */,
@@ -905,10 +913,12 @@
 				3AFD65641F71A7240008A125 /* Main.storyboard in Resources */,
 				3C8219DA21E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
 				3C4A77B521DD87D90041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
+				3C483FF72209196F00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v in Resources */,
 				3A1857F01EB7AF9E007D4F50 /* Image.tga in Resources */,
 				3C4A77A821DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3AFD65631F71A7240008A125 /* LaunchScreen.storyboard in Resources */,
 				3C821A3E21ED84DE006D516F /* Rec709Sample.mp4 in Resources */,
+				3C483FF92209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */,
 				3CB6E80621D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -936,8 +946,10 @@
 				3C8219D921E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
 				3A1857F21EB7AF9E007D4F50 /* Image.tga in Resources */,
 				3C4A77B721DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
+				3C483FF82209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */,
 				3C4A77A721DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3AFD655F1F71A71B0008A125 /* Main.storyboard in Resources */,
+				3C483FF62209196E00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v in Resources */,
 				3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 				3C8219D521E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
 				3C4A77B421DD87D80041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
