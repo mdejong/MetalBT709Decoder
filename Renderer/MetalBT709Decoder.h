@@ -12,6 +12,12 @@
 
 @class MetalRenderContext;
 
+typedef enum {
+  MetalBT709GammaApple = 0, // default
+  MetalBT709GammaSRGB,
+  MetalBT709GammaLinear
+} MetalBT709Gamma;
+
 @interface MetalBT709Decoder : NSObject
 
 // Setup MetalRenderContext instance before the first decode,
@@ -22,10 +28,20 @@
 
 @property (nonatomic, assign) MTLPixelFormat colorPixelFormat;
 
+// Defaults to apple gamma. Caller must set the specific gamma function
+// to use white decoded before Metal is initialized. The decoding
+// logic must indicate the gamma function to be used at init time
+// even though the actualy type of content to be decoded may not
+// be known until the first frame of video is read.
+
+@property (nonatomic, assign) MetalBT709Gamma gamma;
+
 // If set to TRUE, a compute kernel will be used to render,
 // otherwise use a fragment shader.
 
 @property (nonatomic, assign) BOOL useComputeRenderer;
+
+// Set to TRUE once a render context has been setup
 
 // Setup Metal refs for this instance, this is implicitly
 // invoked by decodeBT709 but some test code may want to

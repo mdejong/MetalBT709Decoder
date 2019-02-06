@@ -112,6 +112,15 @@ void validate_storage_mode(id<MTLTexture> texture)
     
     _yCbCrPixelBuffer = [self decodeH264YCbCr];
     //CVPixelBufferRetain(_yCbCrPixelBuffer);
+
+    MetalBT709Gamma decodeGamma = MetalBT709GammaApple;
+    
+    if (0) {
+      // Explicitly set sRGB decode matrix flag
+      decodeGamma = MetalBT709GammaSRGB;
+    } else if (1) {
+      decodeGamma = MetalBT709GammaLinear;
+    }
     
     int width = (int) CVPixelBufferGetWidth(_yCbCrPixelBuffer);
     int height = (int) CVPixelBufferGetHeight(_yCbCrPixelBuffer);
@@ -233,6 +242,8 @@ void validate_storage_mode(id<MTLTexture> texture)
     
     //self.metalBT709Decoder.useComputeRenderer = TRUE;
     
+    self.metalBT709Decoder.gamma = decodeGamma;
+    
     BOOL worked = [self.metalBT709Decoder setupMetal];
     worked = worked;
     NSAssert(worked, @"worked");
@@ -284,7 +295,9 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeH264YCbCr_barsFullscreen];
   //cvPixelBufer = [self decodeCloudsiPadImage];
   //cvPixelBufer = [self decodeTest709Frame];
-  cvPixelBufer = [self decodeDropOfWater];
+  //cvPixelBufer = [self decodeDropOfWater];
+  //cvPixelBufer = [self decodeBigBuckBunny];
+  cvPixelBufer = [self decodeQuicktimeTestPatternLinearGrayscale];
 
   if (debugDumpYCbCr) {
     [BGRAToBT709Converter dumpYCBCr:cvPixelBufer];
@@ -342,6 +355,27 @@ void validate_storage_mode(id<MTLTexture> texture)
 - (CVPixelBufferRef) decodeQuicktimeTestPattern
 {
   NSString *resFilename = @"QuickTime_Test_Pattern_HD.mov";
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(1920, 1080)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  return cvPixelBuffer;
+}
+
+// Grayscale linear gamma version of Quicktime test pattern
+
+- (CVPixelBufferRef) decodeQuicktimeTestPatternLinearGrayscale
+{
+  NSString *resFilename = @"QuickTime_Test_Pattern_HD_grayscale.m4v";
   
   NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
                                                                     frameDuration:1.0/30
@@ -420,12 +454,32 @@ void validate_storage_mode(id<MTLTexture> texture)
 
 - (CVPixelBufferRef) decodeDropOfWater
 {
-  NSString *resFilename = @"drop-of-water-iPad-2048-1536-apple-crf20.m4v";
-  //NSString *resFilename = @"drop-of-water-iPad-2048-1536-sRGB-crf20.m4v";
+  //NSString *resFilename = @"drop-of-water-iPad-2048-1536-apple-crf20.m4v";
+  NSString *resFilename = @"drop-of-water-iPad-2048-1536-sRGB-crf20.m4v";
   
   NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
                                                                     frameDuration:1.0/30
                                                                        renderSize:CGSizeMake(2048, 1536)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  return cvPixelBuffer;
+}
+
+- (CVPixelBufferRef) decodeBigBuckBunny
+{
+  NSString *resFilename = @"big_buck_bunny_HD_apple.m4v";
+  //NSString *resFilename = @"big_buck_bunny_HD_srgb.m4v";
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(1920, 1080)
                                                                        aveBitrate:0];
   NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
   

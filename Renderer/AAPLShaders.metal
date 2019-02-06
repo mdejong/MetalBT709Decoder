@@ -141,12 +141,44 @@ float sRGB_nonLinearNormToLinear(float normV)
   return normV;
 }
 
-// Extract common BT.709 decode logic from the 2 implementations
+// Unused since this does not decode video colors to linear light
+
+//static inline
+//float4 BT709_gamma_decode(const float4 rgba) {
+//  rgba.r = BT709_nonLinearNormToLinear(rgba.r);
+//  rgba.g = BT709_nonLinearNormToLinear(rgba.g);
+//  rgba.b = BT709_nonLinearNormToLinear(rgba.b);
+//  return rgba;
+//}
+
+static inline
+float4 sRGB_gamma_decode(const float4 rgba) {
+  rgba.r = sRGB_nonLinearNormToLinear(rgba.r);
+  rgba.g = sRGB_nonLinearNormToLinear(rgba.g);
+  rgba.b = sRGB_nonLinearNormToLinear(rgba.b);
+  return rgba;
+}
+
+// Note that the Apple gamma 1.961 decoding logic
+// is used when a BT709 flag is detected for an
+// input pixel buffer. The original BT709 gamma
+// functions does not actually convert video
+// graded color values to linear identity
+
+static inline
+float4 Apple196_gamma_decode(const float4 rgba) {
+  rgba.r = Apple196_nonLinearNormToLinear(rgba.r);
+  rgba.g = Apple196_nonLinearNormToLinear(rgba.g);
+  rgba.b = Apple196_nonLinearNormToLinear(rgba.b);
+  return rgba;
+}
+
+// Extract common BT.709 decode logic from the 2 implementations,
+// this method accepts (Y Cb Cr) and returns gamma encoded
+// values if the original data was gamma encoded.
 
 static inline
 float4 BT709_decode(const float Y, const float Cb, const float Cr) {
-  const bool applyGammaMap = true;
-  
   // Y already normalized to range [0 255]
   //
   // Note that the matrix multiply will adjust
@@ -205,34 +237,13 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
   
   rgb = saturate(rgb);
   
-  // Note that application of this call to pow() and the if branch
-  // has very little performance impact on iOS with an A9 chip.
-  // The whole process seems to be IO bound and the resize render
-  // takes just as much time as the original calculation, so optimization
-  // that would only do 1 step in the exact render size would be the
-  // most useful optimization.
+  // Note that gamma decoding seems to have very little impact
+  // on performance since the entire shader is IO bound.
   
-  if (applyGammaMap) {
-    // Convert sRGB to linear
-    
-//    rgb.r = sRGB_nonLinearNormToLinear(rgb.r);
-//    rgb.g = sRGB_nonLinearNormToLinear(rgb.g);
-//    rgb.b = sRGB_nonLinearNormToLinear(rgb.b);
-    
-    // Convert BT.709 to linear
-    
-//    rgb.r = BT709_nonLinearNormToLinear(rgb.r);
-//    rgb.g = BT709_nonLinearNormToLinear(rgb.g);
-//    rgb.b = BT709_nonLinearNormToLinear(rgb.b);
-
-    rgb.r = Apple196_nonLinearNormToLinear(rgb.r);
-    rgb.g = Apple196_nonLinearNormToLinear(rgb.g);
-    rgb.b = Apple196_nonLinearNormToLinear(rgb.b);
-  }
-  
-  float4 pixel = float4(rgb.r, rgb.g, rgb.b, 1.0);
-  return pixel;
+  return float4(rgb.r, rgb.g, rgb.b, 1.0f);
 }
+
+// Decode with Apple 196 gamma
 
 fragment float4
 BT709ToLinearSRGBFragment(RasterizerData in [[stage_in]],
@@ -248,11 +259,52 @@ BT709ToLinearSRGBFragment(RasterizerData in [[stage_in]],
   float Cb = float(uvSamples[0]);
   float Cr = float(uvSamples[1]);
   
-  return BT709_decode(Y, Cb, Cr);
+  float4 pixel = BT709_decode(Y, Cb, Cr);
+  return Apple196_gamma_decode(pixel);
 }
 
-// Colorspace conversion compute kernel. Note that inTexture and outTexture
-// must be the same dimensions.
+// Decode with sRGB gamma
+
+fragment float4
+sRGBToLinearSRGBFragment(RasterizerData in [[stage_in]],
+                          texture2d<half, access::sample>  inYTexture  [[texture(AAPLTextureIndexYPlane)]],
+                          texture2d<half, access::sample>  inUVTexture [[texture(AAPLTextureIndexCbCrPlane)]]
+                          )
+{
+  constexpr sampler textureSampler (mag_filter::nearest, min_filter::nearest);
+  
+  float Y = float(inYTexture.sample(textureSampler, in.textureCoordinate).r);
+  half2 uvSamples = inUVTexture.sample(textureSampler, in.textureCoordinate).rg;
+  
+  float Cb = float(uvSamples[0]);
+  float Cr = float(uvSamples[1]);
+  
+  float4 pixel = BT709_decode(Y, Cb, Cr);
+  return sRGB_gamma_decode(pixel);
+}
+
+// Decode without a gamma adjustment, original input is linear
+// and output will also be linear.
+
+fragment float4
+LinearToLinearSRGBFragment(RasterizerData in [[stage_in]],
+                         texture2d<half, access::sample>  inYTexture  [[texture(AAPLTextureIndexYPlane)]],
+                         texture2d<half, access::sample>  inUVTexture [[texture(AAPLTextureIndexCbCrPlane)]]
+                         )
+{
+  constexpr sampler textureSampler (mag_filter::nearest, min_filter::nearest);
+  
+  float Y = float(inYTexture.sample(textureSampler, in.textureCoordinate).r);
+  half2 uvSamples = inUVTexture.sample(textureSampler, in.textureCoordinate).rg;
+  
+  float Cb = float(uvSamples[0]);
+  float Cr = float(uvSamples[1]);
+  
+  float4 pixel = BT709_decode(Y, Cb, Cr);
+  return pixel;
+}
+
+// Decode with compute kernel and Apple 196 gamma function
 
 kernel void
 BT709ToLinearSRGBKernel(texture2d<half, access::read>  inYTexture  [[texture(0)]],
@@ -273,6 +325,56 @@ BT709ToLinearSRGBKernel(texture2d<half, access::read>  inYTexture  [[texture(0)]
   float Cr = float(uvSamples[1]);
   
   float4 pixel = BT709_decode(Y, Cb, Cr);
+  pixel = Apple196_gamma_decode(pixel);
   outTexture.write(pixel, gid);
 }
 
+// Decode with compute kernel and sRGB gamma function
+
+kernel void
+sRGBToLinearSRGBKernel(texture2d<half, access::read>  inYTexture  [[texture(0)]],
+                        texture2d<half, access::read>  inUVTexture [[texture(1)]],
+                        texture2d<float, access::write> outTexture  [[texture(2)]],
+                        ushort2                         gid         [[thread_position_in_grid]])
+{
+  // Check if the pixel is within the bounds of the output texture
+  if((gid.x >= outTexture.get_width()) || (gid.y >= outTexture.get_height()))
+  {
+    // Return early if the pixel is out of bounds
+    return;
+  }
+  
+  float Y = float(inYTexture.read(gid).r);
+  half2 uvSamples = inUVTexture.read(gid/2).rg;
+  float Cb = float(uvSamples[0]);
+  float Cr = float(uvSamples[1]);
+  
+  float4 pixel = BT709_decode(Y, Cb, Cr);
+  pixel = sRGB_gamma_decode(pixel);
+  outTexture.write(pixel, gid);
+}
+
+// Decode without a gamma adjustment, original input is linear
+// and output will also be linear.
+
+kernel void
+LinearToLinearSRGBKernel(texture2d<half, access::read>  inYTexture  [[texture(0)]],
+                       texture2d<half, access::read>  inUVTexture [[texture(1)]],
+                       texture2d<float, access::write> outTexture  [[texture(2)]],
+                       ushort2                         gid         [[thread_position_in_grid]])
+{
+  // Check if the pixel is within the bounds of the output texture
+  if((gid.x >= outTexture.get_width()) || (gid.y >= outTexture.get_height()))
+  {
+    // Return early if the pixel is out of bounds
+    return;
+  }
+  
+  float Y = float(inYTexture.read(gid).r);
+  half2 uvSamples = inUVTexture.read(gid/2).rg;
+  float Cb = float(uvSamples[0]);
+  float Cr = float(uvSamples[1]);
+  
+  float4 pixel = BT709_decode(Y, Cb, Cr);
+  outTexture.write(pixel, gid);
+}

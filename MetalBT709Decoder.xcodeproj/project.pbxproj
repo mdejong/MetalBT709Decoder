@@ -32,6 +32,9 @@
 		3AFD65721F71A8A10008A125 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD65691F71A8900008A125 /* main.m */; };
 		3AFD65731F71A8A10008A125 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD65691F71A8900008A125 /* main.m */; };
 		3C013D2B21E6F7C200C0807C /* MetalSRGBDecoderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C013D2A21E6F7C200C0807C /* MetalSRGBDecoderTests.m */; };
+		3C02732D220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C02732C220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v */; };
+		3C02732E220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C02732C220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v */; };
+		3C02732F220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C02732C220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v */; };
 		3C0C3EF921F8FA1A00C498D3 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C3EF821F8FA1A00C498D3 /* AppDelegate.m */; };
 		3C0C3EFC21F8FA1A00C498D3 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C3EFB21F8FA1A00C498D3 /* ViewController.m */; };
 		3C0C3EFF21F8FA1A00C498D3 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3C0C3EFD21F8FA1A00C498D3 /* Main.storyboard */; };
@@ -46,6 +49,10 @@
 		3C483FF72209196F00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FF42209196A00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v */; };
 		3C483FF82209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FF52209196C00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v */; };
 		3C483FF92209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FF52209196C00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v */; };
+		3C483FFC22098AE500AC51AC /* big_buck_bunny_HD_apple.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FFA22098ADC00AC51AC /* big_buck_bunny_HD_apple.m4v */; };
+		3C483FFD22098AE600AC51AC /* big_buck_bunny_HD_apple.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FFA22098ADC00AC51AC /* big_buck_bunny_HD_apple.m4v */; };
+		3C483FFE22098AE600AC51AC /* big_buck_bunny_HD_srgb.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FFB22098ADE00AC51AC /* big_buck_bunny_HD_srgb.m4v */; };
+		3C483FFF22098AE600AC51AC /* big_buck_bunny_HD_srgb.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C483FFB22098ADE00AC51AC /* big_buck_bunny_HD_srgb.m4v */; };
 		3C4A770321D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
 		3C4A770421D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
 		3C4A770521D8498E0041ACE3 /* MetalRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */; };
@@ -224,6 +231,7 @@
 		3AFD65741F71A8A70008A125 /* AAPLAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AAPLAppDelegate.h; sourceTree = "<group>"; };
 		3AFD65751F71A8AB0008A125 /* AAPLViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AAPLViewController.h; sourceTree = "<group>"; };
 		3C013D2A21E6F7C200C0807C /* MetalSRGBDecoderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalSRGBDecoderTests.m; sourceTree = "<group>"; };
+		3C02732C220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = QuickTime_Test_Pattern_HD_grayscale.m4v; sourceTree = "<group>"; };
 		3C0C3EF521F8FA1900C498D3 /* CoreVideoDecodeiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CoreVideoDecodeiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C0C3EF721F8FA1A00C498D3 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		3C0C3EF821F8FA1A00C498D3 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -240,6 +248,8 @@
 		3C483FEF2207BCA300AC51AC /* write_full_range.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = write_full_range.m; sourceTree = "<group>"; };
 		3C483FF42209196A00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = "drop-of-water-iPad-2048-1536-apple-crf20.m4v"; sourceTree = "<group>"; };
 		3C483FF52209196C00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = "drop-of-water-iPad-2048-1536-sRGB-crf20.m4v"; sourceTree = "<group>"; };
+		3C483FFA22098ADC00AC51AC /* big_buck_bunny_HD_apple.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = big_buck_bunny_HD_apple.m4v; sourceTree = "<group>"; };
+		3C483FFB22098ADE00AC51AC /* big_buck_bunny_HD_srgb.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = big_buck_bunny_HD_srgb.m4v; sourceTree = "<group>"; };
 		3C4A770121D8498E0041ACE3 /* MetalRenderContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalRenderContext.m; sourceTree = "<group>"; };
 		3C4A770221D8498E0041ACE3 /* MetalRenderContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalRenderContext.h; sourceTree = "<group>"; };
 		3C4A770A21D892BA0041ACE3 /* EmptyiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EmptyiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -435,9 +445,12 @@
 				3C4A77A621DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v */,
 				3C4A77B321DD87D60041ACE3 /* QuickTime_Test_Pattern_HD.mov */,
 				3C4A77B221DD87D50041ACE3 /* QuickTime_Test_Pattern_SD.mov */,
+				3C02732C220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v */,
 				3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */,
 				3C483FF42209196A00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v */,
 				3C483FF52209196C00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v */,
+				3C483FFA22098ADC00AC51AC /* big_buck_bunny_HD_apple.m4v */,
+				3C483FFB22098ADE00AC51AC /* big_buck_bunny_HD_srgb.m4v */,
 				3AF7E9BE1EB64A46003BB06D /* AAPLRenderer.h */,
 				3AF7E9BF1EB64A46003BB06D /* AAPLRenderer.m */,
 				3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */,
@@ -910,12 +923,15 @@
 			files = (
 				3C8219D621E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
 				3C4A77B821DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
+				3C483FFD22098AE600AC51AC /* big_buck_bunny_HD_apple.m4v in Resources */,
 				3AFD65641F71A7240008A125 /* Main.storyboard in Resources */,
 				3C8219DA21E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
 				3C4A77B521DD87D90041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
+				3C483FFF22098AE600AC51AC /* big_buck_bunny_HD_srgb.m4v in Resources */,
 				3C483FF72209196F00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v in Resources */,
 				3A1857F01EB7AF9E007D4F50 /* Image.tga in Resources */,
 				3C4A77A821DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
+				3C02732E220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */,
 				3AFD65631F71A7240008A125 /* LaunchScreen.storyboard in Resources */,
 				3C821A3E21ED84DE006D516F /* Rec709Sample.mp4 in Resources */,
 				3C483FF92209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */,
@@ -932,6 +948,7 @@
 				3C4A77B921DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
 				3C4A77A921DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3A06FBA71F730C4000073097 /* Main.storyboard in Resources */,
+				3C02732F220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */,
 				3CB6E80721D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 				3C8219D721E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
 				3C4A77B621DD87DA0041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
@@ -944,9 +961,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				3C8219D921E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
+				3C02732D220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */,
+				3C483FFC22098AE500AC51AC /* big_buck_bunny_HD_apple.m4v in Resources */,
 				3A1857F21EB7AF9E007D4F50 /* Image.tga in Resources */,
 				3C4A77B721DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
 				3C483FF82209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */,
+				3C483FFE22098AE600AC51AC /* big_buck_bunny_HD_srgb.m4v in Resources */,
 				3C4A77A721DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3AFD655F1F71A71B0008A125 /* Main.storyboard in Resources */,
 				3C483FF62209196E00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v in Resources */,
@@ -1373,7 +1393,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Application/iOS/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.helpurock.MetalBT709Decoder;
 				PRODUCT_NAME = MetalBT709Decoder;
@@ -1392,7 +1412,7 @@
 				DEVELOPMENT_TEAM = 9F74CLHA49;
 				GCC_PREPROCESSOR_DEFINITIONS = TARGET_IOS;
 				INFOPLIST_FILE = Application/iOS/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.helpurock.MetalBT709Decoder;
 				PRODUCT_NAME = MetalBT709Decoder;

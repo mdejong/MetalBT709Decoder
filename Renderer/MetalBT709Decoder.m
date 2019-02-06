@@ -83,7 +83,7 @@
     return FALSE;
   }
   
-  // Setup testure cache so that pixel buffers can be represented by a Metal texture
+  // Setup texture cache so that pixel buffers can be represented by a Metal texture
   
   NSDictionary *cacheAttributes = @{
                                     (NSString*)kCVMetalTextureCacheMaximumTextureAgeKey: @(0),
@@ -106,9 +106,22 @@
   
   MetalRenderContext *metalRenderContext = self.metalRenderContext;
   id<MTLLibrary> defaultLibrary = metalRenderContext.defaultLibrary;
+
+  NSString *functionName = nil;
+  MetalBT709Gamma gamma = self.gamma;
+
+  if (gamma == MetalBT709GammaApple) {
+    functionName = @"BT709ToLinearSRGBKernel";
+  } else if (gamma == MetalBT709GammaSRGB) {
+    functionName = @"sRGBToLinearSRGBKernel";
+  } else if (gamma == MetalBT709GammaLinear) {
+    functionName = @"LinearToLinearSRGBKernel";
+  } else {
+    assert(0);
+  }
   
   // Load the kernel function from the library
-  id<MTLFunction> kernelFunction = [defaultLibrary newFunctionWithName:@"BT709ToLinearSRGBKernel"];
+  id<MTLFunction> kernelFunction = [defaultLibrary newFunctionWithName:functionName];
   
   // Create a compute pipeline state
   self.computePipelineState = [metalRenderContext.device newComputePipelineStateWithFunction:kernelFunction
@@ -141,12 +154,25 @@
   // Load vertex function from metal library that renders full size into viewport with flipped Y axis
   id<MTLFunction> vertexFunction = [defaultLibrary newFunctionWithName:@"identityVertexShader"];
   
+  NSString *functionName = nil;
+  MetalBT709Gamma gamma = self.gamma;
+  
+  if (gamma == MetalBT709GammaApple) {
+    functionName = @"BT709ToLinearSRGBFragment";
+  } else if (gamma == MetalBT709GammaSRGB) {
+    functionName = @"sRGBToLinearSRGBFragment";
+  } else if (gamma == MetalBT709GammaLinear) {
+    functionName = @"LinearToLinearSRGBFragment";
+  } else {
+    assert(0);
+  }
+  
   // Load the fragment function from the library
-  id<MTLFunction> fragmentFunction = [defaultLibrary newFunctionWithName:@"BT709ToLinearSRGBFragment"];
+  id<MTLFunction> fragmentFunction = [defaultLibrary newFunctionWithName:functionName];
   
   // Set up a descriptor for creating a pipeline state object
   MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
-  pipelineStateDescriptor.label = @"BT709 Render Pipeline";
+  pipelineStateDescriptor.label = [NSString stringWithFormat:@"Render Pipeline %@", functionName];
   pipelineStateDescriptor.vertexFunction = vertexFunction;
   pipelineStateDescriptor.fragmentFunction = fragmentFunction;
   pipelineStateDescriptor.colorAttachments[0].pixelFormat = self.colorPixelFormat;
@@ -258,6 +284,41 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
   if (!supported) {
     NSLog(@"unsupported YCbCrMatrix \"%@\", only BT.709 matrix is supported", matrixKeyAttachment);
     return FALSE;
+  }
+  
+  CFTypeRef transferFunctionKeyAttachment = CVBufferGetAttachment(cvPixelBuffer, kCVImageBufferTransferFunctionKey, NULL);
+  
+  // Require iOS 12 or newer to access kCVImageBufferTransferFunction_sRGB and kCVImageBufferTransferFunction_Linear
+  //const NSString *kCVImageBufferTransferFunction_sRGB_str = @"IEC_sRGB";
+  //const NSString *kCVImageBufferTransferFunction_Linear_str = @"Linear";
+ 
+  BOOL isBT709Gamma = (CFStringCompare(transferFunctionKeyAttachment, kCVImageBufferTransferFunction_ITU_R_709_2, 0) == kCFCompareEqualTo);
+  //BOOL isSRGBGamma = (CFStringCompare(transferFunctionKeyAttachment, (__bridge CFStringRef)kCVImageBufferTransferFunction_sRGB_str, 0) == kCFCompareEqualTo);
+  BOOL isSRGBGamma = (CFStringCompare(transferFunctionKeyAttachment, kCVImageBufferTransferFunction_sRGB, 0) == kCFCompareEqualTo);
+  //BOOL isLinearGamma = (CFStringCompare(transferFunctionKeyAttachment, (__bridge CFStringRef)kCVImageBufferTransferFunction_Linear_str, 0) == kCFCompareEqualTo);
+  BOOL isLinearGamma = (CFStringCompare(transferFunctionKeyAttachment, kCVImageBufferTransferFunction_Linear, 0) == kCFCompareEqualTo);
+  
+#if defined(DEBUG)
+  NSLog(@"isBT709Gamma %d : isSRGBGamma %d : isSRGBGamma %d", isBT709Gamma, isSRGBGamma, isLinearGamma);
+#endif // DEBUG
+  
+  MetalBT709Gamma gamma = self.gamma;
+  
+  if (gamma == MetalBT709GammaApple) {
+    if (isBT709Gamma == FALSE) {
+      NSLog(@"Decoder configured for gamma = MetalBT709GammaApple but TransferFunction was \"%@\"", transferFunctionKeyAttachment);
+      return FALSE;
+    }
+  } else if (gamma == MetalBT709GammaSRGB) {
+    if (isSRGBGamma == FALSE) {
+      NSLog(@"Decoder configured for gamma = MetalBT709GammaSRGB but TransferFunction was \"%@\"", transferFunctionKeyAttachment);
+      return FALSE;
+    }
+  } else if (gamma == MetalBT709GammaLinear) {
+    if (isLinearGamma == FALSE) {
+      NSLog(@"Decoder configured for gamma = MetalBT709GammaLinear but TransferFunction was \"%@\"", transferFunctionKeyAttachment);
+      return FALSE;
+    }
   }
   
   // Map Metal texture to the CoreVideo pixel buffer
