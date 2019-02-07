@@ -143,7 +143,7 @@ int dump_image_meta(CGImageRef inImage,
 //  NSMutableData *Cb = [NSMutableData data];
 //  NSMutableData *Cr = [NSMutableData data];
   
-  const BOOL dump = TRUE;
+  const BOOL dump = FALSE;
   
   [BGRAToBT709Converter copyYCBCr:cvPixelBuffer Y:Y Cb:Cb Cr:Cr dump:dump];
   
@@ -174,7 +174,7 @@ int dump_image_meta(CGImageRef inImage,
     printf(" -> (Y Cb Cr) (%d %d %d)\n", Y, Cb, Cr);
   }
   
-  if ((1)) {
+  if (dump) {
     // Process YCbCr output with CoreImage to generate an output
     // sRGB image that checks decoding logic.
     
@@ -508,24 +508,146 @@ int dump_image_meta(CGImageRef inImage,
   return 0;
 }
 
-int process(NSDictionary *inDict) {
-  // Read PNG
-  
-  NSString *inPNGStr = inDict[@"input"];
-  NSString *outY4mStr = inDict[@"output"];
-  NSString *gamma = inDict[@"-gamma"];
+// Return TRUE if file exists, FALSE otherwise
 
-  NSNumber *inputIsFramesPatternNum = inDict[@"inputIsFramesPattern"];
-  BOOL inputIsFramesPattern = [inputIsFramesPatternNum boolValue];
+BOOL fileExists(NSString *filePath) {
+  if ([[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+// Given an input filename like "F001.png", return the input files
+// that exist on the disk given these frame numbers.
+
+int parse_filenames_from_first_file(NSString *firstFilename,
+                                    NSMutableArray *mFilenames)
+{
+  // Given the first frame image filename, build and array of filenames
+  // by checking to see if files exist up until we find one that does not.
+  // This makes it possible to pass the 25th frame ofa 50 frame animation
+  // and generate an animation 25 frames in duration.
   
-  NSNumber *fpsNum = inDict[@"-fps"];
-  Y4MHeaderFPS fps = [fpsNum intValue];
+  const char *firstFilenameCstr = (const char *) [firstFilename UTF8String];
   
-  printf("loading %s\n", [inPNGStr UTF8String]);
+  if (fileExists(firstFilename) == FALSE) {
+    fprintf(stderr, "error: first filename \"%s\" does not exist\n", firstFilenameCstr);
+    exit(1);
+  }
   
-  CGImageRef inImage = makeImageFromFile(inPNGStr);
+  NSString *firstFilenameExt = [firstFilename pathExtension];
+  
+  // Find first numerical character in the [0-9] range starting at the end of the filename string.
+  // A frame filename like "Frame0001.png" would be an example input. Note that the last frame
+  // number must be the last character before the extension.
+  
+  NSArray *upToLastPathComponent = [firstFilename pathComponents];
+  NSRange upToLastPathComponentRange;
+  upToLastPathComponentRange.location = 0;
+  upToLastPathComponentRange.length = [upToLastPathComponent count] - 1;
+  upToLastPathComponent = [upToLastPathComponent subarrayWithRange:upToLastPathComponentRange];
+  NSString *upToLastPathComponentPath = [NSString pathWithComponents:upToLastPathComponent];
+  
+  NSString *firstFilenameTail = [firstFilename lastPathComponent];
+  NSString *firstFilenameTailNoExtension = [firstFilenameTail stringByDeletingPathExtension];
+  
+  int numericStartIndex = -1;
+  BOOL foundNonAlpha = FALSE;
+  
+  for (int i = (int)[firstFilenameTailNoExtension length] - 1; i > 0; i--) {
+    unichar c = [firstFilenameTailNoExtension characterAtIndex:i];
+    if ((c >= '0') && (c <= '9') && (foundNonAlpha == FALSE)) {
+      numericStartIndex = i;
+    } else {
+      foundNonAlpha = TRUE;
+    }
+  }
+  if (numericStartIndex == -1 || numericStartIndex == 0) {
+    fprintf(stderr, "error: could not find frame number in first filename \"%s\"\n", firstFilenameCstr);
+    exit(1);
+  }
+  
+  // Extract the numeric portion of the first frame filename
+  
+  NSString *namePortion = [firstFilenameTailNoExtension substringToIndex:numericStartIndex];
+  NSString *numberPortion = [firstFilenameTailNoExtension substringFromIndex:numericStartIndex];
+  
+  if ([namePortion length] < 1 || [numberPortion length] == 0) {
+    fprintf(stderr, "error: could not find frame number in first filename \"%s\"\n", firstFilenameCstr);
+    exit(1);
+  }
+  
+  // Convert number with leading zeros to a simple integer
+  
+  int formatWidth = (int) [numberPortion length];
+  int startingFrameNumber = [numberPortion intValue];
+  int endingFrameNumber = -1;
+  
+#define CRAZY_MAX_FRAMES 9999999
+#define CRAZY_MAX_DIGITS 7
+  
+  // Note that we include the first frame in this loop just so that it gets added to inFramePaths.
+  
+  for (int i = startingFrameNumber; i < CRAZY_MAX_FRAMES; i++) @autoreleasepool {
+    NSMutableString *frameNumberWithLeadingZeros = [NSMutableString string];
+    [frameNumberWithLeadingZeros appendFormat:@"%07d", i];
+    if ([frameNumberWithLeadingZeros length] > formatWidth) {
+      int numToDelete = (int) ([frameNumberWithLeadingZeros length] - formatWidth);
+      NSRange delRange;
+      delRange.location = 0;
+      delRange.length = numToDelete;
+      [frameNumberWithLeadingZeros deleteCharactersInRange:delRange];
+      assert([frameNumberWithLeadingZeros length] == formatWidth);
+    }
+    [frameNumberWithLeadingZeros appendString:@"."];
+    [frameNumberWithLeadingZeros appendString:firstFilenameExt];
+    [frameNumberWithLeadingZeros insertString:namePortion atIndex:0];
+    NSString *framePathWithNumber = [upToLastPathComponentPath stringByAppendingPathComponent:frameNumberWithLeadingZeros];
+    
+    if (fileExists(framePathWithNumber)) {
+      // Found frame at indicated path, add it to array of known frame filenames
+      
+      [mFilenames addObject:framePathWithNumber];
+      endingFrameNumber = i;
+    } else {
+      // Frame filename with indicated frame number not found, done scanning for frame files
+      break;
+    }
+  }
+  
+  if ([mFilenames count] <= 1) {
+    fprintf(stderr, "error: at least 2 input frames are required\n");
+    exit(1);
+  }
+  
+  if ((startingFrameNumber == endingFrameNumber) || (endingFrameNumber == CRAZY_MAX_FRAMES-1)) {
+    fprintf(stderr, "error: could not find last frame number\n");
+    exit(1);
+  }
+
+  return 0;
+}
+
+// Read from source frame, convert to YCbCr and populate CoreVideo buffer
+
+static inline
+CVPixelBufferRef loadFrameIntoCVPixelBuffer(
+          NSString *inputImageStr,
+                                            int frameNum,
+                                            BOOL isLinearGamma,
+                                            BOOL isSRGBGamma,
+                                            NSMutableData *Y,
+                                            NSMutableData *Cb,
+                                            NSMutableData *Cr)
+{
+  if (1 || frameNum == 1) {
+    printf("loading %s\n", [inputImageStr UTF8String]);
+  }
+  
+  CGImageRef inImage = makeImageFromFile(inputImageStr);
   if (inImage == NULL) {
-    return 2;
+    return NULL;
   }
   
   int width = (int) CGImageGetWidth(inImage);
@@ -539,8 +661,8 @@ int process(NSDictionary *inDict) {
   
   if (widthDiv2 && heightDiv2) {
   } else {
-    printf("width and height must both be even\n");
-    return 2;
+    printf("width and height must both be even but got dimensions %d x %d\n", width, height);
+    return NULL;
   }
   
   CGColorSpaceRef inputColorspace = CGImageGetColorSpace(inImage);
@@ -576,7 +698,7 @@ int process(NSDictionary *inDict) {
     
     CGColorSpaceRelease(colorspace);
   }
-
+  
   {
     CGColorSpaceRef colorspace = CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
     
@@ -622,35 +744,34 @@ int process(NSDictionary *inDict) {
     
     CGColorSpaceRelease(colorspace);
   }
-
-  if (inputIsRGBColorspace) {
-    printf("untagged RGB colorspace is not supported as input\n");
-    exit(4);
-  } else if (inputIsSRGBColorspace) {
-    printf("input is sRGB colorspace\n");
-  } else if (inputIsSRGBLinearColorspace) {
-    printf("input is sRGBLinear colorspace\n");
-  } else if (inputIsGrayColorspace) {
-    printf("input is grayscale colorspace\n");
-  } else if (inputIsBT709Colorspace) {
-    printf("input is already in BT.709 colorspace\n");
-  } else {
-    printf("will convert from input colorspace to Apple gamma encoded space:\n");
-    NSString *desc = [(__bridge id)inputColorspace description];
-    printf("%s\n", [desc UTF8String]);
+  
+  if (frameNum == 1) {
+    if (inputIsRGBColorspace) {
+      printf("untagged RGB colorspace is not supported as input\n");
+      exit(4);
+    } else if (inputIsSRGBColorspace) {
+      printf("input is sRGB colorspace\n");
+    } else if (inputIsSRGBLinearColorspace) {
+      printf("input is sRGBLinear colorspace\n");
+    } else if (inputIsGrayColorspace) {
+      printf("input is grayscale colorspace\n");
+    } else if (inputIsBT709Colorspace) {
+      printf("input is already in BT.709 colorspace\n");
+    } else {
+      printf("will convert from input colorspace to Apple gamma encoded space:\n");
+      NSString *desc = [(__bridge id)inputColorspace description];
+      printf("%s\n", [desc UTF8String]);
+    }
   }
   
-  BOOL isLinearGamma = FALSE;
-  BOOL isSRGBGamma = FALSE;
-  
-  if ([gamma isEqualToString:@"linear"]) {
+  if (isLinearGamma) {
     // Treat input image data as linear, grayscale input image data
     // must be tagged as sRGB with gamma = 1.0
-
+    
     // ffmpeg -i in.y4m -c:v libx264 -color_primaries bt709 -colorspace bt709 -color_trc linear out.m4v
-
+    
     CGFrameBuffer *inputFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
-
+    
     inputFB.colorspace = CGImageGetColorSpace(inImage);
     
     [inputFB renderCGImage:inImage];
@@ -670,29 +791,63 @@ int process(NSDictionary *inDict) {
     CGImageRelease(inImage);
     
     inImage = [linearFB createCGImageRef];
-    
-    isLinearGamma = TRUE;
-  } else if ([gamma isEqualToString:@"srgb"]) {
+  } else if (isSRGBGamma) {
     // ffmpeg -i in.y4m -c:v libx264 -color_primaries bt709 -colorspace bt709 -color_trc iec61966_2_1 out.m4v
-    
-    isSRGBGamma = TRUE;
   }
   
   CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage
                                                                        isLinear:isLinearGamma
                                                                     asSRGBGamma:isSRGBGamma];
-
-  NSMutableData *Y = [NSMutableData data];
-  NSMutableData *Cb = [NSMutableData data];
-  NSMutableData *Cr = [NSMutableData data];
   
   int dumpResult = dump_image_meta(inImage, cvPixelBuffer, Y, Cb, Cr);
   
   CGImageRelease(inImage);
   
   if (dumpResult != 0) {
-    return dumpResult;
+    return NULL;
   }
+  
+  return cvPixelBuffer;
+}
+
+int process(NSDictionary *inDict) {
+  // Read PNG
+  
+  NSString *inputImageStr = inDict[@"input"];
+  NSString *outY4mStr = inDict[@"output"];
+  NSString *gamma = inDict[@"-gamma"];
+
+  NSNumber *inputIsFramesPatternNum = inDict[@"inputIsFramesPattern"];
+  BOOL inputIsFramesPattern = [inputIsFramesPatternNum boolValue];
+  NSMutableArray *inputFramesFilenames = [NSMutableArray array];
+  
+  if (inputIsFramesPattern) {
+    int result = parse_filenames_from_first_file(inputImageStr, inputFramesFilenames);
+    if (result != 0) {
+      return result;
+    }
+  }
+  
+  NSNumber *fpsNum = inDict[@"-fps"];
+  Y4MHeaderFPS fps = [fpsNum intValue];
+  
+  BOOL isLinearGamma = FALSE;
+  BOOL isSRGBGamma = FALSE;
+  
+  if ([gamma isEqualToString:@"linear"]) {
+    isLinearGamma = TRUE;
+  } else if ([gamma isEqualToString:@"srgb"]) {
+    isSRGBGamma = TRUE;
+  }
+  
+  int frameNum = 1;
+  int maxFrameNum = frameNum + (int)[inputFramesFilenames count];
+  
+  NSMutableData *Y = [NSMutableData data];
+  NSMutableData *Cb = [NSMutableData data];
+  NSMutableData *Cr = [NSMutableData data];
+  
+  BOOL hasWrittenHeader = FALSE;
   
   // Process YCbCr by writing to output YUV frame(s) to y4m file
   
@@ -702,33 +857,56 @@ int process(NSDictionary *inDict) {
   if (outFile == NULL) {
     return 1;
   }
+  
+  for (int i = 0; i < (int)[inputFramesFilenames count]; i++) @autoreleasepool {
+    if (inputIsFramesPattern) {
+      inputImageStr = inputFramesFilenames[i];
+    }
 
-  Y4MHeaderStruct header;
+    CVPixelBufferRef cvPixelBuffer = loadFrameIntoCVPixelBuffer(inputImageStr, frameNum++, isLinearGamma, isSRGBGamma, Y, Cb, Cr);
+    
+    if (cvPixelBuffer == NULL) {
+      return 1;
+    }
   
-  header.width = width;
-  header.height = height;
-  
-  header.fps = fps;
-  
-  int header_result = y4m_write_header(outFile, &header);
-  if (header_result != 0) {
-    return header_result;
-  }
-  
-  Y4MFrameStruct fs;
-  
-  fs.yPtr = (uint8_t*) Y.bytes;
-  fs.yLen = (int) Y.length;
-  
-  fs.uPtr = (uint8_t*) Cb.bytes;
-  fs.uLen = (int) Cb.length;
-  
-  fs.vPtr = (uint8_t*) Cr.bytes;
-  fs.vLen = (int) Cr.length;
-  
-  int write_frame_result = y4m_write_frame(outFile, &fs);
-  if (write_frame_result != 0) {
-    return write_frame_result;
+    if (hasWrittenHeader == FALSE) {
+      Y4MHeaderStruct header;
+      
+      int width = (int) CVPixelBufferGetWidth(cvPixelBuffer);
+      int height = (int) CVPixelBufferGetHeight(cvPixelBuffer);
+      
+      header.width = width;
+      header.height = height;
+      
+      header.fps = fps;
+      
+      int header_result = y4m_write_header(outFile, &header);
+      if (header_result != 0) {
+        return header_result;
+      }
+      
+      hasWrittenHeader = TRUE;
+    }
+    
+    // Write frame data
+    
+    Y4MFrameStruct fs;
+    
+    fs.yPtr = (uint8_t*) Y.bytes;
+    fs.yLen = (int) Y.length;
+    
+    fs.uPtr = (uint8_t*) Cb.bytes;
+    fs.uLen = (int) Cb.length;
+    
+    fs.vPtr = (uint8_t*) Cr.bytes;
+    fs.vLen = (int) Cr.length;
+    
+    int write_frame_result = y4m_write_frame(outFile, &fs);
+    if (write_frame_result != 0) {
+      return write_frame_result;
+    }
+    
+    CVPixelBufferRelease(cvPixelBuffer);
   }
   
   fclose(outFile);

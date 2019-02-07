@@ -840,7 +840,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer bufferPtr:&sourceBuffer];
   NSAssert(worked, @"worked");
 
-  if ((1)) {
+  if ((0)) {
     uint32_t *pixelPtr = (uint32_t *) sourceBuffer.data;
     uint32_t pixel = pixelPtr[0];
     
@@ -877,7 +877,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   // Copy data from CoreVideo pixel buffer planes into flat buffers
   
-  if ((1)) {
+  if ((0)) {
     NSMutableData *Y = [NSMutableData data];
     NSMutableData *Cb = [NSMutableData data];
     NSMutableData *Cr = [NSMutableData data];
