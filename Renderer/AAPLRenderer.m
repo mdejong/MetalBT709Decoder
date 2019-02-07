@@ -115,10 +115,10 @@ void validate_storage_mode(id<MTLTexture> texture)
 
     MetalBT709Gamma decodeGamma = MetalBT709GammaApple;
     
-    if (0) {
+    if ((0)) {
       // Explicitly set sRGB decode matrix flag
       decodeGamma = MetalBT709GammaSRGB;
-    } else if (1) {
+    } else if ((0)) {
       decodeGamma = MetalBT709GammaLinear;
     }
     
@@ -296,8 +296,8 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeCloudsiPadImage];
   //cvPixelBufer = [self decodeTest709Frame];
   //cvPixelBufer = [self decodeDropOfWater];
-  //cvPixelBufer = [self decodeBigBuckBunny];
-  cvPixelBufer = [self decodeQuicktimeTestPatternLinearGrayscale];
+  cvPixelBufer = [self decodeBigBuckBunny];
+  //cvPixelBufer = [self decodeQuicktimeTestPatternLinearGrayscale];
 
   if (debugDumpYCbCr) {
     [BGRAToBT709Converter dumpYCBCr:cvPixelBufer];
