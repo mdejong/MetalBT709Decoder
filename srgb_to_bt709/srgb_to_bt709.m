@@ -830,9 +830,11 @@ int process(NSDictionary *inDict) {
   
   NSNumber *fpsNum = inDict[@"-fps"];
   Y4MHeaderFPS fps = [fpsNum intValue];
-  
+  int frameNum = 1;
+
   BOOL isLinearGamma = FALSE;
   BOOL isSRGBGamma = FALSE;
+  BOOL hasWrittenHeader = FALSE;
   
   if ([gamma isEqualToString:@"linear"]) {
     isLinearGamma = TRUE;
@@ -840,14 +842,9 @@ int process(NSDictionary *inDict) {
     isSRGBGamma = TRUE;
   }
   
-  int frameNum = 1;
-  int maxFrameNum = frameNum + (int)[inputFramesFilenames count];
-  
   NSMutableData *Y = [NSMutableData data];
   NSMutableData *Cb = [NSMutableData data];
   NSMutableData *Cr = [NSMutableData data];
-  
-  BOOL hasWrittenHeader = FALSE;
   
   // Process YCbCr by writing to output YUV frame(s) to y4m file
   
