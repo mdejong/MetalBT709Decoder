@@ -826,6 +826,8 @@ int process(NSDictionary *inDict) {
     if (result != 0) {
       return result;
     }
+  } else {
+    [inputFramesFilenames addObject:inputImageStr];
   }
   
   NSNumber *fpsNum = inDict[@"-fps"];
@@ -856,9 +858,7 @@ int process(NSDictionary *inDict) {
   }
   
   for (int i = 0; i < (int)[inputFramesFilenames count]; i++) @autoreleasepool {
-    if (inputIsFramesPattern) {
-      inputImageStr = inputFramesFilenames[i];
-    }
+    inputImageStr = inputFramesFilenames[i];
 
     CVPixelBufferRef cvPixelBuffer = loadFrameIntoCVPixelBuffer(inputImageStr, frameNum++, isLinearGamma, isSRGBGamma, Y, Cb, Cr);
     
