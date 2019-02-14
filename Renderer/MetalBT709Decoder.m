@@ -8,6 +8,8 @@
 
 #import "MetalRenderContext.h"
 
+#import "CVPixelBufferUtils.h"
+
 @interface MetalBT709Decoder ()
 {
   CVMetalTextureCacheRef _textureCache;
@@ -22,6 +24,7 @@
 
 @property (nonatomic, retain) id<MTLTexture> inputYTexture;
 @property (nonatomic, retain) id<MTLTexture> inputCbCrTexture;
+@property (nonatomic, retain) id<MTLTexture> inputAlphaTexture;
 
 @end
 
@@ -102,6 +105,8 @@
 
 - (BOOL) setupMetalComputePipeline
 {
+  NSAssert(self.hasAlphaChannel == FALSE, @"compute pipeline does not support hasAlphaChannel");
+  
   NSError *error = NULL;
   
   MetalRenderContext *metalRenderContext = self.metalRenderContext;
@@ -157,7 +162,12 @@
   NSString *functionName = nil;
   MetalBT709Gamma gamma = self.gamma;
   
-  if (gamma == MetalBT709GammaApple) {
+  if (self.hasAlphaChannel) {
+    // RGBA alpha channel render supports only the sRGB gamma function and assumes
+    // that the alpha channel is always encoded as linear.    
+    self.gamma = MetalBT709GammaSRGB;
+    functionName = @"sRGBToLinearSRGBFragmentAlpha";
+  } else if (gamma == MetalBT709GammaApple) {
     functionName = @"BT709ToLinearSRGBFragment";
   } else if (gamma == MetalBT709GammaSRGB) {
     functionName = @"sRGBToLinearSRGBFragment";
@@ -204,7 +214,8 @@
 // meaning directly into a view then pass a renderPassDescriptor.
 // A 2 stage render would pass nil for renderPassDescriptor.
 
-- (BOOL) decodeBT709:(CVPixelBufferRef)yCbCrInputTexture
+- (BOOL) decodeBT709:(CVPixelBufferRef)yCbCrPixelBuffer
+    alphaPixelBuffer:(CVPixelBufferRef)alphaPixelBuffer
      bgraSRGBTexture:(id<MTLTexture>)bgraSRGBTexture
        commandBuffer:(id<MTLCommandBuffer>)commandBuffer
 renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
@@ -219,13 +230,15 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
     return FALSE;
   }
   
-  worked = [self processBT709ToSRGB:yCbCrInputTexture
+  worked = [self processBT709ToSRGB:yCbCrPixelBuffer
+                   alphaPixelBuffer:alphaPixelBuffer
                     bgraSRGBTexture:bgraSRGBTexture
                       commandBuffer:commandBuffer
                renderPassDescriptor:renderPassDescriptor
                         renderWidth:renderWidth
                        renderHeight:renderHeight
                  waitUntilCompleted:waitUntilCompleted];
+
   if (worked == FALSE) {
     return FALSE;
   }
@@ -237,6 +250,7 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
 // colorspace image and resample it into a sRGB output image.
 
 - (BOOL) processBT709ToSRGB:(CVPixelBufferRef)cvPixelBuffer
+           alphaPixelBuffer:(CVPixelBufferRef)alphaPixelBuffer
             bgraSRGBTexture:(id<MTLTexture>)bgraSRGBTexture
               commandBuffer:(id<MTLCommandBuffer>)commandBuffer
        renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
@@ -256,23 +270,40 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
   // non-linear BT709 input texture would generate incorrect pixel values.
   
   if (bgraSRGBTexture != nil) {
+#if defined(DEBUG)
     NSAssert(width == bgraSRGBTexture.width, @"width mismatch between BT709 and SRGB : %d != %d", width, (int)bgraSRGBTexture.width);
     NSAssert(height == bgraSRGBTexture.height, @"height mismatch between BT709 and SRGB : %d != %d", height, (int)bgraSRGBTexture.height);
+#endif // DEBUG
     
     if (width != bgraSRGBTexture.width || height != bgraSRGBTexture.height) {
       return FALSE;
     }
   }
 
+#if defined(DEBUG)
   NSAssert(width == renderWidth, @"width mismatch : %d != %d", width, renderWidth);
   NSAssert(height == renderHeight, @"height mismatch : %d != %d", height, renderHeight);
+#endif // DEBUG
   
   if (width != renderWidth || height != renderHeight) {
     return FALSE;
   }
   
-  int hw = width / 2;
-  int hh = height / 2;
+  // Check dimensions of alpha pixel buffer
+  
+  if (alphaPixelBuffer != NULL) {
+    int alphaWidth = (int) CVPixelBufferGetWidth(alphaPixelBuffer);
+    int alphaHeight = (int) CVPixelBufferGetHeight(alphaPixelBuffer);
+    
+#if defined(DEBUG)
+    NSAssert(width == alphaWidth, @"width mismatch between RGB and Alpha buffers : %d != %d", width, alphaWidth);
+    NSAssert(height == alphaHeight, @"height mismatch between RGB and Alpha : %d != %d", height, alphaHeight);
+#endif // DEBUG
+    
+    if (width != alphaWidth || height != alphaHeight) {
+      return FALSE;
+    }
+  }
   
   // Verify that the input CoreVideo buffer is explicitly tagged as BT.709
   // video. This module only supports BT.709, so no need to guess.
@@ -299,7 +330,7 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
   BOOL isLinearGamma = (CFStringCompare(transferFunctionKeyAttachment, kCVImageBufferTransferFunction_Linear, 0) == kCFCompareEqualTo);
   
 #if defined(DEBUG)
-  NSLog(@"isBT709Gamma %d : isSRGBGamma %d : isSRGBGamma %d", isBT709Gamma, isSRGBGamma, isLinearGamma);
+  //NSLog(@"isBT709Gamma %d : isSRGBGamma %d : isSRGBGamma %d", isBT709Gamma, isSRGBGamma, isLinearGamma);
 #endif // DEBUG
   
   MetalBT709Gamma gamma = self.gamma;
@@ -321,105 +352,49 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
     }
   }
   
+  // Alpha channel pixel buffer must be encoded as linear
+  
+  if (alphaPixelBuffer != NULL) {
+    CFTypeRef transferFunctionKeyAttachment = CVBufferGetAttachment(alphaPixelBuffer, kCVImageBufferTransferFunctionKey, NULL);
+#if defined(DEBUG)
+    assert(transferFunctionKeyAttachment != NULL);
+#endif // DEBUG
+    BOOL isLinearGamma = (CFStringCompare(transferFunctionKeyAttachment, kCVImageBufferTransferFunction_Linear, 0) == kCFCompareEqualTo);
+    
+    if (isLinearGamma == FALSE) {
+      NSLog(@"Decoder alpha pixel buffer TransferFunction must be linear, it was \"%@\"", transferFunctionKeyAttachment);
+      return FALSE;
+    }
+  }
+  
   // Map Metal texture to the CoreVideo pixel buffer
   
-  id<MTLTexture> inputYTexture = nil;
-  id<MTLTexture> inputCbCrTexture = nil;
+  id<MTLTexture> inputYTexture = cvpbu_wrap_y_plane_as_metal_texture(cvPixelBuffer, width, height, _textureCache, 0);
+  id<MTLTexture> inputCbCrTexture = cvpbu_wrap_uv_plane_as_metal_texture(cvPixelBuffer, width, height, _textureCache, 1);
+  id<MTLTexture> inputAlphaTexture = nil;
   
-  {
-    CVMetalTextureRef yTextureWrapperRef = NULL;
-    
-    CVReturn ret = CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
-                                                             _textureCache,
-                                                             cvPixelBuffer,
-                                                             nil,
-                                                             MTLPixelFormatR8Unorm,
-                                                             width,
-                                                             height,
-                                                             0,
-                                                             &yTextureWrapperRef);
-    
-    NSParameterAssert(ret == kCVReturnSuccess && yTextureWrapperRef != NULL);
-    
-    if (ret != kCVReturnSuccess || yTextureWrapperRef == NULL) {
-      return FALSE;
-    }
-    
-    inputYTexture = CVMetalTextureGetTexture(yTextureWrapperRef);
-    
-    CFRelease(yTextureWrapperRef);
+  if (alphaPixelBuffer != NULL) {
+    inputAlphaTexture = cvpbu_wrap_y_plane_as_metal_texture(alphaPixelBuffer, width, height, _textureCache, 0);
   }
 
-  {
-    CVMetalTextureRef cbcrTextureWrapperRef = NULL;
-    
-    CVReturn ret = CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
-                                                             _textureCache,
-                                                             cvPixelBuffer,
-                                                             nil,
-                                                             MTLPixelFormatRG8Unorm,
-                                                             hw,
-                                                             hh,
-                                                             1,
-                                                             &cbcrTextureWrapperRef);
-    
-    NSParameterAssert(ret == kCVReturnSuccess && cbcrTextureWrapperRef != NULL);
-    
-    if (ret != kCVReturnSuccess || cbcrTextureWrapperRef == NULL) {
-      return FALSE;
-    }
-    
-    inputCbCrTexture = CVMetalTextureGetTexture(cbcrTextureWrapperRef);
-    
-    CFRelease(cbcrTextureWrapperRef);
-  }
-  
   // Dumping contents only needed when DEBUG is explicitly indicated
   
   if (debug) {
     
-    // lock and grab pointers to copy from
+    NSMutableData *yData = cvpbu_get_y_plane_as_data(cvPixelBuffer, 0);
+    NSMutableData *uvData = cvpbu_get_uv_plane_as_data(cvPixelBuffer, 1);
+    NSMutableData *aData = nil;
     
-    {
-      int status = CVPixelBufferLockBaseAddress(cvPixelBuffer, 0);
-      assert(status == kCVReturnSuccess);
+    if (alphaPixelBuffer != NULL) {
+      cvpbu_get_y_plane_as_data(alphaPixelBuffer, 0);
     }
-    
-    uint8_t *yPlane = (uint8_t *) CVPixelBufferGetBaseAddressOfPlane(cvPixelBuffer, 0);
-    size_t yBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(cvPixelBuffer, 0);
-    
-    uint8_t *yPlanePacked = (uint8_t *) malloc(width * height * sizeof(uint8_t));
-    
-    for (int row = 0; row < height; row++) {
-      uint8_t *inRowPtr = yPlane + (row * yBytesPerRow);
-      uint8_t *outRowPtr = yPlanePacked + (row * (width * sizeof(uint8_t)));
-      
-      for (int col = 0; col < width; col++) {
-        int Y = inRowPtr[col];
-        outRowPtr[col] = Y;
-      }
-    }
-    
-    uint16_t *cbcrPlane = (uint16_t *) CVPixelBufferGetBaseAddressOfPlane(cvPixelBuffer, 1);
-    size_t cbcrBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(cvPixelBuffer, 1);
-    const size_t cbcrPixelsPerRow = cbcrBytesPerRow / sizeof(uint16_t);
-    
-    uint16_t *cbcrPlanePacked = (uint16_t *) malloc(hw * hh * sizeof(uint16_t));
-    
-    for (int row = 0; row < hh; row++) {
-      uint16_t *inRowPtr = cbcrPlane + (row * cbcrPixelsPerRow);
-      uint16_t *outRowPtr = cbcrPlanePacked + (row * hw);
-      
-      for (int col = 0; col < hw; col++) {
-        uint16_t uv = inRowPtr[col];
-        outRowPtr[col] = uv;
-      }
-    }
-    
+
     // Debug dump Y
     
     if (debug) {
       printf("Y : %d x %d\n", width, height);
+      
+      uint8_t *yPlanePacked = (uint8_t *) yData.bytes;
       
       for (int row = 0; row < height; row++) {
         for (int col = 0; col < width; col++) {
@@ -434,7 +409,12 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
     // Debug dump CbCr
     
     if (debug) {
+      unsigned int hw = width / 2;
+      unsigned int hh = height / 2;
+      
       printf("CbCr : %d x %d\n", hw, hh);
+      
+      uint16_t *cbcrPlanePacked = (uint16_t *) uvData.bytes;
       
       for (int row = 0; row < hh; row++) {
         for (int col = 0; col < hw; col++) {
@@ -448,18 +428,28 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
       }
     }
     
-    free(yPlanePacked);
-    free(cbcrPlanePacked);
+    // Debug dump Alpha channel Y values
     
-    {
-      int status = CVPixelBufferUnlockBaseAddress(cvPixelBuffer, 0);
-      assert(status == kCVReturnSuccess);
+    if (debug && (alphaPixelBuffer != NULL)) {
+      printf("A : %d x %d\n", width, height);
+      
+      uint8_t *aPlanePacked = (uint8_t *) aData.bytes;
+      
+      for (int row = 0; row < height; row++) {
+        for (int col = 0; col < width; col++) {
+          int offset = (row * width) + col;
+          int Y = aPlanePacked[offset];
+          printf("%3d ", Y);
+        }
+        printf("\n");
+      }
     }
   }
 
   // Hold on to texture ref until next render
   self.inputYTexture = inputYTexture;
   self.inputCbCrTexture = inputCbCrTexture;
+  self.inputAlphaTexture = inputAlphaTexture;
   
   id<MTLTexture> outputTexture = bgraSRGBTexture;
   
@@ -482,6 +472,7 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
     if (waitUntilCompleted && renderPassDescriptor != nil) {
       // FIXME: would need to present drawable here before
       // calling commit on the commandBuffer
+      assert(0);
     }
   }
   
@@ -594,7 +585,14 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
                               atIndex:0];
     [renderEncoder setFragmentTexture:self.inputCbCrTexture
                               atIndex:1];
-    
+    if (self.hasAlphaChannel) {
+#if defined(DEBUG)
+      NSAssert(self.inputAlphaTexture, @"inputAlphaTexture Metal texture is nil with hasAlphaChannel set to TRUE");
+#endif // DEBUG
+      [renderEncoder setFragmentTexture:self.inputAlphaTexture
+                                atIndex:2];
+    }
+
     // Draw the 3 vertices of our triangle
     [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle
                       vertexStart:0
@@ -664,6 +662,13 @@ renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
                               atIndex:0];
     [renderEncoder setFragmentTexture:self.inputCbCrTexture
                               atIndex:1];
+    if (self.hasAlphaChannel) {
+#if defined(DEBUG)
+      NSAssert(self.inputAlphaTexture, @"inputAlphaTexture Metal texture is nil with hasAlphaChannel set to TRUE");
+#endif // DEBUG
+      [renderEncoder setFragmentTexture:self.inputAlphaTexture
+                                atIndex:2];
+    }
     
     // Draw the 3 vertices of our triangle
     [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle

@@ -243,6 +243,33 @@ float4 BT709_decode(const float Y, const float Cb, const float Cr) {
   return float4(rgb.r, rgb.g, rgb.b, 1.0f);
 }
 
+// Decode the Y portion of a BT.709 input value knowing
+// that Cb and Cr are both zero.
+
+static inline
+float BT709_decodeAlpha(const float Y) {
+  // Y already normalized to range [0 255]
+  //
+  // Note that the matrix multiply will adjust
+  // this byte normalized range to account for
+  // the limited range [16 235]
+  //
+  // Note that while a half float can be read from
+  // the input textures, the values need to be full float
+  // from this point forward since the bias values
+  // need to be precise to avoid togggling blue and green
+  // values depending on rounding.
+  
+  float Yn = (Y - (16.0f/255.0f));
+  
+  float YMult = 1.1644f;
+  
+  Yn = Yn * YMult;
+  Yn = saturate(Yn);
+  
+  return Yn;
+}
+
 // Decode with Apple 196 gamma
 
 fragment float4
@@ -377,4 +404,33 @@ LinearToLinearSRGBKernel(texture2d<half, access::read>  inYTexture  [[texture(0)
   
   float4 pixel = BT709_decode(Y, Cb, Cr);
   outTexture.write(pixel, gid);
+}
+
+// Decode with sRGB gamma and an alpha channel
+
+fragment float4
+sRGBToLinearSRGBFragmentAlpha(RasterizerData in [[stage_in]],
+                              texture2d<half, access::sample>  inYTexture  [[texture(AAPLTextureIndexYPlane)]],
+                              texture2d<half, access::sample>  inUVTexture [[texture(AAPLTextureIndexCbCrPlane)]],
+                              texture2d<half, access::sample>  inATexture  [[texture(AAPLTextureIndexAlphaPlane)]]
+                              )
+{
+  constexpr sampler textureSampler (mag_filter::nearest, min_filter::nearest);
+  
+  float Y = float(inYTexture.sample(textureSampler, in.textureCoordinate).r);
+  half2 uvSamples = inUVTexture.sample(textureSampler, in.textureCoordinate).rg;
+  
+  float Cb = float(uvSamples[0]);
+  float Cr = float(uvSamples[1]);
+  
+  float4 pixel = BT709_decode(Y, Cb, Cr);
+  pixel = sRGB_gamma_decode(pixel);
+  // Premultiply
+  float A = float(inATexture.sample(textureSampler, in.textureCoordinate).r);
+  A = BT709_decodeAlpha(A);
+  pixel.r *= A;
+  pixel.g *= A;
+  pixel.b *= A;
+  pixel.a = A;
+  return pixel;
 }

@@ -60,6 +60,10 @@ typedef enum {
 
 + (CVPixelBufferRef) createCoreVideoYCbCrBuffer:(CGSize)size;
 
+// Allocate a CoreVideo buffer that contains a single 8 bit component for each pixel
+
++ (CVPixelBufferRef) createCoreVideoYBuffer:(CGSize)size;
+
 // Copy pixel data from CoreGraphics source into vImage buffer for processing.
 // Note that data is copied as original pixel values, for example if the input
 // is in linear RGB then linear RGB values are copied over.
@@ -118,5 +122,11 @@ typedef enum {
 // and a CIContext.
 
 + (CGFrameBuffer*) processYUVTosRGB:(CVPixelBufferRef)cvPixelBuffer;
+
+// Unpremultiply a 32 BPP image and return the results as
+// a 24 BPP image where the alpha is assumed to be 0xFF.
+// This method returns NULL if there was an error.
+
++ (CGImageRef) unpremultiply:(CGImageRef)inputImageRef;
 
 @end

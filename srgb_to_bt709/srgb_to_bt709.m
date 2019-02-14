@@ -637,6 +637,8 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
                                             int frameNum,
                                             BOOL isLinearGamma,
                                             BOOL isSRGBGamma,
+                                            BOOL isAlpha,
+                                            BOOL writeAlpha,
                                             NSMutableData *Y,
                                             NSMutableData *Cb,
                                             NSMutableData *Cr)
@@ -764,7 +766,154 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
     }
   }
   
-  if (isLinearGamma) {
+  if (isAlpha && !writeAlpha) {
+    // When writing just the BGR portion of the BGRA pixels, unpremultiply
+    // and then emit these pixels as sRGB with alpha = 0xFF.
+    
+    // Process just the BGR portion of the input image or emit just the A
+    
+    // FIXME: Do the input RGB pixels get converted to linear before being
+    // unpremultiplied ?
+    
+    CGImageRef unPreImg = [BGRAToBT709Converter unpremultiply:inImage];
+    
+    // Dump
+    
+    if ((1)) {
+      // Emit png with sRGB colorspace
+      
+      NSString *filename = [NSString stringWithFormat:@"Unpremultiplied.png"];
+      //NSString *tmpDir = NSTemporaryDirectory();
+      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+      NSString *path = [dirName stringByAppendingPathComponent:filename];
+      
+      CGFrameBuffer *cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+      
+      cgFrameBuffer.colorspace = CGImageGetColorSpace(unPreImg);
+      
+      BOOL worked = [cgFrameBuffer renderCGImage:unPreImg];
+      assert(worked);
+      
+      NSData *pngData = [cgFrameBuffer formatAsPNG];
+      
+      worked = [pngData writeToFile:path atomically:TRUE];
+      assert(worked);
+      
+      NSLog(@"wrote %@", path);
+    }
+    
+    CGImageRelease(inImage);
+    inImage = unPreImg;
+  } else if (isAlpha && writeAlpha) {
+    // Writing the alpha channel values means just extract the linear
+    // values from the alpha channel and write as simple linear data
+    
+    CGFrameBuffer *inputFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:32 width:width height:height];
+    
+    // FIXME: If original input is not in sRGB then it needs to be converted!
+    
+    inputFB.colorspace = CGImageGetColorSpace(inImage);
+    
+    BOOL worked = [inputFB renderCGImage:inImage];
+    assert(worked);
+    
+    // Allocate a linear framebuffer to store Alpha channel as grayscale
+    
+    CGColorSpaceRef linearColorspace = CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
+    
+    CGFrameBuffer *linearFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    
+    linearFB.colorspace = linearColorspace;
+    
+    CGColorSpaceRelease(linearColorspace);
+    
+    // Copy the Alpha channel data over R,G,B components and replace alpha with 0xFF
+    
+    uint32_t *inPixelsPtr = (uint32_t *) inputFB.pixels;
+    uint32_t *outPixelsPtr = (uint32_t *) linearFB.pixels;
+    
+    for (int row = 0; row < height; row++) {
+      for (int col = 0; col < width; col++) {
+        int offset = (row * width) + col;
+        
+        uint32_t inPixel = inPixelsPtr[offset];
+        uint32_t A = (inPixel >> 24) & 0xFF;
+        
+        if ((1)) {
+          // Slightly remap the alpha channel values, the resulting
+          // output in the range [16, 235] covers 219+1 linear entries
+          // while the original RGB values correspond to 256 values.
+          
+          // When value are being emitted, the 255 level correctly
+          // maps to 235, and o maps to 16. The problem is that
+          // 17 and 234 are very very close in terms of alpha but
+          // the compression can very easly snap values that are
+          // A = 0 or A = 0xFF to the next closest values. Use
+          // a linear mapping that allocated 2 symbols near zero
+          // and near opaque to avoid having the compression logic
+          // change the opaque or transparent property of values
+          // near the edges.
+          
+          const float AN = A / 255.0f;
+          const float AStep = 1.0f / 219.0f;
+          
+          int AOut;
+          
+          // Map such that 2 steps on top and bottom map to the transparent
+          // and opaque values.
+          
+//          if (AN <= (2 * AStep)) {
+//            AOut = 0;
+//            // Map 0 and 1 to A = 0 ??
+//          } else if (AN >= 1.0f - (2 * AStep)) {
+//            AOut = 255;
+//          } else {
+//            // Determine the number of steps and emit an alpha
+//            // value as grayscale RGB that roughly corresponds.
+//            int numSteps = (int) round(AN / AStep);
+//            //AOut = (int) round(numSteps * AStep);
+//            AOut = numSteps;
+//          }
+          
+          // 220 values, 219 steps
+          int numSteps = (int) round(AN / AStep);
+          float percentOfTotal = numSteps / 219.0f;
+          AOut = percentOfTotal * 255.0f;
+          
+          NSLog(@"in A = %d : AN %.4f : AStep %.4f : numSteps %3d : percentOfTotal %.2f : AOut %d", A, AN, AStep, numSteps, percentOfTotal, AOut);
+          
+          A = AOut;
+        }
+        
+        assert(A >= 0 && A <= 255);
+        
+        uint32_t outPixel = (A << 16) | (A << 8) | (A);
+        outPixelsPtr[offset] = outPixel;
+      }
+    }
+    
+    // Dump linear output as PNG
+    
+    if ((1)) {
+      NSString *filename = [NSString stringWithFormat:@"Unpremultiplied_alpha_as_linear.png"];
+      //NSString *tmpDir = NSTemporaryDirectory();
+      NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
+      NSString *path = [dirName stringByAppendingPathComponent:filename];
+      
+      NSData *pngData = [linearFB formatAsPNG];
+      
+      worked = [pngData writeToFile:path atomically:TRUE];
+      assert(worked);
+      
+      NSLog(@"wrote %@", path);
+    }
+    
+    CGImageRelease(inImage);
+    inImage = [linearFB createCGImageRef];
+    // Treat input as Gamma = 1.0
+    isLinearGamma = TRUE;
+    isSRGBGamma = FALSE;
+  } else if (isLinearGamma) {
     // Treat input image data as linear, grayscale input image data
     // must be tagged as sRGB with gamma = 1.0
     
@@ -816,6 +965,8 @@ int process(NSDictionary *inDict) {
   NSString *inputImageStr = inDict[@"input"];
   NSString *outY4mStr = inDict[@"output"];
   NSString *gamma = inDict[@"-gamma"];
+  
+  BOOL isAlpha = [inDict[@"-alpha"] boolValue];
 
   NSNumber *inputIsFramesPatternNum = inDict[@"inputIsFramesPattern"];
   BOOL inputIsFramesPattern = [inputIsFramesPatternNum boolValue];
@@ -850,7 +1001,17 @@ int process(NSDictionary *inDict) {
   
   // Process YCbCr by writing to output YUV frame(s) to y4m file
   
-  const char *outFilename = [outY4mStr UTF8String];
+  const char *outFilename = NULL;
+  
+  if (FALSE && isAlpha) {
+    // When emitting Unpremultiplied RGB data, emit as "_rgb.y4m"
+    NSString *pathBeforeExt = [outY4mStr stringByDeletingPathExtension];
+    NSString *pathWithExt = [NSString stringWithFormat:@"%@_rgb.y4m", pathBeforeExt];
+    outFilename = [pathWithExt UTF8String];
+  } else {
+    outFilename = [outY4mStr UTF8String];
+  }
+  
   FILE *outFile = y4m_open_file(outFilename);
   
   if (outFile == NULL) {
@@ -860,7 +1021,7 @@ int process(NSDictionary *inDict) {
   for (int i = 0; i < (int)[inputFramesFilenames count]; i++) @autoreleasepool {
     inputImageStr = inputFramesFilenames[i];
 
-    CVPixelBufferRef cvPixelBuffer = loadFrameIntoCVPixelBuffer(inputImageStr, frameNum++, isLinearGamma, isSRGBGamma, Y, Cb, Cr);
+    CVPixelBufferRef cvPixelBuffer = loadFrameIntoCVPixelBuffer(inputImageStr, frameNum++, isLinearGamma, isSRGBGamma, isAlpha, FALSE, Y, Cb, Cr);
     
     if (cvPixelBuffer == NULL) {
       return 1;
@@ -908,6 +1069,76 @@ int process(NSDictionary *inDict) {
   
   fclose(outFile);
   
+  fprintf(stdout, "wrote %s\n", outFilename);
+  
+  // When emitting alpha, iterate over the input again but emit the alpha
+  // channel values. The alpha channel values are always treated as linear.
+  
+  if (isAlpha) {
+    hasWrittenHeader = FALSE;
+    NSString *pathBeforeExt = [outY4mStr stringByDeletingPathExtension];
+    NSString *pathWithExt = [NSString stringWithFormat:@"%@_alpha.y4m", pathBeforeExt];
+    const char *outFilename = [pathWithExt UTF8String];
+    FILE *outFile = y4m_open_file(outFilename);
+    
+    if (outFile == NULL) {
+      return 1;
+    }
+    
+    for (int i = 0; i < (int)[inputFramesFilenames count]; i++) @autoreleasepool {
+      inputImageStr = inputFramesFilenames[i];
+      
+      CVPixelBufferRef cvPixelBuffer = loadFrameIntoCVPixelBuffer(inputImageStr, frameNum++, isLinearGamma, isSRGBGamma, isAlpha, TRUE, Y, Cb, Cr);
+      
+      if (cvPixelBuffer == NULL) {
+        return 1;
+      }
+      
+      if (hasWrittenHeader == FALSE) {
+        Y4MHeaderStruct header;
+        
+        int width = (int) CVPixelBufferGetWidth(cvPixelBuffer);
+        int height = (int) CVPixelBufferGetHeight(cvPixelBuffer);
+        
+        header.width = width;
+        header.height = height;
+        
+        header.fps = fps;
+        
+        int header_result = y4m_write_header(outFile, &header);
+        if (header_result != 0) {
+          return header_result;
+        }
+        
+        hasWrittenHeader = TRUE;
+      }
+      
+      // Write frame data
+      
+      Y4MFrameStruct fs;
+      
+      fs.yPtr = (uint8_t*) Y.bytes;
+      fs.yLen = (int) Y.length;
+      
+      fs.uPtr = (uint8_t*) Cb.bytes;
+      fs.uLen = (int) Cb.length;
+      
+      fs.vPtr = (uint8_t*) Cr.bytes;
+      fs.vLen = (int) Cr.length;
+      
+      int write_frame_result = y4m_write_frame(outFile, &fs);
+      if (write_frame_result != 0) {
+        return write_frame_result;
+      }
+      
+      CVPixelBufferRelease(cvPixelBuffer);
+    }
+
+    fclose(outFile);
+    
+    fprintf(stdout, "wrote %s\n", outFilename);
+  }
+  
   return 0;
 }
 
@@ -936,6 +1167,8 @@ int main(int argc, const char * argv[]) {
     
     args[@"-gamma"] = @"apple";
     
+    args[@"-alpha"] = @FALSE;
+    
     args[@"-fps"] = @(Y4MHeaderFPS_30);
     
     for (int i = 1; i < argc; ) {
@@ -944,7 +1177,24 @@ int main(int argc, const char * argv[]) {
       //printf("process option \"%s\"\n", arg);
       
       if (arg[0] == '-') {
-        if (strcmp(arg, "-gamma") == 0) {
+        if (strcmp(arg, "-alpha") == 0) {
+          i++;
+          arg = (char *) argv[i];
+          i++;
+          
+          if (strcmp(arg, "1") == 0) {
+            args[@"-alpha"] = @TRUE;
+            // Only sRGB gamma curve is supported for encoding
+            // with alpha channel data. This is so that different
+            // decode paths for Apple vs sRGB gamma are not needed.
+            args[@"-gamma"] = @"srgb";
+          } else if (strcmp(arg, "0") == 0) {
+            args[@"-alpha"] = @FALSE;
+          } else {
+            printf("unknown option -alpha value \"%s\", must be 0 or 1", arg);
+            exit(3);
+          }
+        } else if (strcmp(arg, "-gamma") == 0) {
           i++;
           arg = (char *) argv[i];
           i++;
@@ -1061,6 +1311,17 @@ int main(int argc, const char * argv[]) {
     } else {
       printf("output filename \"%s\" must have extension .y4m\n", outY4m);
       exit(3);
+    }
+    
+    // if "-alpha" is TRUE then gamma must be sRGB, gamma for alpha
+    // channel is assumed to be linear with this configuration.
+    
+    if ([args[@"-alpha"] boolValue]) {
+      BOOL isSRGB = [args[@"-gamma"] isEqualToString:@"srgb"];
+      if (!isSRGB) {
+        printf("-alpha 1 can only be used with -gamma srgb\n : got \"%@\"", args[@"-gamma"]);
+        exit(3);
+      }
     }
     
     retcode = process(args);

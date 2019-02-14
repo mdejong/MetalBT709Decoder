@@ -20,6 +20,7 @@ Implementation of renderer class which performs Metal setup and per frame render
 #import "BGRAToBT709Converter.h"
 #import "BGDecodeEncode.h"
 #import "CGFrameBuffer.h"
+#import "CVPixelBufferUtils.h"
 
 @interface AAPLRenderer ()
 
@@ -83,6 +84,9 @@ void validate_storage_mode(id<MTLTexture> texture)
   // Input to sRGB texture render comes from H.264 source
   CVPixelBufferRef _yCbCrPixelBuffer;
   
+  // Secondary Alpha channel texture input
+  CVPixelBufferRef _alphaPixelBuffer;
+  
   // BT.709 render operation must write to an intermediate texture
   // (because mixing non-linear BT.709 input is not legit)
   // that can then be sampled to resize render into the view.
@@ -112,15 +116,6 @@ void validate_storage_mode(id<MTLTexture> texture)
     
     _yCbCrPixelBuffer = [self decodeH264YCbCr];
     //CVPixelBufferRetain(_yCbCrPixelBuffer);
-
-    MetalBT709Gamma decodeGamma = MetalBT709GammaApple;
-    
-    if ((0)) {
-      // Explicitly set sRGB decode matrix flag
-      decodeGamma = MetalBT709GammaSRGB;
-    } else if ((0)) {
-      decodeGamma = MetalBT709GammaLinear;
-    }
     
     int width = (int) CVPixelBufferGetWidth(_yCbCrPixelBuffer);
     int height = (int) CVPixelBufferGetHeight(_yCbCrPixelBuffer);
@@ -241,7 +236,26 @@ void validate_storage_mode(id<MTLTexture> texture)
 #endif // TARGET_OS_IOS
     
     //self.metalBT709Decoder.useComputeRenderer = TRUE;
+
+    // Process 32BPP input, a CoreVideo pixel buffer is modified so that
+    // an additional channel for Y is retained.
+    self.metalBT709Decoder.hasAlphaChannel = TRUE;
     
+    if (self.metalBT709Decoder.hasAlphaChannel) {
+      mtkView.opaque = FALSE;
+    } else {
+      mtkView.opaque = TRUE;
+    }
+    
+    MetalBT709Gamma decodeGamma = MetalBT709GammaApple;
+    
+    if ((1)) {
+      // Explicitly set sRGB decode matrix flag
+      decodeGamma = MetalBT709GammaSRGB;
+    } else if ((0)) {
+      decodeGamma = MetalBT709GammaLinear;
+    }
+
     self.metalBT709Decoder.gamma = decodeGamma;
     
     BOOL worked = [self.metalBT709Decoder setupMetal];
@@ -296,9 +310,11 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeCloudsiPadImage];
   //cvPixelBufer = [self decodeTest709Frame];
   //cvPixelBufer = [self decodeDropOfWater];
-  cvPixelBufer = [self decodeBigBuckBunny];
+  //cvPixelBufer = [self decodeBigBuckBunny];
   //cvPixelBufer = [self decodeQuicktimeTestPatternLinearGrayscale];
 
+  cvPixelBufer = [self decodeRedFadeAlpha];
+  
   if (debugDumpYCbCr) {
     [BGRAToBT709Converter dumpYCBCr:cvPixelBufer];
   }
@@ -492,6 +508,80 @@ void validate_storage_mode(id<MTLTexture> texture)
   return cvPixelBuffer;
 }
 
+- (CVPixelBufferRef) decodeRedFadeAlpha
+{
+  NSString *resFilename = @"RedFadeAlpha256.m4v";
+  
+  int width = 256;
+  int height = 256;
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(width, height)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  // FIXME: Read CoreVideo pixel bufer from _alpha input source and then create a single
+  // CoreVideo container that is able to represent all 4 channels of input data in
+  // a single ref. Another option would be to use 2 CoreVideo buffers but mark
+  // the second texture and a single 8 bit input, this would require a copy operation
+  // for the Alpha channel but it would mean the extra memory for the CbCr in the
+  // second video would not need to be retained.
+  
+  if ((1)) {
+    NSString *resFilename = @"RedFadeAlpha256_alpha.m4v";
+    
+    NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                      frameDuration:1.0/30
+                                                                         renderSize:CGSizeMake(width, height)
+                                                                         aveBitrate:0];
+    NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+    
+    CVPixelBufferRef cvPixelBufferAlphaIn = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+    
+    const int makeCopyToReduceMemoryUsage = 0;
+    
+    if (makeCopyToReduceMemoryUsage) {
+      // Create a CoreVideo pixel buffer that features a Y channel but no UV
+      // channel. This reduces runtime memory usage at the cost of a copy.
+      
+      CVPixelBufferRef cvPixelBufferAlphaOut = [BGRAToBT709Converter createCoreVideoYBuffer:CGSizeMake(width, height)];
+      
+      cvpbu_copy_plane(cvPixelBufferAlphaIn, cvPixelBufferAlphaOut, 0);
+      
+      // Note that only the kCVImageBufferTransferFunctionKey property is set here, this
+      // special purpose Alpha channel buffer cannot be converted from YCbCr to RGB.
+      // This linear check is here so that the reduced memory use pixel buffer will
+      // pass the same validation as the original encoded with ffmpeg.
+      
+      NSDictionary *pbAttachments = @{
+                                      //(__bridge NSString*)kCVImageBufferYCbCrMatrixKey: (__bridge NSString*)kCVImageBufferYCbCrMatrix_ITU_R_709_2,
+                                      //(__bridge NSString*)kCVImageBufferColorPrimariesKey: (__bridge NSString*)kCVImageBufferColorPrimaries_ITU_R_709_2,
+                                      (__bridge NSString*)kCVImageBufferTransferFunctionKey: (__bridge NSString*)kCVImageBufferTransferFunction_Linear,
+                                      };
+      
+      CVBufferSetAttachments(cvPixelBufferAlphaOut, (__bridge CFDictionaryRef)pbAttachments, kCVAttachmentMode_ShouldPropagate);
+      
+      self->_alphaPixelBuffer = cvPixelBufferAlphaOut;
+    } else {
+      CVPixelBufferRetain(cvPixelBufferAlphaIn);
+      self->_alphaPixelBuffer = cvPixelBufferAlphaIn;
+    }
+  }
+  
+  // FIXME: Need a way to hold on to these 2 CoreVideo pixel buffers, if the
+  // buffers will be used and released right away then no need to copy.
+  
+  return cvPixelBuffer;
+}
+
+
 /// Called whenever view changes orientation or is resized
 - (void)mtkView:(nonnull MTKView *)view drawableSizeWillChange:(CGSize)size
 {
@@ -544,6 +634,7 @@ void validate_storage_mode(id<MTLTexture> texture)
       int renderHeight = (int) _resizeTexture.height;
       
       [metalBT709Decoder decodeBT709:_yCbCrPixelBuffer
+                    alphaPixelBuffer:_alphaPixelBuffer
                      bgraSRGBTexture:_resizeTexture
                        commandBuffer:commandBuffer
                 renderPassDescriptor:nil
@@ -556,13 +647,14 @@ void validate_storage_mode(id<MTLTexture> texture)
     // and results in a significant performance improvement.
 
     worked = [metalBT709Decoder decodeBT709:_yCbCrPixelBuffer
-                                 bgraSRGBTexture:nil
-                                   commandBuffer:commandBuffer
-                            renderPassDescriptor:renderPassDescriptor
-                                     renderWidth:renderWidth
-                                    renderHeight:renderHeight
-                              waitUntilCompleted:FALSE];
-    
+                           alphaPixelBuffer:_alphaPixelBuffer
+                            bgraSRGBTexture:nil
+                              commandBuffer:commandBuffer
+                       renderPassDescriptor:renderPassDescriptor
+                                renderWidth:renderWidth
+                               renderHeight:renderHeight
+                         waitUntilCompleted:FALSE];
+
     if (worked) {
       // Schedule a present once the framebuffer is complete using the current drawable
       [commandBuffer presentDrawable:view.currentDrawable];
@@ -578,13 +670,14 @@ void validate_storage_mode(id<MTLTexture> texture)
       int renderHeight = (int) _resizeTexture.height;
       
       worked = [metalBT709Decoder decodeBT709:_yCbCrPixelBuffer
-                                   bgraSRGBTexture:_resizeTexture
-                                     commandBuffer:commandBuffer
-                              renderPassDescriptor:nil
-                                       renderWidth:renderWidth
-                                      renderHeight:renderHeight
-                                waitUntilCompleted:FALSE];
-      
+                             alphaPixelBuffer:_alphaPixelBuffer
+                              bgraSRGBTexture:_resizeTexture
+                                commandBuffer:commandBuffer
+                         renderPassDescriptor:nil
+                                  renderWidth:renderWidth
+                                 renderHeight:renderHeight
+                           waitUntilCompleted:FALSE];
+
 #if defined(DEBUG)
       NSAssert(worked, @"decodeBT709 worked");
 #endif // DEBUG

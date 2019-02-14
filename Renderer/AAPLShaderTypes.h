@@ -28,6 +28,7 @@ typedef enum
 {
   AAPLTextureIndexYPlane = 0,
   AAPLTextureIndexCbCrPlane = 1,
+  AAPLTextureIndexAlphaPlane = 2,
 } AAPLTextureYCbCrIndex;
 
 //  This structure defines the layout of each vertex in the array of vertices set as an input to our

@@ -450,13 +450,10 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   return TRUE;
 }
 
-// Allocate a CoreVideo buffer for use with BT.709 format YCBCr 2 plane data
+// Return pixel buffer attributes
 
-+ (CVPixelBufferRef) createCoreVideoYCbCrBuffer:(CGSize)size
++ (NSDictionary*) getPixelBufferAttributes
 {
-  int width = (int) size.width;
-  int height = (int) size.height;
-  
   NSDictionary *pixelAttributes = @{
                                     (__bridge NSString*)kCVPixelBufferIOSurfacePropertiesKey : @{},
 #if TARGET_OS_IOS
@@ -464,13 +461,57 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 #endif // TARGET_OS_IOS
                                     (__bridge NSString*)kCVPixelBufferCGImageCompatibilityKey : @(YES),
                                     (__bridge NSString*)kCVPixelBufferCGBitmapContextCompatibilityKey : @(YES),
+                                    (__bridge NSString*)kCVPixelBufferMetalCompatibilityKey : @(YES),
                                     };
+  return pixelAttributes;
+}
+
+// Allocate a CoreVideo buffer for use with BT.709 format YCBCr 2 plane data
+
++ (CVPixelBufferRef) createCoreVideoYCbCrBuffer:(CGSize)size
+{
+  int width = (int) size.width;
+  int height = (int) size.height;
+  
+  NSDictionary *pixelAttributes = [self getPixelBufferAttributes];
   
   CVPixelBufferRef cvPixelBuffer = NULL;
   
   uint32_t yuvImageFormatType;
   //yuvImageFormatType = kCVPixelFormatType_420YpCbCr8BiPlanarFullRange; // luma (0, 255)
   yuvImageFormatType = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange; // luma (16, 235)
+  
+  CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault,
+                                        width,
+                                        height,
+                                        yuvImageFormatType,
+                                        (__bridge CFDictionaryRef)(pixelAttributes),
+                                        &cvPixelBuffer);
+  
+  NSAssert(result == kCVReturnSuccess, @"CVPixelBufferCreate failed");
+  
+  return cvPixelBuffer;
+}
+
+// Allocate a CoreVideo buffer that contains a single 8 bit component for each pixel
+
++ (CVPixelBufferRef) createCoreVideoYBuffer:(CGSize)size
+{
+  int width = (int) size.width;
+  int height = (int) size.height;
+  
+  NSDictionary *pixelAttributes = [self getPixelBufferAttributes];
+  
+  CVPixelBufferRef cvPixelBuffer = NULL;
+  
+  uint32_t yuvImageFormatType;
+  yuvImageFormatType = kCVPixelFormatType_OneComponent8; // luma (0, 255)
+  
+  // FIXME: Invoke CVPixelBufferCreateWithPlanarBytes() but create just
+  // 1 single plane of widthxheight bytes. Use this when holding on to
+  // a buffer, in the case where a buffer is rendered and then dropped
+  // there is no need to create a new buffer and copy since that wastes
+  // CPU time in process.
   
   CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault,
                                         width,
@@ -627,7 +668,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   [Cr setLength:hw*hh];
   
   {
-    int status = CVPixelBufferLockBaseAddress(cvPixelBuffer, 0);
+    int status = CVPixelBufferLockBaseAddress(cvPixelBuffer, kCVPixelBufferLock_ReadOnly);
     assert(status == kCVReturnSuccess);
   }
   
@@ -667,7 +708,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   }
   
   {
-    int status = CVPixelBufferUnlockBaseAddress(cvPixelBuffer, 0);
+    int status = CVPixelBufferUnlockBaseAddress(cvPixelBuffer, kCVPixelBufferLock_ReadOnly);
     assert(status == kCVReturnSuccess);
   }
   
@@ -1021,6 +1062,75 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   [cgFramebuffer renderCGImage:outCGImageRef];
   
   return cgFramebuffer;
+}
+
+// Unpremultiply a 32 BPP image and return the results as
+// a 24 BPP image where the alpha is assumed to be 0xFF.
+// This method returns NULL if there was an error.
+
++ (CGImageRef) unpremultiply:(CGImageRef)inputImageRef
+{
+  // Default to sRGB on both MacOSX and iOS
+  //CGColorSpaceRef inputColorspaceRef = NULL;
+  CGColorSpaceRef inputColorspaceRef = CGImageGetColorSpace(inputImageRef);
+  
+  vImage_CGImageFormat rgbCGImgFormat24 = {
+    .bitsPerComponent = 8,
+    .bitsPerPixel = 32,
+    .bitmapInfo = (CGBitmapInfo)(kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst),
+    .colorSpace = inputColorspaceRef,
+  };
+  
+  vImage_CGImageFormat rgbCGImgFormat32 = {
+    .bitsPerComponent = 8,
+    .bitsPerPixel = 32,
+    .bitmapInfo = (CGBitmapInfo)(kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst),
+    .colorSpace = inputColorspaceRef,
+  };
+  
+  const CGFloat backgroundColor = 0.0f;
+  
+  vImage_Flags flags = 0;
+  flags = kvImagePrintDiagnosticsToConsole;
+  
+  vImage_Error err;
+  
+  vImage_Buffer sourceBuffer;
+  vImage_Buffer dstBuffer;
+  
+  // Copy input CoreGraphic image data into vImage buffer and then copy into CoreVideo buffer
+  
+  err = vImageBuffer_InitWithCGImage(&sourceBuffer, &rgbCGImgFormat32, &backgroundColor, inputImageRef, flags);
+  
+  NSAssert(err == kvImageNoError, @"vImageBuffer_InitWithCGImage failed");
+  
+  // Allocate dst buffer
+  
+  err = vImageBuffer_Init(&dstBuffer,
+                          sourceBuffer.height,
+                          sourceBuffer.width,
+                          rgbCGImgFormat24.bitsPerPixel,
+                          flags);
+
+  NSAssert(err == kvImageNoError, @"vImageBuffer_Init failed : %d", (int)err);
+  
+  err = vImageUnpremultiplyData_BGRA8888(&sourceBuffer,
+                                         &dstBuffer,
+                                         flags);
+
+  NSAssert(err == kvImageNoError, @"vImageUnpremultiplyData_ARGB8888 failed : %d", (int)err);
+  
+  CGImageRef unPreImg = vImageCreateCGImageFromBuffer(&dstBuffer,
+                                                      &rgbCGImgFormat24,
+                                                      nil,
+                                                      nil,
+                                                      flags,
+                                                      &err);
+  
+  free(sourceBuffer.data);
+  free(dstBuffer.data);
+  
+  return unPreImg;
 }
 
 @end

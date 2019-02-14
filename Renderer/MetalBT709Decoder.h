@@ -41,6 +41,12 @@ typedef enum {
 
 @property (nonatomic, assign) BOOL useComputeRenderer;
 
+// If hasAlphaChannel is set to TRUE then a second alpha
+// is defined as a linear channel that can be directly
+// interpolated.
+
+@property (nonatomic, assign) BOOL hasAlphaChannel;
+
 // Set to TRUE once a render context has been setup
 
 // Setup Metal refs for this instance, this is implicitly
@@ -57,6 +63,7 @@ typedef enum {
 // A 2 stage render would pass nil for renderPassDescriptor.
 
 - (BOOL) decodeBT709:(CVPixelBufferRef)yCbCrInputTexture
+    alphaPixelBuffer:(CVPixelBufferRef)alphaPixelBuffer
      bgraSRGBTexture:(id<MTLTexture>)bgraSRGBTexture
        commandBuffer:(id<MTLCommandBuffer>)commandBuffer
 renderPassDescriptor:(MTLRenderPassDescriptor*)renderPassDescriptor
