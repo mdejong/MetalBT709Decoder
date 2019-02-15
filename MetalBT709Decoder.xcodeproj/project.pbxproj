@@ -107,6 +107,9 @@
 		3C9779312216024E003721FD /* RedFadeAlpha256.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C97792D2216024C003721FD /* RedFadeAlpha256.m4v */; };
 		3C9779322216024E003721FD /* RedFadeAlpha256.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C97792D2216024C003721FD /* RedFadeAlpha256.m4v */; };
 		3C9779332216024E003721FD /* RedFadeAlpha256.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C97792D2216024C003721FD /* RedFadeAlpha256.m4v */; };
+		3C97793722161CF3003721FD /* MetalScaleRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C97793622161CF3003721FD /* MetalScaleRenderContext.m */; };
+		3C97793822161CF4003721FD /* MetalScaleRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C97793622161CF3003721FD /* MetalScaleRenderContext.m */; };
+		3C97793922161CF4003721FD /* MetalScaleRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C97793622161CF3003721FD /* MetalScaleRenderContext.m */; };
 		3CA8B6C121E03A5300D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
 		3CA8B6C221E03A5300D2B853 /* BGDecodeEncode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CB6E80921D6D15F005424E6 /* BGDecodeEncode.m */; };
 		3CA8B6C521E1682600D2B853 /* H264Encoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CA8B6C421E1682600D2B853 /* H264Encoder.m */; };
@@ -290,6 +293,8 @@
 		3C97792C2216024B003721FD /* RedFadeAlpha256_alpha.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = RedFadeAlpha256_alpha.m4v; sourceTree = "<group>"; };
 		3C97792D2216024C003721FD /* RedFadeAlpha256.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = RedFadeAlpha256.m4v; sourceTree = "<group>"; };
 		3C977934221602B3003721FD /* CVPixelBufferUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CVPixelBufferUtils.h; sourceTree = "<group>"; };
+		3C97793522161CF2003721FD /* MetalScaleRenderContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalScaleRenderContext.h; sourceTree = "<group>"; };
+		3C97793622161CF3003721FD /* MetalScaleRenderContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MetalScaleRenderContext.m; sourceTree = "<group>"; };
 		3CA8B6C321E1682500D2B853 /* H264Encoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = H264Encoder.h; sourceTree = "<group>"; };
 		3CA8B6C421E1682600D2B853 /* H264Encoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = H264Encoder.m; sourceTree = "<group>"; };
 		3CA8B6D021E199C700D2B853 /* gamma_write */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = gamma_write; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -464,6 +469,8 @@
 				3C97792D2216024C003721FD /* RedFadeAlpha256.m4v */,
 				3AF7E9BE1EB64A46003BB06D /* AAPLRenderer.h */,
 				3AF7E9BF1EB64A46003BB06D /* AAPLRenderer.m */,
+				3C97793522161CF2003721FD /* MetalScaleRenderContext.h */,
+				3C97793622161CF3003721FD /* MetalScaleRenderContext.m */,
 				3CB6E80121D6C62A005424E6 /* MetalBT709Decoder.h */,
 				3CB6E80021D6C62A005424E6 /* MetalBT709Decoder.m */,
 				3C4A770221D8498E0041ACE3 /* MetalRenderContext.h */,
@@ -1066,6 +1073,7 @@
 				3AFD65721F71A8A10008A125 /* main.m in Sources */,
 				3CB6E80B21D6D15F005424E6 /* BGDecodeEncode.m in Sources */,
 				3AFD656C1F71A8980008A125 /* AAPLAppDelegate.m in Sources */,
+				3C97793822161CF4003721FD /* MetalScaleRenderContext.m in Sources */,
 				3C4A770421D8498E0041ACE3 /* MetalRenderContext.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1078,6 +1086,7 @@
 				3AFD65701F71A89E0008A125 /* AAPLViewController.m in Sources */,
 				3CB6E81621D73BB5005424E6 /* CGFrameBuffer.m in Sources */,
 				3CA8B6C721E1682600D2B853 /* H264Encoder.m in Sources */,
+				3C97793922161CF4003721FD /* MetalScaleRenderContext.m in Sources */,
 				63B42F171ED2063800859D09 /* AAPLShaders.metal in Sources */,
 				3AF7EA0B1EB64A46003BB06D /* AAPLRenderer.m in Sources */,
 				3AFD656D1F71A8980008A125 /* AAPLAppDelegate.m in Sources */,
@@ -1096,6 +1105,7 @@
 				3AFD65711F71A8A00008A125 /* main.m in Sources */,
 				3CB6E81421D73BB5005424E6 /* CGFrameBuffer.m in Sources */,
 				3CA8B6C521E1682600D2B853 /* H264Encoder.m in Sources */,
+				3C97793722161CF3003721FD /* MetalScaleRenderContext.m in Sources */,
 				3AFD656E1F71A89E0008A125 /* AAPLViewController.m in Sources */,
 				63B42F181ED2063C00859D09 /* AAPLShaders.metal in Sources */,
 				3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */,

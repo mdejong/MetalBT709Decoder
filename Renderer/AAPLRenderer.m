@@ -17,6 +17,7 @@ Implementation of renderer class which performs Metal setup and per frame render
 
 #import "MetalRenderContext.h"
 #import "MetalBT709Decoder.h"
+#import "MetalScaleRenderContext.h"
 #import "BGRAToBT709Converter.h"
 #import "BGDecodeEncode.h"
 #import "CGFrameBuffer.h"
@@ -25,6 +26,8 @@ Implementation of renderer class which performs Metal setup and per frame render
 @interface AAPLRenderer ()
 
 @property (nonatomic, retain) MetalBT709Decoder *metalBT709Decoder;
+
+@property (nonatomic, retain) MetalScaleRenderContext *metalScaleRenderContext;
 
 @end
 
@@ -75,9 +78,6 @@ void validate_storage_mode(id<MTLTexture> texture)
   // The device (aka GPU) we're using to render
   id<MTLDevice> _device;
   
-  // Our render pipeline composed of our vertex and fragment shaders in the .metal shader file
-  id<MTLRenderPipelineState> _pipelineState;
-  
   // The command Queue from which we'll obtain command buffers
   id<MTLCommandQueue> _commandQueue;
   
@@ -95,6 +95,8 @@ void validate_storage_mode(id<MTLTexture> texture)
   // The current size of our view so we can use this in our render pipeline
   vector_uint2 _viewportSize;
   
+  // non-zero when writing to a sRGB texture is possible, certain versions
+  // of MacOSX do not support sRGB texture write operations.
   int hasWriteSRGBTextureSupport;
 }
 
@@ -262,32 +264,16 @@ void validate_storage_mode(id<MTLTexture> texture)
     worked = worked;
     NSAssert(worked, @"worked");
     
-    {
-      // Load the vertex function from the library
-      id<MTLFunction> vertexFunction = [defaultLibrary newFunctionWithName:@"identityVertexShader"];
-      
-      // Load the fragment function from the library
-      id<MTLFunction> fragmentFunction = [defaultLibrary newFunctionWithName:@"samplingShader"];
-      
-      // Set up a descriptor for creating a pipeline state object
-      MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
-      pipelineStateDescriptor.label = @"Rescale Pipeline";
-      pipelineStateDescriptor.vertexFunction = vertexFunction;
-      pipelineStateDescriptor.fragmentFunction = fragmentFunction;
-      pipelineStateDescriptor.colorAttachments[0].pixelFormat = mtkView.colorPixelFormat;
-      
-      NSError *error = NULL;
-      _pipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor
-                                                               error:&error];
-      if (!_pipelineState)
-      {
-        // Pipeline State creation could fail if we haven't properly set up our pipeline descriptor.
-        //  If the Metal API validation is enabled, we can find out more information about what
-        //  went wrong.  (Metal API validation is enabled by default when a debug build is run
-        //  from Xcode)
-        NSLog(@"Failed to created pipeline state, error %@", error);
-      }
-    }
+    // Scale render is used to blit and rescale from the 709
+    // BGRA pixels into the MTKView. Note that in the special
+    // case where no rescale operation is needed then the 709
+    // decoder will render directly into the view.
+    
+    MetalScaleRenderContext *metalScaleRenderContext = [[MetalScaleRenderContext alloc] init];
+    
+    [metalScaleRenderContext setupRenderPipelines:mrc mtkView:mtkView];
+    
+    self.metalScaleRenderContext = metalScaleRenderContext;
   }
   
   return self;
@@ -686,40 +672,16 @@ void validate_storage_mode(id<MTLTexture> texture)
       }
     }
     
-    // renderWidth, renderHeight already set to viewport dimensions above
+    // Invoke scaling operation to fit the intermediate buffer
+    // into the current width and height of the viewport.
     
-    if (renderPassDescriptor != nil)
-    {
-      // Create a render command encoder so we can render into something
-      id<MTLRenderCommandEncoder> renderEncoder =
-      [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
-      renderEncoder.label = @"RescaleRender";
-      
-      // Set the region of the drawable to which we'll draw.
-      [renderEncoder setViewport:(MTLViewport){0.0, 0.0, renderWidth, renderHeight, -1.0, 1.0 }];
-      
-      [renderEncoder setRenderPipelineState:_pipelineState];
-      
-      [renderEncoder setVertexBuffer:mrc.identityVerticesBuffer
-                              offset:0
-                             atIndex:0];
-      
-      // Set the texture object.  The AAPLTextureIndexBaseColor enum value corresponds
-      ///  to the 'colorMap' argument in our 'samplingShader' function because its
-      //   texture attribute qualifier also uses AAPLTextureIndexBaseColor for its index
-      [renderEncoder setFragmentTexture:_resizeTexture
-                                atIndex:AAPLTextureIndexBaseColor];
-      
-      // Draw the vertices of our triangles
-      [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle
-                        vertexStart:0
-                        vertexCount:mrc.identityNumVertices];
-      
-      [renderEncoder endEncoding];
-      
-      // Schedule a present once the framebuffer is complete using the current drawable
-      [commandBuffer presentDrawable:view.currentDrawable];
-    }
+    [self.metalScaleRenderContext renderScaled:mrc
+                                       mtkView:view
+                                   renderWidth:renderWidth
+                                  renderHeight:renderHeight
+                                 commandBuffer:commandBuffer
+                          renderPassDescriptor:renderPassDescriptor
+                                   bgraTexture:_resizeTexture];
   }
   
   if (isCaptureRenderedTextureEnabled) {
