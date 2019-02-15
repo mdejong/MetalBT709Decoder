@@ -689,7 +689,13 @@ void validate_storage_mode(id<MTLTexture> texture)
     int width = (int) _resizeTexture.width;
     int height = (int) _resizeTexture.height;
     
-    CGFrameBuffer *renderedFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    int bpp = 24;
+    if (self.metalBT709Decoder.hasAlphaChannel == TRUE) {
+      // 32 BPP
+      bpp = 32;
+    }
+    
+    CGFrameBuffer *renderedFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:bpp width:width height:height];
     
     // Copy from texture into framebuffer as BGRA pixels
     
@@ -724,7 +730,13 @@ void validate_storage_mode(id<MTLTexture> texture)
     int width = (int) texture.width;
     int height = (int) texture.height;
     
-    CGFrameBuffer *renderedFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+    int bpp = 24;
+    if (self.metalBT709Decoder.hasAlphaChannel == TRUE) {
+      // 32 BPP
+      bpp = 32;
+    }
+    
+    CGFrameBuffer *renderedFB = [CGFrameBuffer cGFrameBufferWithBppDimensions:bpp width:width height:height];
     
     [texture getBytes:(void*)renderedFB.pixels
                  bytesPerRow:width*sizeof(uint32_t)
