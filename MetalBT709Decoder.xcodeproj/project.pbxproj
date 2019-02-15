@@ -156,6 +156,12 @@
 		3CBDDE1421FAF9C6008E1E66 /* QuickTime_Test_Pattern_HD.mov in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77B321DD87D60041ACE3 /* QuickTime_Test_Pattern_HD.mov */; };
 		3CBDDE1521FAF9C6008E1E66 /* QuickTime_Test_Pattern_SD.mov in Resources */ = {isa = PBXBuildFile; fileRef = 3C4A77B221DD87D50041ACE3 /* QuickTime_Test_Pattern_SD.mov */; };
 		3CBDDE1621FAF9C6008E1E66 /* Rec709Sample.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */; };
+		3CF086C0221773C000FD7802 /* GlobeLEDAlpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CF086BE221773BF00FD7802 /* GlobeLEDAlpha.m4v */; };
+		3CF086C1221773C000FD7802 /* GlobeLEDAlpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CF086BE221773BF00FD7802 /* GlobeLEDAlpha.m4v */; };
+		3CF086C2221773C000FD7802 /* GlobeLEDAlpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CF086BE221773BF00FD7802 /* GlobeLEDAlpha.m4v */; };
+		3CF086C3221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CF086BF221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v */; };
+		3CF086C4221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CF086BF221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v */; };
+		3CF086C5221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CF086BF221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v */; };
 		63B42F161ED2063300859D09 /* AAPLShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 3AF7E9C11EB64A46003BB06D /* AAPLShaders.metal */; };
 		63B42F171ED2063800859D09 /* AAPLShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 3AF7E9C11EB64A46003BB06D /* AAPLShaders.metal */; };
 		63B42F181ED2063C00859D09 /* AAPLShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 3AF7E9C11EB64A46003BB06D /* AAPLShaders.metal */; };
@@ -316,6 +322,8 @@
 		3CBDDDFF21FAF8FD008E1E66 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		3CBDDE0121FAF8FD008E1E66 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3CBDDE0221FAF8FD008E1E66 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		3CF086BE221773BF00FD7802 /* GlobeLEDAlpha.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = GlobeLEDAlpha.m4v; sourceTree = "<group>"; };
+		3CF086BF221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = GlobeLEDAlpha_alpha.m4v; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -467,6 +475,8 @@
 				3C483FFB22098ADE00AC51AC /* big_buck_bunny_HD_srgb.m4v */,
 				3C97792D2216024C003721FD /* RedFadeAlpha256.m4v */,
 				3C97792C2216024B003721FD /* RedFadeAlpha256_alpha.m4v */,
+				3CF086BE221773BF00FD7802 /* GlobeLEDAlpha.m4v */,
+				3CF086BF221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v */,
 				3AF7E9BE1EB64A46003BB06D /* AAPLRenderer.h */,
 				3AF7E9BF1EB64A46003BB06D /* AAPLRenderer.m */,
 				3C97793522161CF2003721FD /* MetalScaleRenderContext.h */,
@@ -950,6 +960,8 @@
 				3C483FFF22098AE600AC51AC /* big_buck_bunny_HD_srgb.m4v in Resources */,
 				3C9779322216024E003721FD /* RedFadeAlpha256.m4v in Resources */,
 				3C483FF72209196F00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v in Resources */,
+				3CF086C1221773C000FD7802 /* GlobeLEDAlpha.m4v in Resources */,
+				3CF086C4221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v in Resources */,
 				3A1857F01EB7AF9E007D4F50 /* Image.tga in Resources */,
 				3C4A77A821DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3C02732E220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */,
@@ -966,6 +978,7 @@
 			files = (
 				3C8219DB21E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
 				3A1857F11EB7AF9E007D4F50 /* Image.tga in Resources */,
+				3CF086C2221773C000FD7802 /* GlobeLEDAlpha.m4v in Resources */,
 				3C4A77B921DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
 				3C4A77A921DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3A06FBA71F730C4000073097 /* Main.storyboard in Resources */,
@@ -974,6 +987,7 @@
 				3C9779302216024E003721FD /* RedFadeAlpha256_alpha.m4v in Resources */,
 				3C8219D721E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
 				3C4A77B621DD87DA0041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
+				3CF086C5221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v in Resources */,
 				3C9779332216024E003721FD /* RedFadeAlpha256.m4v in Resources */,
 				3C821A3F21ED84DE006D516F /* Rec709Sample.mp4 in Resources */,
 			);
@@ -984,6 +998,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3C97792E2216024E003721FD /* RedFadeAlpha256_alpha.m4v in Resources */,
+				3CF086C0221773C000FD7802 /* GlobeLEDAlpha.m4v in Resources */,
 				3C8219D921E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
 				3C02732D220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */,
 				3C483FFC22098AE500AC51AC /* big_buck_bunny_HD_apple.m4v in Resources */,
@@ -997,6 +1012,7 @@
 				3C483FF62209196E00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v in Resources */,
 				3CB6E80521D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 				3C8219D521E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
+				3CF086C3221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v in Resources */,
 				3C4A77B421DD87D80041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
 				3C821A3D21ED84DE006D516F /* Rec709Sample.mp4 in Resources */,
 			);

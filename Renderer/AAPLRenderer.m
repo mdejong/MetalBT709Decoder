@@ -285,7 +285,9 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeBigBuckBunny];
   //cvPixelBufer = [self decodeQuicktimeTestPatternLinearGrayscale];
 
-  cvPixelBufer = [self decodeRedFadeAlpha];
+  // RGB + Alpha images
+  //cvPixelBufer = [self decodeRedFadeAlpha];
+  cvPixelBufer = [self decodeGlobeAlpha];
   
   if (debugDumpYCbCr) {
     [BGRAToBT709Converter dumpYCBCr:cvPixelBufer];
@@ -553,6 +555,78 @@ void validate_storage_mode(id<MTLTexture> texture)
   return cvPixelBuffer;
 }
 
+- (CVPixelBufferRef) decodeGlobeAlpha
+{
+  NSString *resFilename = @"GlobeLEDAlpha.m4v";
+  
+  int width = 1920;
+  int height = 1080;
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(width, height)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  // FIXME: Read CoreVideo pixel bufer from _alpha input source and then create a single
+  // CoreVideo container that is able to represent all 4 channels of input data in
+  // a single ref. Another option would be to use 2 CoreVideo buffers but mark
+  // the second texture and a single 8 bit input, this would require a copy operation
+  // for the Alpha channel but it would mean the extra memory for the CbCr in the
+  // second video would not need to be retained.
+  
+  if ((1)) {
+    NSString *resFilename = @"GlobeLEDAlpha_alpha.m4v";
+    
+    NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                      frameDuration:1.0/30
+                                                                         renderSize:CGSizeMake(width, height)
+                                                                         aveBitrate:0];
+    NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+    
+    CVPixelBufferRef cvPixelBufferAlphaIn = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+    
+    const int makeCopyToReduceMemoryUsage = 0;
+    
+    if (makeCopyToReduceMemoryUsage) {
+      // Create a CoreVideo pixel buffer that features a Y channel but no UV
+      // channel. This reduces runtime memory usage at the cost of a copy.
+      
+      CVPixelBufferRef cvPixelBufferAlphaOut = [BGRAToBT709Converter createCoreVideoYBuffer:CGSizeMake(width, height)];
+      
+      cvpbu_copy_plane(cvPixelBufferAlphaIn, cvPixelBufferAlphaOut, 0);
+      
+      // Note that only the kCVImageBufferTransferFunctionKey property is set here, this
+      // special purpose Alpha channel buffer cannot be converted from YCbCr to RGB.
+      // This linear check is here so that the reduced memory use pixel buffer will
+      // pass the same validation as the original encoded with ffmpeg.
+      
+      NSDictionary *pbAttachments = @{
+                                      //(__bridge NSString*)kCVImageBufferYCbCrMatrixKey: (__bridge NSString*)kCVImageBufferYCbCrMatrix_ITU_R_709_2,
+                                      //(__bridge NSString*)kCVImageBufferColorPrimariesKey: (__bridge NSString*)kCVImageBufferColorPrimaries_ITU_R_709_2,
+                                      (__bridge NSString*)kCVImageBufferTransferFunctionKey: (__bridge NSString*)kCVImageBufferTransferFunction_Linear,
+                                      };
+      
+      CVBufferSetAttachments(cvPixelBufferAlphaOut, (__bridge CFDictionaryRef)pbAttachments, kCVAttachmentMode_ShouldPropagate);
+      
+      self->_alphaPixelBuffer = cvPixelBufferAlphaOut;
+    } else {
+      CVPixelBufferRetain(cvPixelBufferAlphaIn);
+      self->_alphaPixelBuffer = cvPixelBufferAlphaIn;
+    }
+  }
+  
+  // FIXME: Need a way to hold on to these 2 CoreVideo pixel buffers, if the
+  // buffers will be used and released right away then no need to copy.
+  
+  return cvPixelBuffer;
+}
 
 /// Called whenever view changes orientation or is resized
 - (void)mtkView:(nonnull MTKView *)view drawableSizeWillChange:(CGSize)size

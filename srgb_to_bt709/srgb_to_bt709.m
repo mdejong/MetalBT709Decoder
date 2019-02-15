@@ -880,7 +880,7 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
           float percentOfTotal = numSteps / 219.0f;
           AOut = percentOfTotal * 255.0f;
           
-          NSLog(@"in A = %d : AN %.4f : AStep %.4f : numSteps %3d : percentOfTotal %.2f : AOut %d", A, AN, AStep, numSteps, percentOfTotal, AOut);
+          //NSLog(@"in A = %d : AN %.4f : AStep %.4f : numSteps %3d : percentOfTotal %.2f : AOut %d", A, AN, AStep, numSteps, percentOfTotal, AOut);
           
           A = AOut;
         }
