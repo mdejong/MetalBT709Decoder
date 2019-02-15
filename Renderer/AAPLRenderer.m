@@ -75,12 +75,6 @@ void validate_storage_mode(id<MTLTexture> texture)
   // implications so it should only be enabled when debuging.
   int isCaptureRenderedTextureEnabled;
   
-  // The device (aka GPU) we're using to render
-  id<MTLDevice> _device;
-  
-  // The command Queue from which we'll obtain command buffers
-  id<MTLCommandQueue> _commandQueue;
-  
   // Input to sRGB texture render comes from H.264 source
   CVPixelBufferRef _yCbCrPixelBuffer;
   
@@ -108,11 +102,20 @@ void validate_storage_mode(id<MTLTexture> texture)
   {
     isCaptureRenderedTextureEnabled = 0;
     
-    _device = mtkView.device;
+    id<MTLDevice> device = mtkView.device;
     
     if (isCaptureRenderedTextureEnabled) {
       mtkView.framebufferOnly = false;
     }
+    
+    // Init Metal context, this object contains refs to metal objects
+    // and util functions.
+    
+    MetalRenderContext *mrc = [[MetalRenderContext alloc] init];
+    
+    mrc.device = device;
+    mrc.defaultLibrary = [device newDefaultLibrary];
+    mrc.commandQueue = [device newCommandQueue];
     
     // Decode H.264 to CoreVideo pixel buffer
     
@@ -178,7 +181,7 @@ void validate_storage_mode(id<MTLTexture> texture)
       
       set_storage_mode(textureDescriptor);
       
-      _resizeTexture = [_device newTextureWithDescriptor:textureDescriptor];
+      _resizeTexture = [device newTextureWithDescriptor:textureDescriptor];
       
       NSAssert(_resizeTexture, @"_resizeTexture");
       
@@ -202,23 +205,6 @@ void validate_storage_mode(id<MTLTexture> texture)
       }
 # endif // DEBUG
     }
-    
-    /// Create render pipeline
-    
-    // Create the command queue
-    _commandQueue = [_device newCommandQueue];
-    
-    // Load all the shader files with a .metal file extension in the project
-    id<MTLLibrary> defaultLibrary = [_device newDefaultLibrary];
-    
-    // Init Metal context, this object contains refs to metal objects
-    // and util functions.
-
-    MetalRenderContext *mrc = [[MetalRenderContext alloc] init];
-    
-    mrc.device = _device;
-    mrc.defaultLibrary = defaultLibrary;
-    mrc.commandQueue = _commandQueue;
     
     // Init metalBT709Decoder with MetalRenderContext set as a property
     
@@ -252,7 +238,7 @@ void validate_storage_mode(id<MTLTexture> texture)
     MetalBT709Gamma decodeGamma = MetalBT709GammaApple;
     
     if ((1)) {
-      // Explicitly set sRGB decode matrix flag
+      // Explicitly set gamma to sRGB
       decodeGamma = MetalBT709GammaSRGB;
     } else if ((0)) {
       decodeGamma = MetalBT709GammaLinear;
@@ -582,16 +568,15 @@ void validate_storage_mode(id<MTLTexture> texture)
 {
   BOOL worked;
 
-  MetalRenderContext *mrc = self.metalBT709Decoder.metalRenderContext;
+  MetalBT709Decoder *metalBT709Decoder = self.metalBT709Decoder;
+  MetalRenderContext *mrc = metalBT709Decoder.metalRenderContext;
   
   // Create a new command buffer for each render pass to the current drawable
-  id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
+  id<MTLCommandBuffer> commandBuffer = [mrc.commandQueue commandBuffer];
   commandBuffer.label = @"BT709 Render";
   
   // Obtain a renderPassDescriptor generated from the view's drawable textures
   MTLRenderPassDescriptor *renderPassDescriptor = view.currentRenderPassDescriptor;
-  
-  MetalBT709Decoder *metalBT709Decoder = self.metalBT709Decoder;
   
   int renderWidth = (int) _viewportSize.x;
   int renderHeight = (int) _viewportSize.y;
