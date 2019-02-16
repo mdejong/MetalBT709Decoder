@@ -767,31 +767,29 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
   }
   
   if (isAlpha && !writeAlpha) {
-    // When writing just the BGR portion of the BGRA pixels, unpremultiply
-    // and then emit these pixels as sRGB with alpha = 0xFF.
+    // Previously, RGB values were being emitted as unpremultiplied
+    // pixels but the compression and color reconstruction results
+    // are actually better when premultiplied pixels are encoded
+    // into the RGB channel.
     
-    // Process just the BGR portion of the input image or emit just the A
-    
-    // FIXME: Do the input RGB pixels get converted to linear before being
-    // unpremultiplied ?
-    
-    CGImageRef unPreImg = [BGRAToBT709Converter unpremultiply:inImage];
+    //CGImageRef unPreImg = [BGRAToBT709Converter unpremultiply:inImage];
     
     // Dump
     
+#if defined(DEBUG)
     if ((1)) {
       // Emit png with sRGB colorspace
       
-      NSString *filename = [NSString stringWithFormat:@"Unpremultiplied.png"];
+      NSString *filename = [NSString stringWithFormat:@"Premultiplied.png"];
       //NSString *tmpDir = NSTemporaryDirectory();
       NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
       NSString *path = [dirName stringByAppendingPathComponent:filename];
       
       CGFrameBuffer *cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
       
-      cgFrameBuffer.colorspace = CGImageGetColorSpace(unPreImg);
+      cgFrameBuffer.colorspace = CGImageGetColorSpace(inImage);
       
-      BOOL worked = [cgFrameBuffer renderCGImage:unPreImg];
+      BOOL worked = [cgFrameBuffer renderCGImage:inImage];
       assert(worked);
       
       NSData *pngData = [cgFrameBuffer formatAsPNG];
@@ -801,9 +799,10 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
       
       NSLog(@"wrote %@", path);
     }
+#endif // DEBUG
     
-    CGImageRelease(inImage);
-    inImage = unPreImg;
+    //CGImageRelease(inImage);
+    //inImage = unPreImg;
   } else if (isAlpha && writeAlpha) {
     // Writing the alpha channel values means just extract the linear
     // values from the alpha channel and write as simple linear data
@@ -892,10 +891,11 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
       }
     }
     
+#if defined(DEBUG)
     // Dump linear output as PNG
     
     if ((1)) {
-      NSString *filename = [NSString stringWithFormat:@"Unpremultiplied_alpha_as_linear.png"];
+      NSString *filename = [NSString stringWithFormat:@"Premultiplied_alpha_as_linear.png"];
       //NSString *tmpDir = NSTemporaryDirectory();
       NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
       NSString *path = [dirName stringByAppendingPathComponent:filename];
@@ -907,6 +907,7 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
       
       NSLog(@"wrote %@", path);
     }
+#endif // DEBUG
     
     CGImageRelease(inImage);
     inImage = [linearFB createCGImageRef];

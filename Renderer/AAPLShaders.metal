@@ -425,12 +425,14 @@ sRGBToLinearSRGBFragmentAlpha(RasterizerData in [[stage_in]],
   
   float4 pixel = BT709_decode(Y, Cb, Cr);
   pixel = sRGB_gamma_decode(pixel);
-  // Premultiply
+  
+  // Load alpha value from alpha texture
   float A = float(inATexture.sample(textureSampler, in.textureCoordinate).r);
   A = BT709_decodeAlpha(A);
-  pixel.r *= A;
-  pixel.g *= A;
-  pixel.b *= A;
+  // Premultiply
+//  pixel.r *= A;
+//  pixel.g *= A;
+//  pixel.b *= A;
   pixel.a = A;
   return pixel;
 }
