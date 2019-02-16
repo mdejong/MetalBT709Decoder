@@ -287,7 +287,8 @@ void validate_storage_mode(id<MTLTexture> texture)
 
   // RGB + Alpha images
   //cvPixelBufer = [self decodeRedFadeAlpha];
-  cvPixelBufer = [self decodeRedCircleAlpha];
+  //cvPixelBufer = [self decodeRedCircleAlpha];
+  cvPixelBufer = [self decodeColorsAlpha4by4];
   //cvPixelBufer = [self decodeGlobeAlpha];
   
   if (debugDumpYCbCr) {
@@ -584,6 +585,53 @@ void validate_storage_mode(id<MTLTexture> texture)
   
   if ((1)) {
     NSString *resFilename = @"RedCircleOverWhiteA_alpha.m4v";
+    
+    NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                      frameDuration:1.0/30
+                                                                         renderSize:CGSizeMake(width, height)
+                                                                         aveBitrate:0];
+    NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+    
+    CVPixelBufferRef cvPixelBufferAlphaIn = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+    
+    CVPixelBufferRetain(cvPixelBufferAlphaIn);
+    self->_alphaPixelBuffer = cvPixelBufferAlphaIn;
+  }
+  
+  // FIXME: Need a way to hold on to these 2 CoreVideo pixel buffers, if the
+  // buffers will be used and released right away then no need to copy.
+  
+  return cvPixelBuffer;
+}
+
+- (CVPixelBufferRef) decodeColorsAlpha4by4
+{
+  NSString *resFilename = @"ColorsAlpha4by4.m4v";
+  
+  int width = 512;
+  int height = 512;
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(width, height)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  // FIXME: Read CoreVideo pixel bufer from _alpha input source and then create a single
+  // CoreVideo container that is able to represent all 4 channels of input data in
+  // a single ref. Another option would be to use 2 CoreVideo buffers but mark
+  // the second texture and a single 8 bit input, this would require a copy operation
+  // for the Alpha channel but it would mean the extra memory for the CbCr in the
+  // second video would not need to be retained.
+  
+  if ((1)) {
+    NSString *resFilename = @"ColorsAlpha4by4_alpha.m4v";
     
     NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
                                                                       frameDuration:1.0/30
