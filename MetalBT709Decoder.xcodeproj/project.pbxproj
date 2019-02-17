@@ -25,9 +25,6 @@
 		3AFD65641F71A7240008A125 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3AFD65491F71A7070008A125 /* Main.storyboard */; };
 		3AFD656C1F71A8980008A125 /* AAPLAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD656B1F71A8910008A125 /* AAPLAppDelegate.m */; };
 		3AFD656D1F71A8980008A125 /* AAPLAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD656B1F71A8910008A125 /* AAPLAppDelegate.m */; };
-		3AFD656E1F71A89E0008A125 /* AAPLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD656A1F71A8900008A125 /* AAPLViewController.m */; };
-		3AFD656F1F71A89E0008A125 /* AAPLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD656A1F71A8900008A125 /* AAPLViewController.m */; };
-		3AFD65701F71A89E0008A125 /* AAPLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD656A1F71A8900008A125 /* AAPLViewController.m */; };
 		3AFD65711F71A8A00008A125 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD65691F71A8900008A125 /* main.m */; };
 		3AFD65721F71A8A10008A125 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD65691F71A8900008A125 /* main.m */; };
 		3AFD65731F71A8A10008A125 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD65691F71A8900008A125 /* main.m */; };
@@ -98,6 +95,15 @@
 		3C7E37C92218BC9F00116145 /* ColorsAlpha4by4_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37C52218BC9E00116145 /* ColorsAlpha4by4_alpha.m4v */; };
 		3C7E37CA2218BC9F00116145 /* ColorsAlpha4by4_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37C52218BC9E00116145 /* ColorsAlpha4by4_alpha.m4v */; };
 		3C7E37CB2218BC9F00116145 /* ColorsAlpha4by4_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37C52218BC9E00116145 /* ColorsAlpha4by4_alpha.m4v */; };
+		3C7E37D12218D02F00116145 /* AAPLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD656A1F71A8900008A125 /* AAPLViewController.m */; };
+		3C7E37D22218D03000116145 /* AAPLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD656A1F71A8900008A125 /* AAPLViewController.m */; };
+		3C7E37D32218D03000116145 /* AAPLViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AFD656A1F71A8900008A125 /* AAPLViewController.m */; };
+		3C7E37D52218D23C00116145 /* AlphaBG.png in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37D42218D23C00116145 /* AlphaBG.png */; };
+		3C7E37D62218D23C00116145 /* AlphaBG.png in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37D42218D23C00116145 /* AlphaBG.png */; };
+		3C7E37D72218D23C00116145 /* AlphaBG.png in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37D42218D23C00116145 /* AlphaBG.png */; };
+		3C7E37D92218E52C00116145 /* AlphaBGHalf.png in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37D82218E52B00116145 /* AlphaBGHalf.png */; };
+		3C7E37DA2218E52C00116145 /* AlphaBGHalf.png in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37D82218E52B00116145 /* AlphaBGHalf.png */; };
+		3C7E37DB2218E52C00116145 /* AlphaBGHalf.png in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37D82218E52B00116145 /* AlphaBGHalf.png */; };
 		3C8219D521E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */; };
 		3C8219D621E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */; };
 		3C8219D721E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */; };
@@ -307,6 +313,8 @@
 		3C4A77C021DEA5280041ACE3 /* encode_h264.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = encode_h264.m; sourceTree = "<group>"; };
 		3C7E37C42218BC9D00116145 /* ColorsAlpha4by4.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ColorsAlpha4by4.m4v; sourceTree = "<group>"; };
 		3C7E37C52218BC9E00116145 /* ColorsAlpha4by4_alpha.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ColorsAlpha4by4_alpha.m4v; sourceTree = "<group>"; };
+		3C7E37D42218D23C00116145 /* AlphaBG.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AlphaBG.png; sourceTree = "<group>"; };
+		3C7E37D82218E52B00116145 /* AlphaBGHalf.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AlphaBGHalf.png; sourceTree = "<group>"; };
 		3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = osxcolor_test_image_iPad_2048_1536.m4v; sourceTree = "<group>"; };
 		3C8219D821E950A5006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = "clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v"; sourceTree = "<group>"; };
 		3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = Rec709Sample.mp4; sourceTree = "<group>"; };
@@ -476,6 +484,8 @@
 		3AF7E9BC1EB64A46003BB06D /* Renderer */ = {
 			isa = PBXGroup;
 			children = (
+				3C7E37D42218D23C00116145 /* AlphaBG.png */,
+				3C7E37D82218E52B00116145 /* AlphaBGHalf.png */,
 				3A1857EF1EB7AF9E007D4F50 /* Image.tga */,
 				3CB6E80421D6CFC3005424E6 /* osxcolor_test_image_24bit_BT709.m4v */,
 				3C8219D421E938CB006D516F /* osxcolor_test_image_iPad_2048_1536.m4v */,
@@ -975,9 +985,11 @@
 				3C4A77B821DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
 				3C483FFD22098AE600AC51AC /* big_buck_bunny_HD_apple.m4v in Resources */,
 				3AFD65641F71A7240008A125 /* Main.storyboard in Resources */,
+				3C7E37D62218D23C00116145 /* AlphaBG.png in Resources */,
 				3C8219DA21E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
 				3C4A77B521DD87D90041ACE3 /* QuickTime_Test_Pattern_SD.mov in Resources */,
 				3C7E37CA2218BC9F00116145 /* ColorsAlpha4by4_alpha.m4v in Resources */,
+				3C7E37DA2218E52C00116145 /* AlphaBGHalf.png in Resources */,
 				3C483FFF22098AE600AC51AC /* big_buck_bunny_HD_srgb.m4v in Resources */,
 				3C9779322216024E003721FD /* RedFadeAlpha256.m4v in Resources */,
 				3C483FF72209196F00AC51AC /* drop-of-water-iPad-2048-1536-apple-crf20.m4v in Resources */,
@@ -1004,9 +1016,11 @@
 				3C8219DB21E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
 				3CF086CD22178F0600FD7802 /* RedCircleOverWhiteA_alpha.m4v in Resources */,
 				3A1857F11EB7AF9E007D4F50 /* Image.tga in Resources */,
+				3C7E37DB2218E52C00116145 /* AlphaBGHalf.png in Resources */,
 				3CF086C2221773C000FD7802 /* GlobeLEDAlpha.m4v in Resources */,
 				3C4A77B921DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
 				3C7E37CB2218BC9F00116145 /* ColorsAlpha4by4_alpha.m4v in Resources */,
+				3C7E37D72218D23C00116145 /* AlphaBG.png in Resources */,
 				3C4A77A921DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3C7E37C82218BC9F00116145 /* ColorsAlpha4by4.m4v in Resources */,
 				3A06FBA71F730C4000073097 /* Main.storyboard in Resources */,
@@ -1025,9 +1039,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C7E37D52218D23C00116145 /* AlphaBG.png in Resources */,
 				3C97792E2216024E003721FD /* RedFadeAlpha256_alpha.m4v in Resources */,
 				3CF086C0221773C000FD7802 /* GlobeLEDAlpha.m4v in Resources */,
 				3C7E37C62218BC9F00116145 /* ColorsAlpha4by4.m4v in Resources */,
+				3C7E37D92218E52C00116145 /* AlphaBGHalf.png in Resources */,
 				3C8219D921E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
 				3C02732D220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */,
 				3C483FFC22098AE500AC51AC /* big_buck_bunny_HD_apple.m4v in Resources */,
@@ -1111,12 +1127,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				3CA8B6C621E1682600D2B853 /* H264Encoder.m in Sources */,
+				3C7E37D22218D03000116145 /* AAPLViewController.m in Sources */,
 				3C4A773321D894720041ACE3 /* BGRAToBT709Converter.m in Sources */,
 				63B42F161ED2063300859D09 /* AAPLShaders.metal in Sources */,
 				3CB6E80321D6C62A005424E6 /* MetalBT709Decoder.m in Sources */,
 				3AF7EA0A1EB64A46003BB06D /* AAPLRenderer.m in Sources */,
 				3A30EDF91EB67EA800B4FC0B /* AAPLImage.m in Sources */,
-				3AFD656F1F71A89E0008A125 /* AAPLViewController.m in Sources */,
 				3CB6E81521D73BB5005424E6 /* CGFrameBuffer.m in Sources */,
 				3AFD65721F71A8A10008A125 /* main.m in Sources */,
 				3CB6E80B21D6D15F005424E6 /* BGDecodeEncode.m in Sources */,
@@ -1131,10 +1147,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				3C4A770521D8498E0041ACE3 /* MetalRenderContext.m in Sources */,
-				3AFD65701F71A89E0008A125 /* AAPLViewController.m in Sources */,
 				3CB6E81621D73BB5005424E6 /* CGFrameBuffer.m in Sources */,
 				3CA8B6C721E1682600D2B853 /* H264Encoder.m in Sources */,
 				3C97793922161CF4003721FD /* MetalScaleRenderContext.m in Sources */,
+				3C7E37D12218D02F00116145 /* AAPLViewController.m in Sources */,
 				63B42F171ED2063800859D09 /* AAPLShaders.metal in Sources */,
 				3AF7EA0B1EB64A46003BB06D /* AAPLRenderer.m in Sources */,
 				3AFD656D1F71A8980008A125 /* AAPLAppDelegate.m in Sources */,
@@ -1153,8 +1169,8 @@
 				3AFD65711F71A8A00008A125 /* main.m in Sources */,
 				3CB6E81421D73BB5005424E6 /* CGFrameBuffer.m in Sources */,
 				3CA8B6C521E1682600D2B853 /* H264Encoder.m in Sources */,
+				3C7E37D32218D03000116145 /* AAPLViewController.m in Sources */,
 				3C97793722161CF3003721FD /* MetalScaleRenderContext.m in Sources */,
-				3AFD656E1F71A89E0008A125 /* AAPLViewController.m in Sources */,
 				63B42F181ED2063C00859D09 /* AAPLShaders.metal in Sources */,
 				3CB6E80221D6C62A005424E6 /* MetalBT709Decoder.m in Sources */,
 				3C4A773221D894720041ACE3 /* BGRAToBT709Converter.m in Sources */,

@@ -8,9 +8,17 @@ Implementation of our cross-platform view controller
 #import "AAPLViewController.h"
 #import "AAPLRenderer.h"
 
+#import <QuartzCore/QuartzCore.h>
+
 @implementation AAPLViewController
 {
-    MTKView *_view;
+#if TARGET_OS_IOS
+    IBOutlet UIImageView *imageView;
+#else
+    IBOutlet NSImageView *imageView;
+#endif // TARGET_OS_IOS
+  
+    IBOutlet MTKView *mtkView;
 
     AAPLRenderer *_renderer;
 }
@@ -19,17 +27,29 @@ Implementation of our cross-platform view controller
 {
     [super viewDidLoad];
 
-    // Set the view to use the default device
-    _view = (MTKView *)self.view;
-    _view.device = MTLCreateSystemDefaultDevice();
+#if TARGET_OS_IOS
+    UIImage *alphaImg = [UIImage imageNamed:@"AlphaBGHalf.png"];
+    assert(alphaImg);
+    UIColor *patternColor = [UIColor colorWithPatternImage:alphaImg];
+    imageView.backgroundColor = patternColor;
+#else
+    // MacOSX
+    NSImage *alphaImg = [NSImage imageNamed:@"AlphaBG.png"];
+    assert(alphaImg);
+    NSColor *patternColor = [NSColor colorWithPatternImage:alphaImg];
+    [imageView setWantsLayer:YES];
+    imageView.layer.backgroundColor = patternColor.CGColor;
+#endif // TARGET_OS_IOS
 
-    if(!_view.device)
+    mtkView.device = MTLCreateSystemDefaultDevice();
+
+    if(!mtkView.device)
     {
         NSLog(@"Metal is not supported on this device");
         return;
     }
 
-    _renderer = [[AAPLRenderer alloc] initWithMetalKitView:_view];
+    _renderer = [[AAPLRenderer alloc] initWithMetalKitView:mtkView];
 
     if(!_renderer)
     {
@@ -38,9 +58,9 @@ Implementation of our cross-platform view controller
     }
 
     // Initialize our renderer with the view size
-    [_renderer mtkView:_view drawableSizeWillChange:_view.drawableSize];
+    [_renderer mtkView:mtkView drawableSizeWillChange:mtkView.drawableSize];
 
-    _view.delegate = _renderer;
+    mtkView.delegate = _renderer;
 }
 
 @end

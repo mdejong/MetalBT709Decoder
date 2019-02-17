@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="13528" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="14460.31" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="13528"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14460.31"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -681,10 +681,39 @@
         <scene sceneID="hIz-AP-VOD">
             <objects>
                 <viewController id="XfG-lQ-9wD" customClass="AAPLViewController" sceneMemberID="viewController">
-                    <view key="view" wantsLayer="YES" id="m2S-Jp-Qdl" customClass="MTKView">
-                        <rect key="frame" x="0.0" y="0.0" width="800" height="600"/>
-                        <autoresizingMask key="autoresizingMask"/>
-                    </view>
+                    <customView key="view" id="iKS-QX-6bQ">
+                        <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <subviews>
+                            <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="ktp-Ii-JOH">
+                                <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
+                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="e1q-bB-iiY"/>
+                            </imageView>
+                            <view wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tyZ-Pt-a5P" userLabel="mtkView" customClass="MTKView">
+                                <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
+                                <subviews>
+                                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gEj-YK-ifh">
+                                        <rect key="frame" x="132" y="11" width="163" height="96"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                    </customView>
+                                </subviews>
+                            </view>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="tyZ-Pt-a5P" firstAttribute="width" secondItem="iKS-QX-6bQ" secondAttribute="width" id="AyV-3W-mbD"/>
+                            <constraint firstItem="tyZ-Pt-a5P" firstAttribute="centerY" secondItem="iKS-QX-6bQ" secondAttribute="centerY" id="F0f-pE-GVw"/>
+                            <constraint firstItem="tyZ-Pt-a5P" firstAttribute="height" secondItem="iKS-QX-6bQ" secondAttribute="height" id="FLK-m3-E1n"/>
+                            <constraint firstItem="ktp-Ii-JOH" firstAttribute="height" secondItem="iKS-QX-6bQ" secondAttribute="height" id="MUF-Ab-PfB"/>
+                            <constraint firstItem="ktp-Ii-JOH" firstAttribute="width" secondItem="iKS-QX-6bQ" secondAttribute="width" id="OZn-iR-hAR"/>
+                            <constraint firstItem="tyZ-Pt-a5P" firstAttribute="centerX" secondItem="iKS-QX-6bQ" secondAttribute="centerX" id="X1n-AI-Nh8"/>
+                            <constraint firstItem="ktp-Ii-JOH" firstAttribute="centerY" secondItem="iKS-QX-6bQ" secondAttribute="centerY" id="YlC-2I-xRW"/>
+                            <constraint firstItem="ktp-Ii-JOH" firstAttribute="centerX" secondItem="iKS-QX-6bQ" secondAttribute="centerX" id="cRJ-ri-Zw0"/>
+                        </constraints>
+                    </customView>
+                    <connections>
+                        <outlet property="imageView" destination="ktp-Ii-JOH" id="nP1-bQ-dt6"/>
+                        <outlet property="mtkView" destination="tyZ-Pt-a5P" id="0UW-Uc-f83"/>
+                    </connections>
                 </viewController>
                 <customObject id="rPt-NT-nkU" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>

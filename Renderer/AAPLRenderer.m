@@ -229,11 +229,26 @@ void validate_storage_mode(id<MTLTexture> texture)
     // an additional channel for Y is retained.
     self.metalBT709Decoder.hasAlphaChannel = TRUE;
     
+    BOOL isOpaqueFlag;
+
+//    if (self.metalBT709Decoder.hasAlphaChannel) {
+//      mtkView.opaque = FALSE;
+//    } else {
+//      mtkView.opaque = TRUE;
+//    }
+
     if (self.metalBT709Decoder.hasAlphaChannel) {
-      mtkView.opaque = FALSE;
+      isOpaqueFlag = FALSE;
     } else {
-      mtkView.opaque = TRUE;
+      isOpaqueFlag = TRUE;
     }
+
+#if TARGET_OS_IOS
+    mtkView.opaque = isOpaqueFlag;
+#else
+    // MacOSX
+    mtkView.layer.opaque = isOpaqueFlag;
+#endif // TARGET_OS_IOS
     
     MetalBT709Gamma decodeGamma = MetalBT709GammaApple;
     
@@ -287,8 +302,8 @@ void validate_storage_mode(id<MTLTexture> texture)
 
   // RGB + Alpha images
   //cvPixelBufer = [self decodeRedFadeAlpha];
-  //cvPixelBufer = [self decodeRedCircleAlpha];
-  cvPixelBufer = [self decodeColorsAlpha4by4];
+  cvPixelBufer = [self decodeRedCircleAlpha];
+  //cvPixelBufer = [self decodeColorsAlpha4by4];
   //cvPixelBufer = [self decodeGlobeAlpha];
   
   if (debugDumpYCbCr) {
@@ -466,8 +481,8 @@ void validate_storage_mode(id<MTLTexture> texture)
 
 - (CVPixelBufferRef) decodeBigBuckBunny
 {
-  NSString *resFilename = @"big_buck_bunny_HD_apple.m4v";
-  //NSString *resFilename = @"big_buck_bunny_HD_srgb.m4v";
+  //NSString *resFilename = @"big_buck_bunny_HD_apple.m4v";
+  NSString *resFilename = @"big_buck_bunny_HD_srgb.m4v";
   
   NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
                                                                     frameDuration:1.0/30
