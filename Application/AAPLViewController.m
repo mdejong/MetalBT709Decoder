@@ -27,18 +27,42 @@ Implementation of our cross-platform view controller
 {
     [super viewDidLoad];
 
+    BOOL alphaImageBackground = FALSE;
+    // If alphaImageBackground is FALSE, background can be black or white
+    BOOL blackBackground = FALSE;
+
 #if TARGET_OS_IOS
-    UIImage *alphaImg = [UIImage imageNamed:@"AlphaBGHalf.png"];
-    assert(alphaImg);
-    UIColor *patternColor = [UIColor colorWithPatternImage:alphaImg];
-    imageView.backgroundColor = patternColor;
+    if (alphaImageBackground) {
+        UIImage *alphaImg = [UIImage imageNamed:@"AlphaBGHalf.png"];
+        assert(alphaImg);
+        UIColor *patternColor = [UIColor colorWithPatternImage:alphaImg];
+        imageView.backgroundColor = patternColor;
+    } else {
+        UIColor *color;
+        if (blackBackground == FALSE) {
+            color = [UIColor whiteColor];
+        } else if (blackBackground) {
+            color = [UIColor blackColor];
+        }
+        imageView.backgroundColor = color;
+    }
 #else
     // MacOSX
-    NSImage *alphaImg = [NSImage imageNamed:@"AlphaBG.png"];
-    assert(alphaImg);
-    NSColor *patternColor = [NSColor colorWithPatternImage:alphaImg];
-    [imageView setWantsLayer:YES];
-    imageView.layer.backgroundColor = patternColor.CGColor;
+    if (alphaImageBackground) {
+        NSImage *alphaImg = [NSImage imageNamed:@"AlphaBG.png"];
+        assert(alphaImg);
+        NSColor *patternColor = [NSColor colorWithPatternImage:alphaImg];
+        [imageView setWantsLayer:YES];
+        imageView.layer.backgroundColor = patternColor.CGColor;
+    } else {
+        NSColor *color;
+        if (blackBackground == FALSE) {
+            color = [NSColor whiteColor];
+        } else if (blackBackground) {
+            color = [NSColor blackColor];
+        }
+        imageView.layer.backgroundColor = color.CGColor;
+    }
 #endif // TARGET_OS_IOS
 
     mtkView.device = MTLCreateSystemDefaultDevice();
