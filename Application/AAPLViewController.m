@@ -27,9 +27,9 @@ Implementation of our cross-platform view controller
 {
     [super viewDidLoad];
 
-    BOOL alphaImageBackground = FALSE;
+    BOOL alphaImageBackground = TRUE;
     // If alphaImageBackground is FALSE, background can be black or white
-    BOOL blackBackground = FALSE;
+    BOOL blackBackground = TRUE;
 
 #if TARGET_OS_IOS
     if (alphaImageBackground) {

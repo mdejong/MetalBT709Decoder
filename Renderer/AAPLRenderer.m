@@ -301,8 +301,8 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeQuicktimeTestPatternLinearGrayscale];
 
   // RGB + Alpha images
-  //cvPixelBufer = [self decodeRedFadeAlpha];
-  cvPixelBufer = [self decodeRedCircleAlpha];
+  cvPixelBufer = [self decodeRedFadeAlpha];
+  //cvPixelBufer = [self decodeRedCircleAlpha];
   //cvPixelBufer = [self decodeColorsAlpha4by4];
   //cvPixelBufer = [self decodeGlobeAlpha];
   
