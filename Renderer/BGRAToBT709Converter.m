@@ -26,10 +26,6 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 
 @implementation BGRAToBT709Converter
 
-- (void) deallocate
-{
-}
-
 // BGRA -> BT709
 
 + (BOOL) convert:(uint32_t*)inBGRAPixels

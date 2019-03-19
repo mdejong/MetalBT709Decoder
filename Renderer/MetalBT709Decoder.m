@@ -30,7 +30,7 @@
 
 @implementation MetalBT709Decoder
 
-- (void) deallocate
+- (void) dealloc
 {
   self.inputYTexture = nil;
   self.inputCbCrTexture = nil;
