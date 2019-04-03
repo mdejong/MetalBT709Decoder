@@ -301,7 +301,8 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeQuicktimeTestPatternLinearGrayscale];
 
   // RGB + Alpha images
-  cvPixelBufer = [self decode50PerAlpha];
+  //cvPixelBufer = [self decode50PerAlpha];
+  cvPixelBufer = [self decode5PerAlpha];
   //cvPixelBufer = [self decodeRedFadeAlpha];
   //cvPixelBufer = [self decodeRedCircleAlpha];
   //cvPixelBufer = [self decodeColorsAlpha4by4];
@@ -524,6 +525,55 @@ void validate_storage_mode(id<MTLTexture> texture)
   
   if ((1)) {
     NSString *resFilename = @"WhitePer50_alpha.m4v";
+    
+    NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                      frameDuration:1.0/30
+                                                                         renderSize:CGSizeMake(width, height)
+                                                                         aveBitrate:0];
+    NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+    
+    CVPixelBufferRef cvPixelBufferAlphaIn = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+    
+    const int makeCopyToReduceMemoryUsage = 0;
+    
+    if (makeCopyToReduceMemoryUsage) {
+      assert(0);
+    } else {
+      CVPixelBufferRetain(cvPixelBufferAlphaIn);
+      self->_alphaPixelBuffer = cvPixelBufferAlphaIn;
+    }
+  }
+  
+  return cvPixelBuffer;
+}
+
+// All white pixels at 5% alpha, this test case should check the precision
+// of encoding logic since the premultiply and then fit into YCbCr range
+// can lose precision which results in the pixel values getting too dark
+// when the RGBA combination is not large, this is cause by very small alpha
+// values which become too dark because of precision loss.
+
+- (CVPixelBufferRef) decode5PerAlpha
+{
+  NSString *resFilename = @"WhitePer5.m4v";
+  
+  int width = 256;
+  int height = 256;
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(width, height)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  if ((1)) {
+    NSString *resFilename = @"WhitePer5_alpha.m4v";
     
     NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
                                                                       frameDuration:1.0/30

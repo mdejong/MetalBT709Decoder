@@ -95,6 +95,12 @@
 		3C4BB2BD225574AF0048926A /* WhitePer50_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2B9225574AE0048926A /* WhitePer50_alpha.m4v */; };
 		3C4BB2BE225574AF0048926A /* WhitePer50_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2B9225574AE0048926A /* WhitePer50_alpha.m4v */; };
 		3C4BB2BF225574AF0048926A /* WhitePer50_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2B9225574AE0048926A /* WhitePer50_alpha.m4v */; };
+		3C4BB2C222557E4C0048926A /* WhitePer5_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2C022557E4B0048926A /* WhitePer5_alpha.m4v */; };
+		3C4BB2C322557E4C0048926A /* WhitePer5_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2C022557E4B0048926A /* WhitePer5_alpha.m4v */; };
+		3C4BB2C422557E4C0048926A /* WhitePer5_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2C022557E4B0048926A /* WhitePer5_alpha.m4v */; };
+		3C4BB2C522557E4C0048926A /* WhitePer5.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2C122557E4B0048926A /* WhitePer5.m4v */; };
+		3C4BB2C622557E4C0048926A /* WhitePer5.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2C122557E4B0048926A /* WhitePer5.m4v */; };
+		3C4BB2C722557E4C0048926A /* WhitePer5.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2C122557E4B0048926A /* WhitePer5.m4v */; };
 		3C7E37C62218BC9F00116145 /* ColorsAlpha4by4.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37C42218BC9D00116145 /* ColorsAlpha4by4.m4v */; };
 		3C7E37C72218BC9F00116145 /* ColorsAlpha4by4.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37C42218BC9D00116145 /* ColorsAlpha4by4.m4v */; };
 		3C7E37C82218BC9F00116145 /* ColorsAlpha4by4.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37C42218BC9D00116145 /* ColorsAlpha4by4.m4v */; };
@@ -319,6 +325,8 @@
 		3C4A77C021DEA5280041ACE3 /* encode_h264.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = encode_h264.m; sourceTree = "<group>"; };
 		3C4BB2B8225574AE0048926A /* WhitePer50.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = WhitePer50.m4v; sourceTree = "<group>"; };
 		3C4BB2B9225574AE0048926A /* WhitePer50_alpha.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = WhitePer50_alpha.m4v; sourceTree = "<group>"; };
+		3C4BB2C022557E4B0048926A /* WhitePer5_alpha.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = WhitePer5_alpha.m4v; sourceTree = "<group>"; };
+		3C4BB2C122557E4B0048926A /* WhitePer5.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = WhitePer5.m4v; sourceTree = "<group>"; };
 		3C7E37C42218BC9D00116145 /* ColorsAlpha4by4.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ColorsAlpha4by4.m4v; sourceTree = "<group>"; };
 		3C7E37C52218BC9E00116145 /* ColorsAlpha4by4_alpha.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ColorsAlpha4by4_alpha.m4v; sourceTree = "<group>"; };
 		3C7E37D42218D23C00116145 /* AlphaBG.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AlphaBG.png; sourceTree = "<group>"; };
@@ -517,6 +525,8 @@
 				3CF086BF221773C000FD7802 /* GlobeLEDAlpha_alpha.m4v */,
 				3C4BB2B8225574AE0048926A /* WhitePer50.m4v */,
 				3C4BB2B9225574AE0048926A /* WhitePer50_alpha.m4v */,
+				3C4BB2C122557E4B0048926A /* WhitePer5.m4v */,
+				3C4BB2C022557E4B0048926A /* WhitePer5_alpha.m4v */,
 				3AF7E9BE1EB64A46003BB06D /* AAPLRenderer.h */,
 				3AF7E9BF1EB64A46003BB06D /* AAPLRenderer.m */,
 				3C97793522161CF2003721FD /* MetalScaleRenderContext.h */,
@@ -991,6 +1001,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3C8219D621E938CC006D516F /* osxcolor_test_image_iPad_2048_1536.m4v in Resources */,
+				3C4BB2C622557E4C0048926A /* WhitePer5.m4v in Resources */,
 				3C97792F2216024E003721FD /* RedFadeAlpha256_alpha.m4v in Resources */,
 				3C4BB2BB225574AF0048926A /* WhitePer50.m4v in Resources */,
 				3C4A77B821DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
@@ -1016,6 +1027,7 @@
 				3AFD65631F71A7240008A125 /* LaunchScreen.storyboard in Resources */,
 				3C821A3E21ED84DE006D516F /* Rec709Sample.mp4 in Resources */,
 				3C483FF92209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */,
+				3C4BB2C322557E4C0048926A /* WhitePer5_alpha.m4v in Resources */,
 				3CB6E80621D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1037,7 +1049,9 @@
 				3C4A77A921DC73FD0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
 				3C7E37C82218BC9F00116145 /* ColorsAlpha4by4.m4v in Resources */,
 				3A06FBA71F730C4000073097 /* Main.storyboard in Resources */,
+				3C4BB2C422557E4C0048926A /* WhitePer5_alpha.m4v in Resources */,
 				3C4BB2BF225574AF0048926A /* WhitePer50_alpha.m4v in Resources */,
+				3C4BB2C722557E4C0048926A /* WhitePer5.m4v in Resources */,
 				3C02732F220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */,
 				3CB6E80721D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 				3C9779302216024E003721FD /* RedFadeAlpha256_alpha.m4v in Resources */,
@@ -1064,9 +1078,11 @@
 				3A1857F21EB7AF9E007D4F50 /* Image.tga in Resources */,
 				3CF086C822178F0600FD7802 /* RedCircleOverWhiteA.m4v in Resources */,
 				3C4A77B721DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
+				3C4BB2C222557E4C0048926A /* WhitePer5_alpha.m4v in Resources */,
 				3C9779312216024E003721FD /* RedFadeAlpha256.m4v in Resources */,
 				3C4BB2BA225574AF0048926A /* WhitePer50.m4v in Resources */,
 				3C483FF82209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */,
+				3C4BB2C522557E4C0048926A /* WhitePer5.m4v in Resources */,
 				3CF086CB22178F0600FD7802 /* RedCircleOverWhiteA_alpha.m4v in Resources */,
 				3C483FFE22098AE600AC51AC /* big_buck_bunny_HD_srgb.m4v in Resources */,
 				3C4A77A721DC73FC0041ACE3 /* Gamma_test_HD_75Per_24BPP_sRGB_HD.m4v in Resources */,
