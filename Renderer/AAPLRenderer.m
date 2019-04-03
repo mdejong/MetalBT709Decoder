@@ -301,7 +301,8 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeQuicktimeTestPatternLinearGrayscale];
 
   // RGB + Alpha images
-  cvPixelBufer = [self decodeRedFadeAlpha];
+  cvPixelBufer = [self decode50PerAlpha];
+  //cvPixelBufer = [self decodeRedFadeAlpha];
   //cvPixelBufer = [self decodeRedCircleAlpha];
   //cvPixelBufer = [self decodeColorsAlpha4by4];
   //cvPixelBufer = [self decodeGlobeAlpha];
@@ -498,6 +499,54 @@ void validate_storage_mode(id<MTLTexture> texture)
   
   return cvPixelBuffer;
 }
+
+// All white pixels at 50% alpha, this checks that the values are represented
+// as linear (after premultiply) that have been encoded as gamma encoded values.
+
+- (CVPixelBufferRef) decode50PerAlpha
+{
+  NSString *resFilename = @"WhitePer50.m4v";
+  
+  int width = 256;
+  int height = 256;
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(width, height)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  if ((1)) {
+    NSString *resFilename = @"WhitePer50_alpha.m4v";
+    
+    NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                      frameDuration:1.0/30
+                                                                         renderSize:CGSizeMake(width, height)
+                                                                         aveBitrate:0];
+    NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+    
+    CVPixelBufferRef cvPixelBufferAlphaIn = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+    
+    const int makeCopyToReduceMemoryUsage = 0;
+    
+    if (makeCopyToReduceMemoryUsage) {
+      assert(0);
+    } else {
+      CVPixelBufferRetain(cvPixelBufferAlphaIn);
+      self->_alphaPixelBuffer = cvPixelBufferAlphaIn;
+    }
+  }
+  
+  return cvPixelBuffer;
+}
+
+// Alpha fade
 
 - (CVPixelBufferRef) decodeRedFadeAlpha
 {
