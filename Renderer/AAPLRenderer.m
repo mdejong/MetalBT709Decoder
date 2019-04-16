@@ -227,7 +227,7 @@ void validate_storage_mode(id<MTLTexture> texture)
 
     // Process 32BPP input, a CoreVideo pixel buffer is modified so that
     // an additional channel for Y is retained.
-    self.metalBT709Decoder.hasAlphaChannel = TRUE;
+    self.metalBT709Decoder.hasAlphaChannel = FALSE;
     
     BOOL isOpaqueFlag;
 
@@ -300,9 +300,11 @@ void validate_storage_mode(id<MTLTexture> texture)
   //cvPixelBufer = [self decodeBigBuckBunny];
   //cvPixelBufer = [self decodeQuicktimeTestPatternLinearGrayscale];
 
+  cvPixelBufer = [self decodeDalaiLama];
+
   // RGB + Alpha images
   //cvPixelBufer = [self decode50PerAlpha];
-  cvPixelBufer = [self decode5PerAlpha];
+  //cvPixelBufer = [self decode5PerAlpha];
   //cvPixelBufer = [self decodeRedFadeAlpha];
   //cvPixelBufer = [self decodeRedCircleAlpha];
   //cvPixelBufer = [self decodeColorsAlpha4by4];
@@ -480,6 +482,27 @@ void validate_storage_mode(id<MTLTexture> texture)
   
   return cvPixelBuffer;
 }
+
+- (CVPixelBufferRef) decodeDalaiLama
+{
+  //NSString *resFilename = @"DalaiLamaGray_bt709.m4v";
+  NSString *resFilename = @"DalaiLamaGray_srgb.m4v";
+  
+  NSArray *cvPixelBuffers = [BGDecodeEncode recompressKeyframesOnBackgroundThread:resFilename
+                                                                    frameDuration:1.0/30
+                                                                       renderSize:CGSizeMake(258, 222)
+                                                                       aveBitrate:0];
+  NSLog(@"returned %d YCbCr textures", (int)cvPixelBuffers.count);
+  
+  // Grab just the first texture, return retained ref
+  
+  CVPixelBufferRef cvPixelBuffer = (__bridge CVPixelBufferRef) cvPixelBuffers[0];
+  
+  CVPixelBufferRetain(cvPixelBuffer);
+  
+  return cvPixelBuffer;
+}
+
 
 - (CVPixelBufferRef) decodeBigBuckBunny
 {

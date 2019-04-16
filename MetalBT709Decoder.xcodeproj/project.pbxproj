@@ -101,6 +101,12 @@
 		3C4BB2C522557E4C0048926A /* WhitePer5.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2C122557E4B0048926A /* WhitePer5.m4v */; };
 		3C4BB2C622557E4C0048926A /* WhitePer5.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2C122557E4B0048926A /* WhitePer5.m4v */; };
 		3C4BB2C722557E4C0048926A /* WhitePer5.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C4BB2C122557E4B0048926A /* WhitePer5.m4v */; };
+		3C6F0F7E226652FA00FD364B /* DalaiLamaGray_bt709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C6F0F7C226652F900FD364B /* DalaiLamaGray_bt709.m4v */; };
+		3C6F0F7F226652FA00FD364B /* DalaiLamaGray_bt709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C6F0F7C226652F900FD364B /* DalaiLamaGray_bt709.m4v */; };
+		3C6F0F80226652FA00FD364B /* DalaiLamaGray_bt709.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C6F0F7C226652F900FD364B /* DalaiLamaGray_bt709.m4v */; };
+		3C6F0F81226652FA00FD364B /* DalaiLamaGray_srgb.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C6F0F7D226652FA00FD364B /* DalaiLamaGray_srgb.m4v */; };
+		3C6F0F82226652FA00FD364B /* DalaiLamaGray_srgb.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C6F0F7D226652FA00FD364B /* DalaiLamaGray_srgb.m4v */; };
+		3C6F0F83226652FA00FD364B /* DalaiLamaGray_srgb.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C6F0F7D226652FA00FD364B /* DalaiLamaGray_srgb.m4v */; };
 		3C7E37C62218BC9F00116145 /* ColorsAlpha4by4.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37C42218BC9D00116145 /* ColorsAlpha4by4.m4v */; };
 		3C7E37C72218BC9F00116145 /* ColorsAlpha4by4.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37C42218BC9D00116145 /* ColorsAlpha4by4.m4v */; };
 		3C7E37C82218BC9F00116145 /* ColorsAlpha4by4.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C7E37C42218BC9D00116145 /* ColorsAlpha4by4.m4v */; };
@@ -327,6 +333,8 @@
 		3C4BB2B9225574AE0048926A /* WhitePer50_alpha.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = WhitePer50_alpha.m4v; sourceTree = "<group>"; };
 		3C4BB2C022557E4B0048926A /* WhitePer5_alpha.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = WhitePer5_alpha.m4v; sourceTree = "<group>"; };
 		3C4BB2C122557E4B0048926A /* WhitePer5.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = WhitePer5.m4v; sourceTree = "<group>"; };
+		3C6F0F7C226652F900FD364B /* DalaiLamaGray_bt709.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = DalaiLamaGray_bt709.m4v; sourceTree = "<group>"; };
+		3C6F0F7D226652FA00FD364B /* DalaiLamaGray_srgb.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = DalaiLamaGray_srgb.m4v; sourceTree = "<group>"; };
 		3C7E37C42218BC9D00116145 /* ColorsAlpha4by4.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ColorsAlpha4by4.m4v; sourceTree = "<group>"; };
 		3C7E37C52218BC9E00116145 /* ColorsAlpha4by4_alpha.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ColorsAlpha4by4_alpha.m4v; sourceTree = "<group>"; };
 		3C7E37D42218D23C00116145 /* AlphaBG.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AlphaBG.png; sourceTree = "<group>"; };
@@ -527,6 +535,8 @@
 				3C4BB2B9225574AE0048926A /* WhitePer50_alpha.m4v */,
 				3C4BB2C122557E4B0048926A /* WhitePer5.m4v */,
 				3C4BB2C022557E4B0048926A /* WhitePer5_alpha.m4v */,
+				3C6F0F7C226652F900FD364B /* DalaiLamaGray_bt709.m4v */,
+				3C6F0F7D226652FA00FD364B /* DalaiLamaGray_srgb.m4v */,
 				3AF7E9BE1EB64A46003BB06D /* AAPLRenderer.h */,
 				3AF7E9BF1EB64A46003BB06D /* AAPLRenderer.m */,
 				3C97793522161CF2003721FD /* MetalScaleRenderContext.h */,
@@ -972,6 +982,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
@@ -1005,6 +1016,7 @@
 				3C97792F2216024E003721FD /* RedFadeAlpha256_alpha.m4v in Resources */,
 				3C4BB2BB225574AF0048926A /* WhitePer50.m4v in Resources */,
 				3C4A77B821DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
+				3C6F0F82226652FA00FD364B /* DalaiLamaGray_srgb.m4v in Resources */,
 				3C483FFD22098AE600AC51AC /* big_buck_bunny_HD_apple.m4v in Resources */,
 				3AFD65641F71A7240008A125 /* Main.storyboard in Resources */,
 				3C7E37D62218D23C00116145 /* AlphaBG.png in Resources */,
@@ -1028,6 +1040,7 @@
 				3C821A3E21ED84DE006D516F /* Rec709Sample.mp4 in Resources */,
 				3C483FF92209196F00AC51AC /* drop-of-water-iPad-2048-1536-sRGB-crf20.m4v in Resources */,
 				3C4BB2C322557E4C0048926A /* WhitePer5_alpha.m4v in Resources */,
+				3C6F0F7F226652FA00FD364B /* DalaiLamaGray_bt709.m4v in Resources */,
 				3CB6E80621D6CFC4005424E6 /* osxcolor_test_image_24bit_BT709.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1039,7 +1052,9 @@
 				3CF086CA22178F0600FD7802 /* RedCircleOverWhiteA.m4v in Resources */,
 				3C8219DB21E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
 				3CF086CD22178F0600FD7802 /* RedCircleOverWhiteA_alpha.m4v in Resources */,
+				3C6F0F80226652FA00FD364B /* DalaiLamaGray_bt709.m4v in Resources */,
 				3A1857F11EB7AF9E007D4F50 /* Image.tga in Resources */,
+				3C6F0F83226652FA00FD364B /* DalaiLamaGray_srgb.m4v in Resources */,
 				3C7E37DB2218E52C00116145 /* AlphaBGHalf.png in Resources */,
 				3CF086C2221773C000FD7802 /* GlobeLEDAlpha.m4v in Resources */,
 				3C4A77B921DD87DA0041ACE3 /* QuickTime_Test_Pattern_HD.mov in Resources */,
@@ -1069,8 +1084,10 @@
 			files = (
 				3C7E37D52218D23C00116145 /* AlphaBG.png in Resources */,
 				3C97792E2216024E003721FD /* RedFadeAlpha256_alpha.m4v in Resources */,
+				3C6F0F7E226652FA00FD364B /* DalaiLamaGray_bt709.m4v in Resources */,
 				3CF086C0221773C000FD7802 /* GlobeLEDAlpha.m4v in Resources */,
 				3C7E37C62218BC9F00116145 /* ColorsAlpha4by4.m4v in Resources */,
+				3C6F0F81226652FA00FD364B /* DalaiLamaGray_srgb.m4v in Resources */,
 				3C7E37D92218E52C00116145 /* AlphaBGHalf.png in Resources */,
 				3C8219D921E950A6006D516F /* clouds_reflecting_off_the_beach-wallpaper-2048x1536.m4v in Resources */,
 				3C02732D220B715C005FB416 /* QuickTime_Test_Pattern_HD_grayscale.m4v in Resources */,
