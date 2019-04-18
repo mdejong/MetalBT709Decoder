@@ -360,6 +360,7 @@ floatIsEqual(float f1, float f2)
 }
 
 - (void)testConvertsLinearRGBToBT709_42PercentBlue_srgb {
+  // sRGB (0 0 107) -> REC.709 (22 169 124)
   
   int Rin = 0;
   int Gin = 0;
@@ -806,7 +807,7 @@ floatIsEqual(float f1, float f2)
   
   // Lossy range conversion means a whole bunch of colors are not an exact match
   
-  XCTAssert([mDict[@"exact"] intValue] == 2753405, @"all exact");
+  XCTAssert([mDict[@"exact"] intValue] == 2753772, @"all exact");
   
   return;
 }
@@ -829,5 +830,246 @@ floatIsEqual(float f1, float f2)
  
  */
 
+// Given an input sRGB triple in the form (R G B), convert
+// to YCbCr based on the BT.709 transform using the
+// gamma encoding defined by sRGB gamma curve.
+
+// NW (40 201 53)  -> REC.709 (142 76 59)
+// NE (52 195 59)  -> REC.709 (141 80 67)
+
+// SW (214 53 201) -> REC.709 (89 180 197)
+// SE (202 58 197) -> REC.709 (90 178 189)
+
+// expr {round((40 + 52 + 214 + 202) / 4.0)} = 127
+// expr {round((201 + 195 + 53 + 58) / 4.0)} = 127
+// expr {round((53 + 59 + 201 + 197) / 4.0)} = 128
+
+// expr {(142 + 141 + 89 + 90) / 4.0} = 115.5
+// expr {(76 + 80 + 180 + 178) / 4.0} = 128.5
+// expr {(59 + 67 + 197 + 189) / 4.0} = 128.0
+
+- (void)testConvertsSRGBToYCbCr_ResampleUpperNW {
+  // sRGB (40 201 53) -> REC.709 (142 76 59)
+  
+  int Rin = 40;
+  int Gin = 201;
+  int Bin = 53;
+  
+  int Y, Cb, Cr;
+  int applyGammaMap = 1;
+  
+  int result;
+  
+  result = BT709_from_sRGB_convertRGBToYCbCr(Rin, Gin, Bin, &Y, &Cb, &Cr, 1);
+  XCTAssert(result == 0);
+  
+  {
+    int v = Y;
+    int expectedVal = 142;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 76;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 59;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  int R, G, B;
+  result = BT709_to_sRGB_convertYCbCrToRGB(Y, Cb, Cr, &R, &G, &B, applyGammaMap);
+  XCTAssert(result == 0);
+  
+  {
+    int v = R;
+    int expectedVal = Rin - 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = G;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = B;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+- (void)testConvertsSRGBToYCbCr_ResampleUpperNE {
+  // sRGB (52 195 59) -> REC.709 (141 80 67)
+  
+  int Rin = 52;
+  int Gin = 195;
+  int Bin = 59;
+  
+  int Y, Cb, Cr;
+  int applyGammaMap = 1;
+  
+  int result;
+  
+  result = BT709_from_sRGB_convertRGBToYCbCr(Rin, Gin, Bin, &Y, &Cb, &Cr, 1);
+  XCTAssert(result == 0);
+  
+  {
+    int v = Y;
+    int expectedVal = 141;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 80;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 67;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  int R, G, B;
+  result = BT709_to_sRGB_convertYCbCrToRGB(Y, Cb, Cr, &R, &G, &B, applyGammaMap);
+  XCTAssert(result == 0);
+  
+  {
+    int v = R;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = G;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = B;
+    int expectedVal = Bin + 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+- (void)testConvertsSRGBToYCbCr_ResampleUpperSW {
+  // sRGB (214 53 201) -> REC.709 (89 180 197)
+  
+  int Rin = 214;
+  int Gin = 53;
+  int Bin = 201;
+  
+  int Y, Cb, Cr;
+  int applyGammaMap = 1;
+  
+  int result;
+  
+  result = BT709_from_sRGB_convertRGBToYCbCr(Rin, Gin, Bin, &Y, &Cb, &Cr, 1);
+  XCTAssert(result == 0);
+  
+  {
+    int v = Y;
+    int expectedVal = 89;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 180;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 197;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  int R, G, B;
+  result = BT709_to_sRGB_convertYCbCrToRGB(Y, Cb, Cr, &R, &G, &B, applyGammaMap);
+  XCTAssert(result == 0);
+  
+  {
+    int v = R;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = G;
+    int expectedVal = Gin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = B;
+    int expectedVal = Bin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
+
+- (void)testConvertsSRGBToYCbCr_ResampleUpperSE {
+  // sRGB (202 58 197) -> REC.709 (90 178 189)
+  
+  int Rin = 202;
+  int Gin = 58;
+  int Bin = 197;
+  
+  int Y, Cb, Cr;
+  int applyGammaMap = 1;
+  
+  int result;
+  
+  result = BT709_from_sRGB_convertRGBToYCbCr(Rin, Gin, Bin, &Y, &Cb, &Cr, 1);
+  XCTAssert(result == 0);
+  
+  {
+    int v = Y;
+    int expectedVal = 90;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cb;
+    int expectedVal = 178;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 189;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  int R, G, B;
+  result = BT709_to_sRGB_convertYCbCrToRGB(Y, Cb, Cr, &R, &G, &B, applyGammaMap);
+  XCTAssert(result == 0);
+  
+  {
+    int v = R;
+    int expectedVal = Rin;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = G;
+    int expectedVal = Gin + 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = B;
+    int expectedVal = Bin + 1;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+}
 
 @end

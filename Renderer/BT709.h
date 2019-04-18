@@ -305,7 +305,7 @@ int BT709_convertLinearRGBToYCbCr(
     Bn = BT709_linearNormToNonLinear(Bn);
     
     if (debug) {
-      printf("post to non-linear Rn Gn Bn : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+      printf("post to non-linear Rn Gn Bn : %.4f %.4f %.4f : percent %3d %3d %3d\n", Rn, Gn, Bn, (int)(Rn*100.0f), (int)(Gn*100.0f), (int)(Bn*100.0f));
       printf("R G B in byte range : %.4f %.4f %.4f\n", Rn*255.0f, Gn*255.0f, Bn*255.0f);
     }
   }

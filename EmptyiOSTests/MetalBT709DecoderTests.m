@@ -246,6 +246,7 @@ uint32_t grayToPixel(uint32_t gray)
   id<MTLCommandBuffer> commandBuffer = [metalRenderContext.commandQueue commandBuffer];
   
   worked = [metalDecoder decodeBT709:yCbCrBuffer
+                    alphaPixelBuffer:NULL
                      bgraSRGBTexture:bgraSRGBTexture
                        commandBuffer:commandBuffer
                 renderPassDescriptor:nil

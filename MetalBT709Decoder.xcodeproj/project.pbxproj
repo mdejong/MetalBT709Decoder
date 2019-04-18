@@ -131,6 +131,8 @@
 		3C821A3D21ED84DE006D516F /* Rec709Sample.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */; };
 		3C821A3E21ED84DE006D516F /* Rec709Sample.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */; };
 		3C821A3F21ED84DE006D516F /* Rec709Sample.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 3C821A3C21ED84DD006D516F /* Rec709Sample.mp4 */; };
+		3C9746C22267CA5000A9A02C /* MetalScaleRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C97793622161CF3003721FD /* MetalScaleRenderContext.m */; };
+		3C9746C32267CA5000A9A02C /* MetalScaleRenderContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C97793622161CF3003721FD /* MetalScaleRenderContext.m */; };
 		3C97792E2216024E003721FD /* RedFadeAlpha256_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C97792C2216024B003721FD /* RedFadeAlpha256_alpha.m4v */; };
 		3C97792F2216024E003721FD /* RedFadeAlpha256_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C97792C2216024B003721FD /* RedFadeAlpha256_alpha.m4v */; };
 		3C9779302216024E003721FD /* RedFadeAlpha256_alpha.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3C97792C2216024B003721FD /* RedFadeAlpha256_alpha.m4v */; };
@@ -1257,6 +1259,7 @@
 				3C4A774521D898BE0041ACE3 /* CGFrameBuffer.m in Sources */,
 				3C4A771C21D892BF0041ACE3 /* main.m in Sources */,
 				3CA8B6C821E1682600D2B853 /* H264Encoder.m in Sources */,
+				3C9746C22267CA5000A9A02C /* MetalScaleRenderContext.m in Sources */,
 				3C4A774621D898BE0041ACE3 /* BGRAToBT709Converter.m in Sources */,
 				3C4A770E21D892BA0041ACE3 /* AppDelegate.m in Sources */,
 				3C4A774321D898BE0041ACE3 /* MetalRenderContext.m in Sources */,
@@ -1275,6 +1278,7 @@
 				3C4A772621D892C00041ACE3 /* EmptyiOSTests.m in Sources */,
 				3C013D2B21E6F7C200C0807C /* MetalSRGBDecoderTests.m in Sources */,
 				3C4A772F21D893290041ACE3 /* MetalBT709DecoderTests.m in Sources */,
+				3C9746C32267CA5000A9A02C /* MetalScaleRenderContext.m in Sources */,
 				3C4A77B121DD79E20041ACE3 /* CoreImageMetalFilterTests.m in Sources */,
 				3C0C3F1021FA642D00C498D3 /* AppleEncodeDecodeBT709Tests.m in Sources */,
 			);
