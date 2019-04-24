@@ -12,6 +12,8 @@
 
 #import "H264Encoder.h"
 
+#import "CVPixelBufferUtils.h"
+
 @import Accelerate;
 @import CoreImage;
 
@@ -527,8 +529,30 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 
 + (BOOL) convertIntoCoreVideoBuffer:(CGImageRef)inputImageRef
                       cvPixelBuffer:(CVPixelBufferRef)cvPixelBuffer
-                          bufferPtr:(vImage_Buffer*)bufferPtr
 {
+  int width = (int) CGImageGetWidth(inputImageRef);
+  int height = (int) CGImageGetHeight(inputImageRef);
+  
+  NSAssert((width % 2) == 0, @"width must be even : got %d", width);
+  NSAssert((height % 2) == 0, @"height must be even : got %d", height);
+  
+  CGFrameBuffer *frameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+  uint32_t *pixelsPtr = (uint32_t *) frameBuffer.pixels;
+  
+  [frameBuffer renderCGImage:inputImageRef];
+  
+  //CVPixelBufferRef dst = [self createCoreVideoYCbCrBuffer:CGSizeMake(width, height)];
+  
+  //for ( int i = 0; i < (width*height); i++) {
+    //uint32_t pixel = pixelsPtr[i];
+    //*pixelsPtr++ = pixel;
+  //}
+  
+  cvpbu_ycbcr_subsample(pixelsPtr, width, height, cvPixelBuffer);
+  
+  return TRUE;
+  
+  /*
   // Default to sRGB on both MacOSX and iOS
   //CGColorSpaceRef inputColorspaceRef = NULL;
   CGColorSpaceRef inputColorspaceRef = CGImageGetColorSpace(inputImageRef);
@@ -580,6 +604,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   vImageCVImageFormat_Release(cvImgFormatRef);
   
   return TRUE;
+  */
 }
 
 // Convert the contents of a CoreVideo pixel buffer and write the results
@@ -872,11 +897,14 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   NSAssert(worked, @"worked");
 
-  vImage_Buffer sourceBuffer;
+  //vImage_Buffer sourceBuffer;
   
-  worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer bufferPtr:&sourceBuffer];
+  //worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer bufferPtr:&sourceBuffer];
+  worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer];
   NSAssert(worked, @"worked");
 
+  /*
+  
   if ((0)) {
     uint32_t *pixelPtr = (uint32_t *) sourceBuffer.data;
     uint32_t pixel = pixelPtr[0];
@@ -912,14 +940,16 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   free(sourceBuffer.data);
   
+  */
+  
   // Copy data from CoreVideo pixel buffer planes into flat buffers
   
-  if ((0)) {
+  if ((1)) {
     NSMutableData *Y = [NSMutableData data];
     NSMutableData *Cb = [NSMutableData data];
     NSMutableData *Cr = [NSMutableData data];
     
-    const BOOL dump = FALSE;
+    const BOOL dump = TRUE;
     
     [self copyYCBCr:cvPixelBuffer Y:Y Cb:Cb Cr:Cr dump:dump];
     
