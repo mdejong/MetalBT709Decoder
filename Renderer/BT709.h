@@ -1481,7 +1481,7 @@ void sRGB_average_pixel_values(
       }
       
       if (dir == -1) {
-        // When processing first pixel, choose direction, 0 for negative and 1 for positive
+        // When processing first pixel, choose direction, 0 for negative, 1 for positive
         
         float deltaUp = 1000000.0f;
         
@@ -1506,30 +1506,19 @@ void sRGB_average_pixel_values(
             printf("delta search decreasing Y values starting from %3d\n", Y);
           }
         }
-      } else {
-        // Finish iterating when pixel value in direction is not smaller than current one
       }
-      
-      if (delta > minDelta) {
-        // The delta is no longer getting smaller, already found minimum
-        
-        if (debug) {
-          printf("found minimum delta at step before Y = %d\n", Y);
-        }
-        
-        break;
-      } else {
-        assert(delta < minDelta);
+            
+      if (delta < minDelta) {
         minP3 = p3;
         minDelta = delta;
         minY = Y;
+      } else {
+        if (debug) {
+          printf("found non-decreasing delta at step Y = %d\n", Y);
+        }
+        
+        break;
       }
-      
-//      if (debug) {
-//        printf("Y = %d : delta %.4f\n", Y, delta);
-//      }
-      
-      //deltas[Y] = delta;
       
       if (dir == 1) {
         Y++;
@@ -1537,19 +1526,6 @@ void sRGB_average_pixel_values(
         Y--;
       }
     }
-
-//    float minDelta = 100000.0f;
-//    FPix3 minP3;
-//    int minY = -1;
-    
-//    for (int Y = YMin; Y <= YMax; Y++) {
-//      float delta = deltas[Y];
-//      if (delta < minDelta) {
-//        minDelta = delta;
-//        minY = Y;
-//        minP3 = RGBForY[Y];
-//      }
-//    }
     
     if (debug) {
       printf("minDelta %.4f : Y = %d : p3 %.2f %.2f %.2f\n", minDelta, minY, minP3.R, minP3.G, minP3.B);
