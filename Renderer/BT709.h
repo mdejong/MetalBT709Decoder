@@ -465,7 +465,7 @@ int BT709_convertYCbCrToNonLinearRGB(
                                   float *GPtr,
                                   float *BPtr)
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(RPtr);
@@ -913,7 +913,7 @@ int sRGB_from_sRGB_convertRGBToYCbCr(
                                          int *CbPtr,
                                          int *CrPtr)
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(YPtr);
@@ -1041,7 +1041,7 @@ void sRGB_ycbcr_tolinearNorm(
                               float *CrPtr
                               )
 {
-  const BOOL debug = TRUE;
+  const BOOL debug = FALSE;
   
 #if defined(DEBUG)
   assert(R >= 0 && R <= 255);
@@ -1139,7 +1139,7 @@ float sRGB_average_cbcr_linear(
                               float C4n
                               )
 {
-  const BOOL debug = TRUE;
+  const BOOL debug = FALSE;
   
   float sum = (C1n + C2n + C3n + C4n);
   float ave = sum / 4.0f;
@@ -1201,17 +1201,6 @@ void sRGB_from_sRGB_average_cbcr(
   assert(*G4 >= 0 && *G4 <= 255);
   assert(*B4 >= 0 && *B4 <= 255);
 #endif // DEBUG
-  
-//  if (debug) {
-//    printf("sRGB in : R G B : %3d %3d %3d\n", R, G, B);
-//  }
-  
-  // Convert to (Y Cb Cr) first and then average ?
-  // Or is average created from original RGB values?
-
-  //int Rave = Component_average_linear(R1, R2, R3, R4);
-  //int Gave = Component_average_linear(G1, G2, G3, G4);
-  //int Bave = Component_average_linear(B1, B2, B3, B4);
   
   // Generate YCbCr from linear average of the 4 pixels
   
@@ -1297,6 +1286,32 @@ void sRGB_from_sRGB_average_cbcr(
   return;
 }
 
+// Calc pixel delta in 3 Dimensions
+
+typedef struct {
+  float R;
+  float G;
+  float B;
+} sRGB_FPix3;
+
+static inline
+float fpix3_delta(sRGB_FPix3 origP3, sRGB_FPix3 p3)
+{
+  const int debug = 0;
+  
+  float delta = 0.0f;
+  
+  delta += fabs(p3.R - origP3.R);
+  delta += fabs(p3.G - origP3.G);
+  delta += fabs(p3.B - origP3.B);
+  
+  if (debug) {
+    printf("RGBForY %.3f %.3f %.3f : %.3f %.3f %.3f\n", p3.R, p3.G, p3.B, origP3.R, origP3.G, origP3.B);
+  }
+  
+  return delta;
+}
+
 // Generate an average of 4 RGB pixel values, this logic
 // creates an average of sRGB pixel values as linear values.
 
@@ -1322,7 +1337,7 @@ void sRGB_average_pixel_values(
                                int *Cr
                                )
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(*R1 >= 0 && *R1 <= 255);
@@ -1369,23 +1384,11 @@ void sRGB_average_pixel_values(
   
   sRGB_from_sRGB_convertRGBToYCbCr(RAveSrgb, GaveSrgb, BaveSrgb, &Yave, &CbAve, &CrAve);
   
-  // Setup a lookup table that maps a Y value to a RGB float triple
-  // that can be used to calculate 3D distance deltas.
-  
-  const int YMin = 16;
-  const int YMax = 235;
-  
-  typedef struct {
-    float R;
-    float G;
-    float B;
-  } FPix3;
-  
-  FPix3 RGBForY[YMax+1];
+  sRGB_FPix3 RGBForY[BT709_YMax+1];
   
   // For each Y, iterate over (Y Cb Cr) and convert to linear RGB
   
-  for (int Y = YMin; Y <= YMax; Y++) {
+  for (int Y = BT709_YMin; Y <= BT709_YMax; Y++) {
     // Map non-linear YCbCr to RGB
     
     float decRn, decGn, decBn;
@@ -1399,7 +1402,7 @@ void sRGB_average_pixel_values(
     decGnLin = sRGB_nonLinearNormToLinear(decGn);
     decBnLin = sRGB_nonLinearNormToLinear(decBn);
     
-    FPix3 p3;
+    sRGB_FPix3 p3;
     
     p3.R = decRnLin;
     p3.G = decGnLin;
@@ -1411,7 +1414,7 @@ void sRGB_average_pixel_values(
   // For each (NW NE SW SE) coordinate, compute the delta between the
   // linear RGB values.
   
-  FPix3 RGBForCorners[] = {
+  sRGB_FPix3 RGBForCorners[] = {
     {Rn1, Gn1, Bn1},
     {Rn2, Gn2, Bn2},
     {Rn3, Gn3, Bn3},
@@ -1421,61 +1424,155 @@ void sRGB_average_pixel_values(
   int Y1ForCorners[4] = { -1, -1, -1, -1 };
   
   for (int i = 0; i < 4; i++) {
-    float deltas[YMax+1];
-    memset(deltas, 0, sizeof(deltas));
-  
-    for (int Y = YMin; Y <= YMax; Y++) {
-      FPix3 p3 = RGBForY[Y];
-      
-      // 3D distance computed in terms of linear RGB colors
-      
-      FPix3 origP3 = RGBForCorners[i];
-      
-      float delta = 0.0f;
-      
-      delta += fabs(p3.R - origP3.R);
-      delta += fabs(p3.G - origP3.G);
-      delta += fabs(p3.B - origP3.B);
-
-      if (debug) {
-      printf("RGBForY %.3f %.3f %.3f : RGBForCorners[%d] %.3f %.3f %.3f\n", p3.R, p3.G, p3.B, i, origP3.R, origP3.G, origP3.B);
-      //printf("delta %.3f : Y = %d : delta3 %.2f %.2f %.2f\n", delta, Y, (p3.R - origP3.R), (p3.G - origP3.G), (p3.B - origP3.B));
-        printf("Y = %d : delta %.4f\n", Y, delta);
-      }
-      
-      deltas[Y] = delta;
-    }
-
-    float minDelta = 100000.0f;
-    FPix3 minP3;
-    int minY = -1;
+    //float deltas[BT709_YMax+1];
+    //memset(deltas, 0, sizeof(deltas));
     
-    for (int Y = YMin; Y <= YMax; Y++) {
-      float delta = deltas[Y];
-      if (delta < minDelta) {
-        minDelta = delta;
-        minY = Y;
-        minP3 = RGBForY[Y];
-      }
+    // Approach: start with the Y value that the original RGB triple would
+    // have mapped to, then travel in the direction that indicates the
+    // delta is getting smaller.
+    
+    sRGB_FPix3 origP3 = RGBForCorners[i];
+
+    int origR, origG, origB;
+    int origY, origCb, origCr;
+    
+    if (i == 0) {
+      origR = *R1;
+      origG = *G1;
+      origB = *B1;
+    } else if (i == 1) {
+      origR = *R2;
+      origG = *G2;
+      origB = *B2;
+    } else if (i == 2) {
+      origR = *R3;
+      origG = *G3;
+      origB = *B3;
+    } else {
+      origR = *R4;
+      origG = *G4;
+      origB = *B4;
     }
+    
+    sRGB_from_sRGB_convertRGBToYCbCr(origR, origG, origB, &origY, &origCb, &origCr);
     
     if (debug) {
-    printf("minDelta %.3f : Y = %d : p3 %.2f %.2f %.2f\n", minDelta, minY, minP3.R, minP3.G, minP3.B);
+      printf("original corner pixel R G B -> Y Cb Cr : %d %d %d -> %d %d %d\n", origR, origG, origB, origY, origCb, origCr);
+    }
+    
+    int dir = -1;
+    float minDelta = 1000000.0f;
+    sRGB_FPix3 minP3;
+    int minY = -1;
+  
+    for (int Y = origY; 1; ) {
+      if (Y < BT709_YMin || Y > BT709_YMax) {
+        // Hnadle edge cases where Y starts on the min or max Y value
+        // or the delta keeps decreasing right to the min or max value
+        break;
+      }
+      
+      sRGB_FPix3 p3 = RGBForY[Y];
+      
+      float delta = fpix3_delta(origP3, p3);
+      
+      if (debug) {
+        printf("delta for Y = %d = %.4f\n", Y, delta);
+      }
+      
+      if (dir == -1) {
+        // When processing first pixel, choose direction, 0 for negative and 1 for positive
+        
+        float deltaUp = 1000000.0f;
+        
+        if (Y < BT709_YMax) {
+          deltaUp = fpix3_delta(origP3, RGBForY[Y+1]);
+        } else {
+          deltaUp = 1000000.0f;
+        }
+        
+        if (deltaUp < delta) {
+          // Delta getting smaller as Y increases
+          dir = 1;
+          
+          if (debug) {
+            printf("delta search increasing Y values starting from %3d\n", Y);
+          }
+        } else {
+          // Delta getting smaller as Y decreases
+          dir = 0;
+          
+          if (debug) {
+            printf("delta search decreasing Y values starting from %3d\n", Y);
+          }
+        }
+      } else {
+        // Finish iterating when pixel value in direction is not smaller than current one
+      }
+      
+      if (delta > minDelta) {
+        // The delta is no longer getting smaller, already found minimum
+        
+        if (debug) {
+          printf("found minimum delta at step before Y = %d\n", Y);
+        }
+        
+        break;
+      } else {
+        assert(delta < minDelta);
+        minP3 = p3;
+        minDelta = delta;
+        minY = Y;
+      }
+      
+//      if (debug) {
+//        printf("Y = %d : delta %.4f\n", Y, delta);
+//      }
+      
+      //deltas[Y] = delta;
+      
+      if (dir == 1) {
+        Y++;
+      } else {
+        Y--;
+      }
+    }
+
+//    float minDelta = 100000.0f;
+//    FPix3 minP3;
+//    int minY = -1;
+    
+//    for (int Y = YMin; Y <= YMax; Y++) {
+//      float delta = deltas[Y];
+//      if (delta < minDelta) {
+//        minDelta = delta;
+//        minY = Y;
+//        minP3 = RGBForY[Y];
+//      }
+//    }
+    
+    if (debug) {
+      printf("minDelta %.4f : Y = %d : p3 %.2f %.2f %.2f\n", minDelta, minY, minP3.R, minP3.G, minP3.B);
     }
     int R_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.R) * 255.0f);
     int G_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.G) * 255.0f);
     int B_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.B) * 255.0f);
     
     if (debug) {
-    printf("min sRGB %3d %3d %3d\n", R_srgb, G_srgb, B_srgb);
+      printf("min sRGB %3d %3d %3d\n", R_srgb, G_srgb, B_srgb);
     }
-    
+
     Y1ForCorners[i] = minY;
   }
   
   if (debug) {
   printf("Y1 Y2 Y3 Y4 : %3d %3d %3d %3d\n", Y1ForCorners[0], Y1ForCorners[1], Y1ForCorners[2], Y1ForCorners[3]);
   }
+  
+  assert(Y1ForCorners[0] != -1);
+  assert(Y1ForCorners[1] != -1);
+  assert(Y1ForCorners[2] != -1);
+  assert(Y1ForCorners[3] != -1);
   
   // Write sRGB encoded Y Cb Cr back to callers
   

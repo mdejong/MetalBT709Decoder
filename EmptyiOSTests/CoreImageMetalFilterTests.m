@@ -1782,11 +1782,11 @@ floatIsEqual(float f1, float f2)
 // Generate linear average that takes gamma into account
 
 - (void)testConvertsSRGBToYCbCr_AverageOf4_t2 {
-  // NW (8 210 54)  -> REC.709 ()
-  // NE (6 214 51)  -> REC.709 ()
+  // NW (8 210 54)   -> REC.709 (150 80 46)
+  // NE (6 214 51)   -> REC.709 (152 77 43)
   
-  // SW (247 45 201) -> REC.709 ()
-  // SE (248 40 203) -> REC.709 ()
+  // SW (247 45 201) -> REC.709 (101 176 210)
+  // SE (248 40 203) -> REC.709 (98 179 213)
   
   int R1 = 8;
   int G1 = 210;
@@ -1818,13 +1818,13 @@ floatIsEqual(float f1, float f2)
   
   {
     int v = Y1;
-    int expectedVal = 16;
+    int expectedVal = 71; // not 16
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Y2;
-    int expectedVal = 16;
+    int expectedVal = 69; // not 16
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1844,23 +1844,23 @@ floatIsEqual(float f1, float f2)
   
   {
     int v = Cb;
-    int expectedVal = 128;
+    int expectedVal = 123;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Cr;
-    int expectedVal = 131;
+    int expectedVal = 139;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
 }
 
 - (void)testConvertsSRGBToYCbCr_AverageOf4_t3 {
-  // NW (10 204 66)  -> REC.709 ()
-  // NE (14 201 70)  -> REC.709 ()
+  // NW (10 204 66)  -> REC.709 (147 87 48)
+  // NE (14 201 70)  -> REC.709 (146 89 51)
   
-  // SW (244 51 186) -> REC.709 ()
+  // SW (244 51 186) -> REC.709 (103 168 207)
   // SE (240 54 183) -> REC.709 ()
   
   int R1 = 10;

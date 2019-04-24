@@ -240,6 +240,8 @@ NSMutableData* cvpbu_get_uv_plane_as_data(CVPixelBufferRef cvPixelBuffer, int pl
 
 static inline
 void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixelBufferRef dst) {
+  const int debug = 0;
+  
 //  int width = (int) CVPixelBufferGetWidth(dst);
 //  int height = (int) CVPixelBufferGetHeight(dst);
   
@@ -274,8 +276,6 @@ void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixel
   assert((height % 2) == 0);
 
   const int numCbCrPerRow = (int) (cbcrOutBytesPerRow / sizeof(uint16_t));
-  
-  const int debug = 1;
   
   {
     uint8_t *outYRowPtr;
@@ -335,8 +335,7 @@ void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixel
                                   );
         
         if (debug) {
-        printf("Y1 Y2 Y3 Y4 %3d %3d %3d %3d\n", Y1, Y2, Y3, Y4, G2, B2);
-        printf("Cb Cr %3d %3d\n", Cb, Cr);
+          printf("Y1 Y2 Y3 Y4 %3d %3d %3d %3d : Cb Cr %3d %3d\n", Y1, Y2, Y3, Y4, Cb, Cr);
         }
         
         // Write 4 Y values to plane 0
@@ -362,7 +361,7 @@ void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixel
     }
   }
   
-  if ((1)) {
+  if ((0)) {
     printf("Y:\n");
     for (int row = 0; row < height; row++) {
       uint8_t *rowOutPtr = outYPlanePtr + (row * yOutBytesPerRow);
