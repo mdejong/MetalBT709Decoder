@@ -777,7 +777,7 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
     // Dump
     
 #if defined(DEBUG)
-    if ((1)) {
+    if ((0)) {
       // Emit png with sRGB colorspace
       
       NSString *filename = [NSString stringWithFormat:@"Premultiplied.png"];

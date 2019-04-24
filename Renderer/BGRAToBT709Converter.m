@@ -944,7 +944,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   // Copy data from CoreVideo pixel buffer planes into flat buffers
   
-  if ((1)) {
+  if ((0)) {
     NSMutableData *Y = [NSMutableData data];
     NSMutableData *Cb = [NSMutableData data];
     NSMutableData *Cr = [NSMutableData data];

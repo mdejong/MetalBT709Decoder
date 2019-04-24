@@ -1706,12 +1706,12 @@ floatIsEqual(float f1, float f2)
   int Y1, Y2, Y3, Y4;
   int Cb, Cr;
 
-  sRGB_average_pixel_values(&R1, &G1, &B1,
-                            &R2, &G2, &B2,
-                            &R3, &G3, &B3,
-                            &R4, &G4, &B4,
-                            &Y1, &Y2, &Y3, &Y4,
-                            &Cb, &Cr);
+  BT709_average_pixel_values(R1, G1, B1,
+                             R2, G2, B2,
+                             R3, G3, B3,
+                             R4, G4, B4,
+                             &Y1, &Y2, &Y3, &Y4,
+                             &Cb, &Cr);
 
   // Expected output?
   // (R G B) (155 149 150)
@@ -1807,13 +1807,12 @@ floatIsEqual(float f1, float f2)
   int Y1, Y2, Y3, Y4;
   int Cb, Cr;
   
-  sRGB_average_pixel_values(&R1, &G1, &B1,
-                            &R2, &G2, &B2,
-                            &R3, &G3, &B3,
-                            &R4, &G4, &B4,
-                            &Y1, &Y2, &Y3, &Y4,
-                            &Cb, &Cr);
-  
+  BT709_average_pixel_values(R1, G1, B1,
+                             R2, G2, B2,
+                             R3, G3, B3,
+                             R4, G4, B4,
+                             &Y1, &Y2, &Y3, &Y4,
+                             &Cb, &Cr);
 
   
   {
@@ -1882,13 +1881,13 @@ floatIsEqual(float f1, float f2)
   int Y1, Y2, Y3, Y4;
   int Cb, Cr;
   
-  sRGB_average_pixel_values(&R1, &G1, &B1,
-                            &R2, &G2, &B2,
-                            &R3, &G3, &B3,
-                            &R4, &G4, &B4,
-                            &Y1, &Y2, &Y3, &Y4,
-                            &Cb, &Cr);
-  
+  BT709_average_pixel_values(R1, G1, B1,
+                             R2, G2, B2,
+                             R3, G3, B3,
+                             R4, G4, B4,
+                             &Y1, &Y2, &Y3, &Y4,
+                             &Cb, &Cr);
+
   
   
   {

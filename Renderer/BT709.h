@@ -1316,19 +1316,19 @@ float fpix3_delta(sRGB_FPix3 origP3, sRGB_FPix3 p3)
 // creates an average of sRGB pixel values as linear values.
 
 static inline
-void sRGB_average_pixel_values(
-                               int *R1,
-                               int *G1,
-                               int *B1,
-                               int *R2,
-                               int *G2,
-                               int *B2,
-                               int *R3,
-                               int *G3,
-                               int *B3,
-                               int *R4,
-                               int *G4,
-                               int *B4,
+void BT709_average_pixel_values(
+                               int R1,
+                               int G1,
+                               int B1,
+                               int R2,
+                               int G2,
+                               int B2,
+                               int R3,
+                               int G3,
+                               int B3,
+                               int R4,
+                               int G4,
+                               int B4,
                                int *Y1,
                                int *Y2,
                                int *Y3,
@@ -1362,10 +1362,10 @@ void sRGB_average_pixel_values(
   float Rn3, Gn3, Bn3;
   float Rn4, Gn4, Bn4;
   
-  sRGB_tolinearNorm(*R1, *G1, *B1, &Rn1, &Gn1, &Bn1);
-  sRGB_tolinearNorm(*R2, *G2, *B2, &Rn2, &Gn2, &Bn2);
-  sRGB_tolinearNorm(*R3, *G3, *B3, &Rn3, &Gn3, &Bn3);
-  sRGB_tolinearNorm(*R4, *G4, *B4, &Rn4, &Gn4, &Bn4);
+  sRGB_tolinearNorm(R1, G1, B1, &Rn1, &Gn1, &Bn1);
+  sRGB_tolinearNorm(R2, G2, B2, &Rn2, &Gn2, &Bn2);
+  sRGB_tolinearNorm(R3, G3, B3, &Rn3, &Gn3, &Bn3);
+  sRGB_tolinearNorm(R4, G4, B4, &Rn4, &Gn4, &Bn4);
   
   // Average (R G B) as 4 linear values
   
@@ -1379,6 +1379,8 @@ void sRGB_average_pixel_values(
   int RAveSrgb = sRGB_from_linear(Rave);
   int GaveSrgb = sRGB_from_linear(Gave);
   int BaveSrgb = sRGB_from_linear(Bave);
+  
+  // FIXME: map input into sRGB gamma or BT.709 Apple curve gamma, need input to switch between
   
   int Yave, CbAve, CrAve;
   
@@ -1437,22 +1439,24 @@ void sRGB_average_pixel_values(
     int origY, origCb, origCr;
     
     if (i == 0) {
-      origR = *R1;
-      origG = *G1;
-      origB = *B1;
+      origR = R1;
+      origG = G1;
+      origB = B1;
     } else if (i == 1) {
-      origR = *R2;
-      origG = *G2;
-      origB = *B2;
+      origR = R2;
+      origG = G2;
+      origB = B2;
     } else if (i == 2) {
-      origR = *R3;
-      origG = *G3;
-      origB = *B3;
+      origR = R3;
+      origG = G3;
+      origB = B3;
     } else {
-      origR = *R4;
-      origG = *G4;
-      origB = *B4;
+      origR = R4;
+      origG = G4;
+      origB = B4;
     }
+    
+    // FIXME: map into sRGB gamma or BT.709 Apple curve gamma, need input to switch between
     
     sRGB_from_sRGB_convertRGBToYCbCr(origR, origG, origB, &origY, &origCb, &origCr);
     
@@ -1507,7 +1511,7 @@ void sRGB_average_pixel_values(
           }
         }
       }
-            
+      
       if (delta < minDelta) {
         minP3 = p3;
         minDelta = delta;
@@ -1530,11 +1534,12 @@ void sRGB_average_pixel_values(
     if (debug) {
       printf("minDelta %.4f : Y = %d : p3 %.2f %.2f %.2f\n", minDelta, minY, minP3.R, minP3.G, minP3.B);
     }
-    int R_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.R) * 255.0f);
-    int G_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.G) * 255.0f);
-    int B_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.B) * 255.0f);
     
     if (debug) {
+      int R_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.R) * 255.0f);
+      int G_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.G) * 255.0f);
+      int B_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.B) * 255.0f);
+      
       printf("min sRGB %3d %3d %3d\n", R_srgb, G_srgb, B_srgb);
     }
 

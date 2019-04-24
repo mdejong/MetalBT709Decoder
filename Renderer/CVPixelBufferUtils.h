@@ -325,11 +325,11 @@ void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixel
         int Y1, Y2, Y3, Y4;
         int Cb, Cr;
         
-        sRGB_average_pixel_values(
-                                  &R1, &G1, &B1,
-                                  &R2, &G2, &B2,
-                                  &R3, &G3, &B3,
-                                  &R4, &G4, &B4,
+        BT709_average_pixel_values(
+                                  R1, G1, B1,
+                                  R2, G2, B2,
+                                  R3, G3, B3,
+                                  R4, G4, B4,
                                   &Y1, &Y2, &Y3, &Y4,
                                   &Cb, &Cr
                                   );
