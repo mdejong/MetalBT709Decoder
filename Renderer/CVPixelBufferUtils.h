@@ -361,7 +361,7 @@ void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixel
     }
   }
   
-  if ((1)) {
+  if ((0)) {
     printf("Y:\n");
     for (int row = 0; row < height; row++) {
       uint8_t *rowOutPtr = outYPlanePtr + (row * yOutBytesPerRow);

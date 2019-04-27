@@ -1391,6 +1391,8 @@ void BT709_average_pixel_values(
   
   // For each Y, iterate over (Y Cb Cr) and convert to linear RGB
   
+  if (searchClosestY == 1) {
+  
   for (int Y = BT709_YMin; Y <= BT709_YMax; Y++) {
     // Map non-linear YCbCr to RGB
     
@@ -1413,6 +1415,8 @@ void BT709_average_pixel_values(
     
     RGBForY[Y] = p3;
   }
+    
+  } // end if (searchClosestY == 1)
   
   // For each (NW NE SW SE) coordinate, compute the delta between the
   // linear RGB values.
@@ -1548,7 +1552,7 @@ void BT709_average_pixel_values(
       printf("min sRGB %3d %3d %3d\n", R_srgb, G_srgb, B_srgb);
     }
       
-    }
+    } // end if (searchClosestY == 1)
 
     Y1ForCorners[i] = minY;
   }
