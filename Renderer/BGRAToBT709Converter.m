@@ -421,6 +421,8 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   // FIXME: "CVImageBufferChromaSubsampling" read from attached H.264 (.m4v) is "TopLeft"
   // kCVImageBufferChromaLocationTopFieldKey = kCVImageBufferChromaLocation_TopLeft
   
+  // http://read.pudn.com/downloads157/ebook/698838/Video.Demystified.5th.May.2007.pdf (Page 24 4:2:0)
+  
   NSDictionary *pbAttachments = @{
                                   (__bridge NSString*)kCVImageBufferChromaLocationTopFieldKey: (__bridge NSString*)kCVImageBufferChromaLocation_Center,
                                   (__bridge NSString*)kCVImageBufferAlphaChannelIsOpaque: (id)kCFBooleanTrue,
