@@ -331,7 +331,7 @@ void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixel
                                   R3, G3, B3,
                                   R4, G4, B4,
                                   &Y1, &Y2, &Y3, &Y4,
-                                  &Cb, &Cr
+                                  &Cb, &Cr, 0
                                   );
         
         if (debug) {
@@ -361,7 +361,7 @@ void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixel
     }
   }
   
-  if ((0)) {
+  if ((1)) {
     printf("Y:\n");
     for (int row = 0; row < height; row++) {
       uint8_t *rowOutPtr = outYPlanePtr + (row * yOutBytesPerRow);
@@ -377,7 +377,9 @@ void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixel
       uint16_t *rowOutPtr = outCbCrPlanePtr + (row * numCbCrPerRow);
       for (int col = 0; col < (width/2); col++) {
         uint16_t pVal = rowOutPtr[col];
-        printf("%3d %3d ", (pVal >> 8) & 0xFF, pVal & 0xFF);
+        uint8_t Cb = (pVal >> 0) & 0xFF;
+        uint8_t Cr = (pVal >> 8) & 0xFF;
+        printf("%3d %3d ", Cb, Cr);
       }
       printf("\n");
     }

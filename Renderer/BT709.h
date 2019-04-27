@@ -1334,7 +1334,8 @@ void BT709_average_pixel_values(
                                int *Y3,
                                int *Y4,
                                int *Cb,
-                               int *Cr
+                               int *Cr,
+                               int searchClosestY
                                )
 {
   const int debug = 0;
@@ -1464,10 +1465,14 @@ void BT709_average_pixel_values(
       printf("original corner pixel R G B -> Y Cb Cr : %d %d %d -> %d %d %d\n", origR, origG, origB, origY, origCb, origCr);
     }
     
+    int minY = origY;
+    
+    if (searchClosestY == 1) {
+      // Test different Y values
+    
     int dir = -1;
     float minDelta = 1000000.0f;
     sRGB_FPix3 minP3;
-    int minY = -1;
   
     for (int Y = origY; 1; ) {
       if (Y < BT709_YMin || Y > BT709_YMax) {
@@ -1541,6 +1546,8 @@ void BT709_average_pixel_values(
       int B_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.B) * 255.0f);
       
       printf("min sRGB %3d %3d %3d\n", R_srgb, G_srgb, B_srgb);
+    }
+      
     }
 
     Y1ForCorners[i] = minY;
