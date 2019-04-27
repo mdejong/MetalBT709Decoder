@@ -1340,21 +1340,21 @@ void BT709_average_pixel_values(
   const int debug = 0;
   
 #if defined(DEBUG)
-  assert(*R1 >= 0 && *R1 <= 255);
-  assert(*G1 >= 0 && *G1 <= 255);
-  assert(*B1 >= 0 && *B1 <= 255);
+  assert(R1 >= 0 && R1 <= 255);
+  assert(G1 >= 0 && G1 <= 255);
+  assert(B1 >= 0 && B1 <= 255);
   
-  assert(*R2 >= 0 && *R2 <= 255);
-  assert(*G2 >= 0 && *G2 <= 255);
-  assert(*B2 >= 0 && *B2 <= 255);
+  assert(R2 >= 0 && R2 <= 255);
+  assert(G2 >= 0 && G2 <= 255);
+  assert(B2 >= 0 && B2 <= 255);
   
-  assert(*R3 >= 0 && *R3 <= 255);
-  assert(*G3 >= 0 && *G3 <= 255);
-  assert(*B3 >= 0 && *B3 <= 255);
+  assert(R3 >= 0 && R3 <= 255);
+  assert(G3 >= 0 && G3 <= 255);
+  assert(B3 >= 0 && B3 <= 255);
   
-  assert(*R4 >= 0 && *R4 <= 255);
-  assert(*G4 >= 0 && *G4 <= 255);
-  assert(*B4 >= 0 && *B4 <= 255);
+  assert(R4 >= 0 && R4 <= 255);
+  assert(G4 >= 0 && G4 <= 255);
+  assert(B4 >= 0 && B4 <= 255);
 #endif // DEBUG
 
   float Rn1, Gn1, Bn1;
