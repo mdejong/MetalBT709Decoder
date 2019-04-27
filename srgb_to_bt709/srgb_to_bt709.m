@@ -669,6 +669,11 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
   
   CGColorSpaceRef inputColorspace = CGImageGetColorSpace(inImage);
   
+  if (CGColorSpaceGetModel(inputColorspace) == kCGColorSpaceModelIndexed) {
+    printf("input image with colortable based colorspace is not supported\n");
+    return NULL;
+  }
+  
   BOOL inputIsRGBColorspace = FALSE;
   BOOL inputIsSRGBColorspace = FALSE;
   BOOL inputIsSRGBLinearColorspace = FALSE;
