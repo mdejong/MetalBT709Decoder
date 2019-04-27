@@ -843,7 +843,7 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
         uint32_t inPixel = inPixelsPtr[offset];
         uint32_t A = (inPixel >> 24) & 0xFF;
         
-        if ((1)) {
+        if ((0)) {
           // Slightly remap the alpha channel values, the resulting
           // output in the range [16, 235] covers 219+1 linear entries
           // while the original RGB values correspond to 256 values.
