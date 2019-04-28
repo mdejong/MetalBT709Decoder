@@ -529,6 +529,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 
 + (BOOL) convertIntoCoreVideoBuffer:(CGImageRef)inputImageRef
                       cvPixelBuffer:(CVPixelBufferRef)cvPixelBuffer
+                       useSRGBGamma:(BOOL)useSRGBGamma
 {
   int width = (int) CGImageGetWidth(inputImageRef);
   int height = (int) CGImageGetHeight(inputImageRef);
@@ -548,7 +549,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     //*pixelsPtr++ = pixel;
   //}
   
-  cvpbu_ycbcr_subsample(pixelsPtr, width, height, cvPixelBuffer);
+  cvpbu_ycbcr_subsample(pixelsPtr, width, height, cvPixelBuffer, useSRGBGamma);
   
   return TRUE;
   
@@ -884,6 +885,8 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   // same color primaries so typically only the gamma is adjusted
   // in this type of conversion.
   
+  BOOL useSRGBGamma = FALSE;
+  
   if (isLinear) {
     CGColorSpaceRef inputCS = CGImageGetColorSpace(inputImageRef);
     worked = [self setColorspace:cvPixelBuffer colorSpace:inputCS];
@@ -891,6 +894,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     CGColorSpaceRef sRGBcs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
     worked = [self setColorspace:cvPixelBuffer colorSpace:sRGBcs];
     CGColorSpaceRelease(sRGBcs);
+    useSRGBGamma = TRUE;
   } else {
     worked = [self setBT709Colorspace:cvPixelBuffer];
   }
@@ -900,7 +904,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   //vImage_Buffer sourceBuffer;
   
   //worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer bufferPtr:&sourceBuffer];
-  worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer];
+  worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer useSRGBGamma:useSRGBGamma];
   NSAssert(worked, @"worked");
 
   /*

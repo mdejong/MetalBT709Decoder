@@ -1085,16 +1085,18 @@ void sRGB_ycbcr_tolinearNorm(
   return;
 }
 
-// Convert sRGB gamma encoded value to linear normalized float value
+// Convert sRGB gamma encoded value to linear normalized float value,
+// if the useSRGBGamma argument is 0 then use Apple BT.709 gamma instead.
 
 static inline
-void sRGB_tolinearNorm(
+void BT709_tolinearNorm(
                              int R,
                              int G,
                              int B,
                              float *RnPtr,
                              float *GnPtr,
-                             float *BnPtr
+                             float *BnPtr,
+                             const int useSRGBGamma
                              )
 {
   const int debug = 0;
@@ -1113,10 +1115,16 @@ void sRGB_tolinearNorm(
   float Gn = byteNorm(G);
   float Bn = byteNorm(B);
   
-  Rn = sRGB_nonLinearNormToLinear(Rn);
-  Gn = sRGB_nonLinearNormToLinear(Gn);
-  Bn = sRGB_nonLinearNormToLinear(Bn);
-  
+  if (useSRGBGamma) {
+    Rn = sRGB_nonLinearNormToLinear(Rn);
+    Gn = sRGB_nonLinearNormToLinear(Gn);
+    Bn = sRGB_nonLinearNormToLinear(Bn);
+  } else {
+    Rn = Apple196_nonLinearNormToLinear(Rn);
+    Gn = Apple196_nonLinearNormToLinear(Gn);
+    Bn = Apple196_nonLinearNormToLinear(Bn);
+  }
+
   if (debug) {
     printf("Rn Gn Bn (linear) : %.4f %.4f %.4f\n", Rn, Gn, Bn);
   }
@@ -1132,7 +1140,7 @@ void sRGB_tolinearNorm(
 // Cb or Cr values.
 
 static inline
-float sRGB_average_cbcr_linear(
+float BT709_average_cbcr_linear(
                               float C1n,
                               float C2n,
                               float C3n,
@@ -1152,9 +1160,15 @@ float sRGB_average_cbcr_linear(
 }
 
 static inline
-int sRGB_from_linear(float Cn)
+int BT709_from_linear(float Cn,
+                      const int useSRGBGamma)
 {
-  float nonLinear = sRGB_linearNormToNonLinear(Cn);
+  float nonLinear;
+  if (useSRGBGamma) {
+    nonLinear = sRGB_linearNormToNonLinear(Cn);
+  } else {
+    nonLinear = Apple196_linearNormToNonLinear(Cn);
+  }
   return (int) round(nonLinear * 255.0f);
 }
 
@@ -1223,8 +1237,8 @@ void sRGB_from_sRGB_average_cbcr(
   
   float CbAve, CrAve;
   
-  CbAve = sRGB_average_cbcr_linear(Cb1, Cb2, Cb3, Cb4);
-  CrAve = sRGB_average_cbcr_linear(Cr1, Cr2, Cr3, Cr4);
+  CbAve = BT709_average_cbcr_linear(Cb1, Cb2, Cb3, Cb4);
+  CrAve = BT709_average_cbcr_linear(Cr1, Cr2, Cr3, Cr4);
   
   if (debug) {
     printf("CbAve %.4f\n", CbAve);
@@ -1314,6 +1328,9 @@ float fpix3_delta(sRGB_FPix3 origP3, sRGB_FPix3 p3)
 
 // Generate an average of 4 RGB pixel values, this logic
 // creates an average of sRGB pixel values as linear values.
+// The searchClosestY argument is a linear best difference
+// algo that was not used because it distorts otherwise
+// smooth colors in the input.
 
 static inline
 void BT709_average_pixel_values(
@@ -1335,7 +1352,8 @@ void BT709_average_pixel_values(
                                int *Y4,
                                int *Cb,
                                int *Cr,
-                               int searchClosestY
+                               int searchClosestY,
+                               int useSRGBGamma
                                )
 {
   const int debug = 0;
@@ -1363,29 +1381,29 @@ void BT709_average_pixel_values(
   float Rn3, Gn3, Bn3;
   float Rn4, Gn4, Bn4;
   
-  sRGB_tolinearNorm(R1, G1, B1, &Rn1, &Gn1, &Bn1);
-  sRGB_tolinearNorm(R2, G2, B2, &Rn2, &Gn2, &Bn2);
-  sRGB_tolinearNorm(R3, G3, B3, &Rn3, &Gn3, &Bn3);
-  sRGB_tolinearNorm(R4, G4, B4, &Rn4, &Gn4, &Bn4);
-  
+  BT709_tolinearNorm(R1, G1, B1, &Rn1, &Gn1, &Bn1, useSRGBGamma);
+  BT709_tolinearNorm(R2, G2, B2, &Rn2, &Gn2, &Bn2, useSRGBGamma);
+  BT709_tolinearNorm(R3, G3, B3, &Rn3, &Gn3, &Bn3, useSRGBGamma);
+  BT709_tolinearNorm(R4, G4, B4, &Rn4, &Gn4, &Bn4, useSRGBGamma);
+
   // Average (R G B) as 4 linear values
   
-  float Rave = sRGB_average_cbcr_linear(Rn1, Rn2, Rn3, Rn4);
-  float Gave = sRGB_average_cbcr_linear(Gn1, Gn2, Gn3, Gn4);
-  float Bave = sRGB_average_cbcr_linear(Bn1, Bn2, Bn3, Bn4);
+  float Rave = BT709_average_cbcr_linear(Rn1, Rn2, Rn3, Rn4);
+  float Gave = BT709_average_cbcr_linear(Gn1, Gn2, Gn3, Gn4);
+  float Bave = BT709_average_cbcr_linear(Bn1, Bn2, Bn3, Bn4);
   
   // Map linear RGB values into sRGB so that gamma encoded values
   // are passed through YCbCr matrix to generate average Cb and Cr.
   
-  int RAveSrgb = sRGB_from_linear(Rave);
-  int GaveSrgb = sRGB_from_linear(Gave);
-  int BaveSrgb = sRGB_from_linear(Bave);
-  
-  // FIXME: map input into sRGB gamma or BT.709 Apple curve gamma, need input to switch between
+  int RAveGammaEncoded = BT709_from_linear(Rave, useSRGBGamma);
+  int GaveGammaEncoded = BT709_from_linear(Gave, useSRGBGamma);
+  int BaveGammaEncoded = BT709_from_linear(Bave, useSRGBGamma);
   
   int Yave, CbAve, CrAve;
   
-  sRGB_from_sRGB_convertRGBToYCbCr(RAveSrgb, GaveSrgb, BaveSrgb, &Yave, &CbAve, &CrAve);
+  // Note that this YCbCr encoding method works for either gamma encoding
+  
+  sRGB_from_sRGB_convertRGBToYCbCr(RAveGammaEncoded, GaveGammaEncoded, BaveGammaEncoded, &Yave, &CbAve, &CrAve);
   
   sRGB_FPix3 RGBForY[BT709_YMax+1];
   
@@ -1399,13 +1417,17 @@ void BT709_average_pixel_values(
     float decRn, decGn, decBn;
     BT709_convertYCbCrToNonLinearRGB(Y, CbAve, CrAve, &decRn, &decGn, &decBn);
     
-    // Map sRGB RGB values to linear
-    
     float decRnLin, decGnLin, decBnLin;
     
-    decRnLin = sRGB_nonLinearNormToLinear(decRn);
-    decGnLin = sRGB_nonLinearNormToLinear(decGn);
-    decBnLin = sRGB_nonLinearNormToLinear(decBn);
+    if (useSRGBGamma) {
+      decRnLin = sRGB_nonLinearNormToLinear(decRn);
+      decGnLin = sRGB_nonLinearNormToLinear(decGn);
+      decBnLin = sRGB_nonLinearNormToLinear(decBn);
+    } else {
+      decRnLin = Apple196_nonLinearNormToLinear(decRn);
+      decGnLin = Apple196_nonLinearNormToLinear(decGn);
+      decBnLin = Apple196_nonLinearNormToLinear(decBn);
+    }
     
     sRGB_FPix3 p3;
     
@@ -1461,9 +1483,27 @@ void BT709_average_pixel_values(
       origB = B4;
     }
     
-    // FIXME: map into sRGB gamma or BT.709 Apple curve gamma, need input to switch between
+    // Original input is assumed to be in sRGB space, would need to convert gamma to Apple BT.709
+    // before calculating the YCbCr of the original pixels here.
     
-    sRGB_from_sRGB_convertRGBToYCbCr(origR, origG, origB, &origY, &origCb, &origCr);
+    if (useSRGBGamma) {
+      sRGB_from_sRGB_convertRGBToYCbCr(origR, origG, origB, &origY, &origCb, &origCr);
+    } else {
+      // When encoding for Apple BT.709, convert from input sRGB to linear and then
+      // convert those linear values to Apple BT.709. This could be optimized by
+      // converting all the original input values to use Apple BT.709 gamma, note
+      // that only the Y is actually used here.
+
+      float inRnLin, inGnLin, inBnLin;
+      
+      BT709_tolinearNorm(origR, origG, origB, &inRnLin, &inGnLin, &inBnLin, 1); // sRGB -> linear
+      
+      int origRGammaEncoded = BT709_from_linear(inRnLin, useSRGBGamma);
+      int origGGammaEncoded = BT709_from_linear(inGnLin, useSRGBGamma);
+      int origBGammaEncoded = BT709_from_linear(inBnLin, useSRGBGamma);
+      
+      sRGB_from_sRGB_convertRGBToYCbCr(origRGammaEncoded, origGGammaEncoded, origBGammaEncoded, &origY, &origCb, &origCr);
+    }
     
     if (debug) {
       printf("original corner pixel R G B -> Y Cb Cr : %d %d %d -> %d %d %d\n", origR, origG, origB, origY, origCb, origCr);
@@ -1545,11 +1585,15 @@ void BT709_average_pixel_values(
     }
     
     if (debug) {
-      int R_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.R) * 255.0f);
-      int G_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.G) * 255.0f);
-      int B_srgb = (int) round(sRGB_linearNormToNonLinear(minP3.B) * 255.0f);
+      int RGammaEncoded = BT709_from_linear(minP3.R, useSRGBGamma);
+      int GGammaEncoded = BT709_from_linear(minP3.G, useSRGBGamma);
+      int BGammaEncoded = BT709_from_linear(minP3.B, useSRGBGamma);
       
-      printf("min sRGB %3d %3d %3d\n", R_srgb, G_srgb, B_srgb);
+      if (useSRGBGamma) {
+        printf("min sRGB %3d %3d %3d\n", RGammaEncoded, GGammaEncoded, BGammaEncoded);
+      } else {
+        printf("min Apple BT709 %3d %3d %3d\n", RGammaEncoded, GGammaEncoded, BGammaEncoded);
+      }
     }
       
     } // end if (searchClosestY == 1)

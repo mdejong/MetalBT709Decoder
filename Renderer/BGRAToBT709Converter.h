@@ -69,7 +69,8 @@ typedef enum {
 // is in linear RGB then linear RGB values are copied over.
 
 + (BOOL) convertIntoCoreVideoBuffer:(CGImageRef)inputImageRef
-                      cvPixelBuffer:(CVPixelBufferRef)cvPixelBuffer;
+                      cvPixelBuffer:(CVPixelBufferRef)cvPixelBuffer
+                       useSRGBGamma:(BOOL)useSRGBGamma;
 
 // Convert the contents of a CoreVideo pixel buffer and write the results
 // into the indicated destination vImage buffer.
