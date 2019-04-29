@@ -1136,9 +1136,9 @@ floatIsEqual(float f1, float f2)
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
-  int decR = sRGB_from_linear(decRn);
-  int decG = sRGB_from_linear(decGn);
-  int decB = sRGB_from_linear(decBn);
+  int decR = BT709_from_linear(decRn, BT709GammaSrgb);
+  int decG = BT709_from_linear(decGn, BT709GammaSrgb);
+  int decB = BT709_from_linear(decBn, BT709GammaSrgb);
   
   {
     int v = decR;
@@ -1221,10 +1221,10 @@ floatIsEqual(float f1, float f2)
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
-  int decR = sRGB_from_linear(decRn);
-  int decG = sRGB_from_linear(decGn);
-  int decB = sRGB_from_linear(decBn);
-  
+  int decR = BT709_from_linear(decRn, BT709GammaSrgb);
+  int decG = BT709_from_linear(decGn, BT709GammaSrgb);
+  int decB = BT709_from_linear(decBn, BT709GammaSrgb);
+
   {
     int v = decR;
     int expectedVal = R;
@@ -1306,9 +1306,9 @@ floatIsEqual(float f1, float f2)
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
-  int decR = sRGB_from_linear(decRn);
-  int decG = sRGB_from_linear(decGn);
-  int decB = sRGB_from_linear(decBn);
+  int decR = BT709_from_linear(decRn, BT709GammaSrgb);
+  int decG = BT709_from_linear(decGn, BT709GammaSrgb);
+  int decB = BT709_from_linear(decBn, BT709GammaSrgb);
   
   {
     int v = decR;
@@ -1390,9 +1390,9 @@ floatIsEqual(float f1, float f2)
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
-  int decR = sRGB_from_linear(decRn);
-  int decG = sRGB_from_linear(decGn);
-  int decB = sRGB_from_linear(decBn);
+  int decR = BT709_from_linear(decRn, BT709GammaSrgb);
+  int decG = BT709_from_linear(decGn, BT709GammaSrgb);
+  int decB = BT709_from_linear(decBn, BT709GammaSrgb);
   
   {
     int v = decR;
@@ -1680,7 +1680,7 @@ floatIsEqual(float f1, float f2)
 
 // Generate linear average that takes gamma into account
 
-- (void)testConvertsSRGBToYCbCr_AverageOf4_t1 {
+- (void)testConvertsSRGBToYCbCr_AverageOf4_t1_sRGB {
   // NW (40 201 53)  -> REC.709 with sRGB (150 79 63)
   // NE (52 195 59)  -> REC.709 with sRGB (149 83 71)
   
@@ -1705,6 +1705,9 @@ floatIsEqual(float f1, float f2)
   
   int Y1, Y2, Y3, Y4;
   int Cb, Cr;
+  
+  const BT709Gamma inputGamma = BT709GammaSrgb;
+  const BT709Gamma outputGamma = BT709GammaSrgb;
 
   BT709_average_pixel_values(R1, G1, B1,
                              R2, G2, B2,
@@ -1712,7 +1715,7 @@ floatIsEqual(float f1, float f2)
                              R4, G4, B4,
                              &Y1, &Y2, &Y3, &Y4,
                              &Cb, &Cr,
-                             1);
+                             inputGamma, outputGamma);
 
   // Expected output?
   // (R G B) (155 149 150)
@@ -1742,25 +1745,25 @@ floatIsEqual(float f1, float f2)
   
   {
     int v = Y1;
-    int expectedVal = 61;
+    int expectedVal = 150;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
-
+  
   {
     int v = Y2;
-    int expectedVal = 67;
+    int expectedVal = 149;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
-
+  
   {
     int v = Y3;
-    int expectedVal = 189;
+    int expectedVal = 100;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
-
+  
   {
     int v = Y4;
-    int expectedVal = 185;
+    int expectedVal = 101;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1771,16 +1774,16 @@ floatIsEqual(float f1, float f2)
     int expectedVal = 128;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
-
+  
   {
     int v = Cr;
     int expectedVal = 131;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
-
+  
 }
 
-- (void)testConvertsSRGBToYCbCr_AverageOf4_t1_nosearch {
+- (void)testConvertsSRGBToYCbCr_AverageOf4_t1_Apple {
   // NW (40 201 53)  -> REC.709 with sRGB (150 79 63)
   // NE (52 195 59)  -> REC.709 with sRGB (149 83 71)
   
@@ -1806,61 +1809,115 @@ floatIsEqual(float f1, float f2)
   int Y1, Y2, Y3, Y4;
   int Cb, Cr;
   
+  const BT709Gamma inputGamma = BT709GammaSrgb;
+  const BT709Gamma outputGamma = BT709GammaApple;
+  
   BT709_average_pixel_values(R1, G1, B1,
                              R2, G2, B2,
                              R3, G3, B3,
                              R4, G4, B4,
                              &Y1, &Y2, &Y3, &Y4,
                              &Cb, &Cr,
-                             0);
-  
-  // Expected output?
-  // (R G B) (155 149 150)
-  
-  // Got (84 77 78)
-  // (Y Cb Cr) (? 128 131)
-  
-  // Need to search Y values to find each Y1, Y2, Y3, Y4
-  // that is closest to the original pixel given a fixed
-  // Cb and Cr.
-  
-  // Output:
-  
-  //  minDelta 0.57 : Y = 61 : p3 0.04 0.03 0.03
-  //  sRGB  58  51  52
-  //  minDelta 0.52 : Y = 67 : p3 0.05 0.04 0.04
-  //  sRGB  65  58  59
-  //  minDelta 0.59 : Y = 189 : p3 0.62 0.58 0.59
-  //  sRGB 207 200 201
-  //  minDelta 0.51 : Y = 185 : p3 0.59 0.55 0.56
-  //  sRGB 202 195 197
-  //  Y1 Y2 Y3 Y4 :  61  67 189 185
-  
-  // (Y Cb Cr)
-  // (145 128 129) (143 128 128)
-  // ( 95 128 129) ( 95 128 128)
+                             inputGamma, outputGamma);
   
   {
     int v = Y1;
-    int expectedVal = 61;
+    int expectedVal = 145;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Y2;
-    int expectedVal = 67;
+    int expectedVal = 142;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Y3;
-    int expectedVal = 189;
+    int expectedVal = 95;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Y4;
-    int expectedVal = 185;
+    int expectedVal = 95;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  // Ave Cb Cr
+  
+  {
+    int v = Cb;
+    int expectedVal = 128;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Cr;
+    int expectedVal = 131;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+}
+
+- (void)testConvertsSRGBToYCbCr_AverageOf4_t1_Linear {
+  // NW (40 201 53)  -> REC.709 with sRGB (150 79 63)
+  // NE (52 195 59)  -> REC.709 with sRGB (149 83 71)
+  
+  // SW (214 53 201) -> REC.709 with sRGB (100 177 193)
+  // SE (202 58 197) -> REC.709 with sRGB (101 175 186)
+  
+  int R1 = 40;
+  int G1 = 201;
+  int B1 = 53;
+  
+  int R2 = 52;
+  int G2 = 195;
+  int B2 = 59;
+  
+  int R3 = 214;
+  int G3 = 53;
+  int B3 = 201;
+  
+  int R4 = 202;
+  int G4 = 58;
+  int B4 = 197;
+  
+  int Y1, Y2, Y3, Y4;
+  int Cb, Cr;
+  
+  const BT709Gamma inputGamma = BT709GammaSrgb;
+  const BT709Gamma outputGamma = BT709GammaLinear;
+  
+  BT709_average_pixel_values(R1, G1, B1,
+                             R2, G2, B2,
+                             R3, G3, B3,
+                             R4, G4, B4,
+                             &Y1, &Y2, &Y3, &Y4,
+                             &Cb, &Cr,
+                             inputGamma, outputGamma);
+  
+  {
+    int v = Y1;
+    int expectedVal = 109;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Y2;
+    int expectedVal = 104;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Y3;
+    int expectedVal = 62;
+    XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
+  }
+  
+  {
+    int v = Y4;
+    int expectedVal = 59;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1908,36 +1965,38 @@ floatIsEqual(float f1, float f2)
   int Y1, Y2, Y3, Y4;
   int Cb, Cr;
   
+  const BT709Gamma inputGamma = BT709GammaSrgb;
+  const BT709Gamma outputGamma = BT709GammaSrgb;
+  
   BT709_average_pixel_values(R1, G1, B1,
                              R2, G2, B2,
                              R3, G3, B3,
                              R4, G4, B4,
                              &Y1, &Y2, &Y3, &Y4,
                              &Cb, &Cr,
-                             1);
-
+                             inputGamma, outputGamma);
   
   {
     int v = Y1;
-    int expectedVal = 71; // not 16
+    int expectedVal = 150; // not 16
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Y2;
-    int expectedVal = 69; // not 16
+    int expectedVal = 152; // not 16
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Y3;
-    int expectedVal = 198;
+    int expectedVal = 101;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Y4;
-    int expectedVal = 199;
+    int expectedVal = 98;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
@@ -1983,37 +2042,38 @@ floatIsEqual(float f1, float f2)
   int Y1, Y2, Y3, Y4;
   int Cb, Cr;
   
+  const BT709Gamma inputGamma = BT709GammaSrgb;
+  const BT709Gamma outputGamma = BT709GammaSrgb;
+  
   BT709_average_pixel_values(R1, G1, B1,
                              R2, G2, B2,
                              R3, G3, B3,
                              R4, G4, B4,
                              &Y1, &Y2, &Y3, &Y4,
                              &Cb, &Cr,
-                             1);
-
-  
+                             inputGamma, outputGamma);
   
   {
     int v = Y1;
-    int expectedVal = 85;
+    int expectedVal = 147;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Y2;
-    int expectedVal = 89;
+    int expectedVal = 146;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Y3;
-    int expectedVal = 189;
+    int expectedVal = 103;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   
   {
     int v = Y4;
-    int expectedVal = 186;
+    int expectedVal = 104;
     XCTAssert(v == expectedVal, @"%3d != %3d", v, expectedVal);
   }
   

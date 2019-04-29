@@ -17,6 +17,13 @@
 #if !defined(_BT709_H)
 #define _BT709_H
 
+typedef enum
+{
+  BT709GammaSrgb = 1,
+  BT709GammaApple = 2,
+  BT709GammaLinear = 3
+} BT709Gamma;
+
 // BT.601 constants
 
 // Kr, Kg, Kb (601)
@@ -1085,8 +1092,8 @@ void sRGB_ycbcr_tolinearNorm(
   return;
 }
 
-// Convert sRGB gamma encoded value to linear normalized float value,
-// if the useSRGBGamma argument is 0 then use Apple BT.709 gamma instead.
+// Convert sRGB gamma encoded value to linear normalized float value.
+// the inputGamma argument indicates the gamma encoding.
 
 static inline
 void BT709_tolinearNorm(
@@ -1096,7 +1103,7 @@ void BT709_tolinearNorm(
                              float *RnPtr,
                              float *GnPtr,
                              float *BnPtr,
-                             const int useSRGBGamma
+                             BT709Gamma inputGamma
                              )
 {
   const int debug = 0;
@@ -1115,14 +1122,18 @@ void BT709_tolinearNorm(
   float Gn = byteNorm(G);
   float Bn = byteNorm(B);
   
-  if (useSRGBGamma) {
+  if (inputGamma == BT709GammaSrgb) {
     Rn = sRGB_nonLinearNormToLinear(Rn);
     Gn = sRGB_nonLinearNormToLinear(Gn);
     Bn = sRGB_nonLinearNormToLinear(Bn);
-  } else {
+  } else if (inputGamma == BT709GammaApple) {
     Rn = Apple196_nonLinearNormToLinear(Rn);
     Gn = Apple196_nonLinearNormToLinear(Gn);
     Bn = Apple196_nonLinearNormToLinear(Bn);
+  } else if (inputGamma == BT709GammaLinear) {
+    // nop
+  } else {
+    assert(0);
   }
 
   if (debug) {
@@ -1134,6 +1145,25 @@ void BT709_tolinearNorm(
   *BnPtr = Bn;
   
   return;
+}
+
+static inline
+int BT709_from_linear(float Cn,
+                      const BT709Gamma outputGamma)
+{
+  float nonLinear;
+  
+  if (outputGamma == BT709GammaSrgb) {
+    nonLinear = sRGB_linearNormToNonLinear(Cn);
+  } else if (outputGamma == BT709GammaApple) {
+    nonLinear = Apple196_linearNormToNonLinear(Cn);
+  } else if (outputGamma == BT709GammaLinear) {
+    nonLinear = Cn;
+  } else {
+    assert(0);
+  }
+
+  return (int) round(nonLinear * 255.0f);
 }
 
 // Generate average values for 4 linear normalized float
@@ -1157,19 +1187,6 @@ float BT709_average_cbcr_linear(
   }
 
   return ave;
-}
-
-static inline
-int BT709_from_linear(float Cn,
-                      const int useSRGBGamma)
-{
-  float nonLinear;
-  if (useSRGBGamma) {
-    nonLinear = sRGB_linearNormToNonLinear(Cn);
-  } else {
-    nonLinear = Apple196_linearNormToNonLinear(Cn);
-  }
-  return (int) round(nonLinear * 255.0f);
 }
 
 // Given an input sRGB set of 4 pixels, calculate an average
@@ -1265,33 +1282,33 @@ void sRGB_from_sRGB_average_cbcr(
   
   // Convert linear RGB values to sRGB and return
   
-  *R1 = sRGB_from_linear(Rn1);
-  *G1 = sRGB_from_linear(Gn1);
-  *B1 = sRGB_from_linear(Bn1);
+  *R1 = BT709_from_linear(Rn1, BT709GammaSrgb);
+  *G1 = BT709_from_linear(Gn1, BT709GammaSrgb);
+  *B1 = BT709_from_linear(Bn1, BT709GammaSrgb);
   
   if (debug) {
     printf("R1 G1 B1 : %3d %3d %3d\n", *R1, *G1, *B1);
   }
   
-  *R2 = sRGB_from_linear(Rn2);
-  *G2 = sRGB_from_linear(Gn2);
-  *B2 = sRGB_from_linear(Bn2);
+  *R2 = BT709_from_linear(Rn2, BT709GammaSrgb);
+  *G2 = BT709_from_linear(Gn2, BT709GammaSrgb);
+  *B2 = BT709_from_linear(Bn2, BT709GammaSrgb);
   
   if (debug) {
     printf("R2 G2 B2 : %3d %3d %3d\n", *R2, *G2, *B2);
   }
   
-  *R3 = sRGB_from_linear(Rn3);
-  *G3 = sRGB_from_linear(Gn3);
-  *B3 = sRGB_from_linear(Bn3);
+  *R3 = BT709_from_linear(Rn3, BT709GammaSrgb);
+  *G3 = BT709_from_linear(Gn3, BT709GammaSrgb);
+  *B3 = BT709_from_linear(Bn3, BT709GammaSrgb);
   
   if (debug) {
     printf("R3 G3 B3 : %3d %3d %3d\n", *R3, *G3, *B3);
   }
   
-  *R4 = sRGB_from_linear(Rn4);
-  *G4 = sRGB_from_linear(Gn4);
-  *B4 = sRGB_from_linear(Bn4);
+  *R4 = BT709_from_linear(Rn4, BT709GammaSrgb);
+  *G4 = BT709_from_linear(Gn4, BT709GammaSrgb);
+  *B4 = BT709_from_linear(Bn4, BT709GammaSrgb);
   
   if (debug) {
     printf("R4 G4 B4 : %3d %3d %3d\n", *R4, *G4, *B4);
@@ -1328,9 +1345,6 @@ float fpix3_delta(sRGB_FPix3 origP3, sRGB_FPix3 p3)
 
 // Generate an average of 4 RGB pixel values, this logic
 // creates an average of sRGB pixel values as linear values.
-// The searchClosestY argument is a linear best difference
-// algo that was not used because it distorts otherwise
-// smooth colors in the input.
 
 static inline
 void BT709_average_pixel_values(
@@ -1352,11 +1366,11 @@ void BT709_average_pixel_values(
                                int *Y4,
                                int *Cb,
                                int *Cr,
-                               int searchClosestY,
-                               int useSRGBGamma
+                                const BT709Gamma inputGamma,
+                                const BT709Gamma outputGamma
                                )
 {
-  const int debug = 0;
+  const int debug = 1;
   
 #if defined(DEBUG)
   assert(R1 >= 0 && R1 <= 255);
@@ -1381,10 +1395,12 @@ void BT709_average_pixel_values(
   float Rn3, Gn3, Bn3;
   float Rn4, Gn4, Bn4;
   
-  BT709_tolinearNorm(R1, G1, B1, &Rn1, &Gn1, &Bn1, useSRGBGamma);
-  BT709_tolinearNorm(R2, G2, B2, &Rn2, &Gn2, &Bn2, useSRGBGamma);
-  BT709_tolinearNorm(R3, G3, B3, &Rn3, &Gn3, &Bn3, useSRGBGamma);
-  BT709_tolinearNorm(R4, G4, B4, &Rn4, &Gn4, &Bn4, useSRGBGamma);
+  // Input can be in sRGB, BT.709, or linear gamma encoding
+  
+  BT709_tolinearNorm(R1, G1, B1, &Rn1, &Gn1, &Bn1, inputGamma);
+  BT709_tolinearNorm(R2, G2, B2, &Rn2, &Gn2, &Bn2, inputGamma);
+  BT709_tolinearNorm(R3, G3, B3, &Rn3, &Gn3, &Bn3, inputGamma);
+  BT709_tolinearNorm(R4, G4, B4, &Rn4, &Gn4, &Bn4, inputGamma);
 
   // Average (R G B) as 4 linear values
   
@@ -1395,9 +1411,9 @@ void BT709_average_pixel_values(
   // Map linear RGB values into sRGB so that gamma encoded values
   // are passed through YCbCr matrix to generate average Cb and Cr.
   
-  int RAveGammaEncoded = BT709_from_linear(Rave, useSRGBGamma);
-  int GaveGammaEncoded = BT709_from_linear(Gave, useSRGBGamma);
-  int BaveGammaEncoded = BT709_from_linear(Bave, useSRGBGamma);
+  int RAveGammaEncoded = BT709_from_linear(Rave, outputGamma);
+  int GaveGammaEncoded = BT709_from_linear(Gave, outputGamma);
+  int BaveGammaEncoded = BT709_from_linear(Bave, outputGamma);
   
   int Yave, CbAve, CrAve;
   
@@ -1405,198 +1421,61 @@ void BT709_average_pixel_values(
   
   sRGB_from_sRGB_convertRGBToYCbCr(RAveGammaEncoded, GaveGammaEncoded, BaveGammaEncoded, &Yave, &CbAve, &CrAve);
   
-  sRGB_FPix3 RGBForY[BT709_YMax+1];
-  
-  // For each Y, iterate over (Y Cb Cr) and convert to linear RGB
-  
-  if (searchClosestY == 1) {
-  
-  for (int Y = BT709_YMin; Y <= BT709_YMax; Y++) {
-    // Map non-linear YCbCr to RGB
-    
-    float decRn, decGn, decBn;
-    BT709_convertYCbCrToNonLinearRGB(Y, CbAve, CrAve, &decRn, &decGn, &decBn);
-    
-    float decRnLin, decGnLin, decBnLin;
-    
-    if (useSRGBGamma) {
-      decRnLin = sRGB_nonLinearNormToLinear(decRn);
-      decGnLin = sRGB_nonLinearNormToLinear(decGn);
-      decBnLin = sRGB_nonLinearNormToLinear(decBn);
-    } else {
-      decRnLin = Apple196_nonLinearNormToLinear(decRn);
-      decGnLin = Apple196_nonLinearNormToLinear(decGn);
-      decBnLin = Apple196_nonLinearNormToLinear(decBn);
-    }
-    
-    sRGB_FPix3 p3;
-    
-    p3.R = decRnLin;
-    p3.G = decGnLin;
-    p3.B = decBnLin;
-    
-    RGBForY[Y] = p3;
-  }
-    
-  } // end if (searchClosestY == 1)
-  
-  // For each (NW NE SW SE) coordinate, compute the delta between the
-  // linear RGB values.
-  
-  sRGB_FPix3 RGBForCorners[] = {
-    {Rn1, Gn1, Bn1},
-    {Rn2, Gn2, Bn2},
-    {Rn3, Gn3, Bn3},
-    {Rn4, Gn4, Bn4}
-  };
-  
   int Y1ForCorners[4] = { -1, -1, -1, -1 };
   
   for (int i = 0; i < 4; i++) {
-    //float deltas[BT709_YMax+1];
-    //memset(deltas, 0, sizeof(deltas));
-    
-    // Approach: start with the Y value that the original RGB triple would
-    // have mapped to, then travel in the direction that indicates the
-    // delta is getting smaller.
-    
-    sRGB_FPix3 origP3 = RGBForCorners[i];
-
     int origR, origG, origB;
+    float origRn, origGn, origBn;
+
     int origY, origCb, origCr;
     
     if (i == 0) {
       origR = R1;
       origG = G1;
       origB = B1;
+      origRn = Rn1;
+      origGn = Gn1;
+      origBn = Bn1;
     } else if (i == 1) {
       origR = R2;
       origG = G2;
       origB = B2;
+      origRn = Rn2;
+      origGn = Gn2;
+      origBn = Bn2;
     } else if (i == 2) {
       origR = R3;
       origG = G3;
       origB = B3;
-    } else {
+      origRn = Rn3;
+      origGn = Gn3;
+      origBn = Bn3;
+    } else if (i == 3) {
       origR = R4;
       origG = G4;
       origB = B4;
-    }
-    
-    // Original input is assumed to be in sRGB space, would need to convert gamma to Apple BT.709
-    // before calculating the YCbCr of the original pixels here.
-    
-    if (useSRGBGamma) {
-      sRGB_from_sRGB_convertRGBToYCbCr(origR, origG, origB, &origY, &origCb, &origCr);
+      origRn = Rn4;
+      origGn = Gn4;
+      origBn = Bn4;
     } else {
-      // When encoding for Apple BT.709, convert from input sRGB to linear and then
-      // convert those linear values to Apple BT.709. This could be optimized by
-      // converting all the original input values to use Apple BT.709 gamma, note
-      // that only the Y is actually used here.
-
-      float inRnLin, inGnLin, inBnLin;
-      
-      BT709_tolinearNorm(origR, origG, origB, &inRnLin, &inGnLin, &inBnLin, 1); // sRGB -> linear
-      
-      int origRGammaEncoded = BT709_from_linear(inRnLin, useSRGBGamma);
-      int origGGammaEncoded = BT709_from_linear(inGnLin, useSRGBGamma);
-      int origBGammaEncoded = BT709_from_linear(inBnLin, useSRGBGamma);
-      
-      sRGB_from_sRGB_convertRGBToYCbCr(origRGammaEncoded, origGGammaEncoded, origBGammaEncoded, &origY, &origCb, &origCr);
+#if defined(DEBUG)
+      assert(0);
+#endif
     }
+    
+    // Encode to output gamma curve and pass through BT.709 matrix transform
+    
+    int origRGammaEncoded = BT709_from_linear(origRn, outputGamma);
+    int origGGammaEncoded = BT709_from_linear(origGn, outputGamma);
+    int origBGammaEncoded = BT709_from_linear(origBn, outputGamma);
+    
+    sRGB_from_sRGB_convertRGBToYCbCr(origRGammaEncoded, origGGammaEncoded, origBGammaEncoded, &origY, &origCb, &origCr);
     
     if (debug) {
-      printf("original corner pixel R G B -> Y Cb Cr : %d %d %d -> %d %d %d\n", origR, origG, origB, origY, origCb, origCr);
+      printf("original corner pixel R G B : %d %d %d -> -> Y Cb Cr %d %d %d\n", origR, origG, origB, origY, origCb, origCr);
     }
     
     int minY = origY;
-    
-    if (searchClosestY == 1) {
-      // Test different Y values
-    
-    int dir = -1;
-    float minDelta = 1000000.0f;
-    sRGB_FPix3 minP3;
-  
-    for (int Y = origY; 1; ) {
-      if (Y < BT709_YMin || Y > BT709_YMax) {
-        // Hnadle edge cases where Y starts on the min or max Y value
-        // or the delta keeps decreasing right to the min or max value
-        break;
-      }
-      
-      sRGB_FPix3 p3 = RGBForY[Y];
-      
-      float delta = fpix3_delta(origP3, p3);
-      
-      if (debug) {
-        printf("delta for Y = %d = %.4f\n", Y, delta);
-      }
-      
-      if (dir == -1) {
-        // When processing first pixel, choose direction, 0 for negative, 1 for positive
-        
-        float deltaUp = 1000000.0f;
-        
-        if (Y < BT709_YMax) {
-          deltaUp = fpix3_delta(origP3, RGBForY[Y+1]);
-        } else {
-          deltaUp = 1000000.0f;
-        }
-        
-        if (deltaUp < delta) {
-          // Delta getting smaller as Y increases
-          dir = 1;
-          
-          if (debug) {
-            printf("delta search increasing Y values starting from %3d\n", Y);
-          }
-        } else {
-          // Delta getting smaller as Y decreases
-          dir = 0;
-          
-          if (debug) {
-            printf("delta search decreasing Y values starting from %3d\n", Y);
-          }
-        }
-      }
-      
-      if (delta < minDelta) {
-        minP3 = p3;
-        minDelta = delta;
-        minY = Y;
-      } else {
-        if (debug) {
-          printf("found non-decreasing delta at step Y = %d\n", Y);
-        }
-        
-        break;
-      }
-      
-      if (dir == 1) {
-        Y++;
-      } else {
-        Y--;
-      }
-    }
-    
-    if (debug) {
-      printf("minDelta %.4f : Y = %d : p3 %.2f %.2f %.2f\n", minDelta, minY, minP3.R, minP3.G, minP3.B);
-    }
-    
-    if (debug) {
-      int RGammaEncoded = BT709_from_linear(minP3.R, useSRGBGamma);
-      int GGammaEncoded = BT709_from_linear(minP3.G, useSRGBGamma);
-      int BGammaEncoded = BT709_from_linear(minP3.B, useSRGBGamma);
-      
-      if (useSRGBGamma) {
-        printf("min sRGB %3d %3d %3d\n", RGammaEncoded, GGammaEncoded, BGammaEncoded);
-      } else {
-        printf("min Apple BT709 %3d %3d %3d\n", RGammaEncoded, GGammaEncoded, BGammaEncoded);
-      }
-    }
-      
-    } // end if (searchClosestY == 1)
 
     Y1ForCorners[i] = minY;
   }
@@ -1616,6 +1495,10 @@ void BT709_average_pixel_values(
   *Y2 = Y1ForCorners[1];
   *Y3 = Y1ForCorners[2];
   *Y4 = Y1ForCorners[3];
+  
+  if (debug) {
+    printf("Cb Cr : %3d %3d\n", CbAve, CrAve);
+  }
   
   *Cb = CbAve;
   *Cr = CrAve;

@@ -239,7 +239,7 @@ NSMutableData* cvpbu_get_uv_plane_as_data(CVPixelBufferRef cvPixelBuffer, int pl
 // best represents the resized color planes via iterative approach.
 
 static inline
-void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixelBufferRef dst, const int useSRGBGamma) {
+void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixelBufferRef dst, const BT709Gamma inputGamma, const BT709Gamma outputGamma) {
   const int debug = 0;
   
 //  int width = (int) CVPixelBufferGetWidth(dst);
@@ -325,36 +325,17 @@ void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixel
         int Y1, Y2, Y3, Y4;
         int Cb, Cr;
         
-        const int searchClosestY = 0;
-        
-        if (useSRGBGamma == 1) {
-          // sRGB
-          const int useSRGBGamma = 1;
-          BT709_average_pixel_values(
-                                     R1, G1, B1,
-                                     R2, G2, B2,
-                                     R3, G3, B3,
-                                     R4, G4, B4,
-                                     &Y1, &Y2, &Y3, &Y4,
-                                     &Cb, &Cr,
-                                     searchClosestY,
-                                     useSRGBGamma
-                                     );
-        } else {
-          // Apple BT.709
-          const int useSRGBGamma = 0;
-          BT709_average_pixel_values(
-                                     R1, G1, B1,
-                                     R2, G2, B2,
-                                     R3, G3, B3,
-                                     R4, G4, B4,
-                                     &Y1, &Y2, &Y3, &Y4,
-                                     &Cb, &Cr,
-                                     searchClosestY,
-                                     useSRGBGamma
-                                     );
-        }
-        
+        BT709_average_pixel_values(
+                                   R1, G1, B1,
+                                   R2, G2, B2,
+                                   R3, G3, B3,
+                                   R4, G4, B4,
+                                   &Y1, &Y2, &Y3, &Y4,
+                                   &Cb, &Cr,
+                                   inputGamma,
+                                   outputGamma
+                                   );
+
         if (debug) {
           printf("Y1 Y2 Y3 Y4 %3d %3d %3d %3d : Cb Cr %3d %3d\n", Y1, Y2, Y3, Y4, Cb, Cr);
         }

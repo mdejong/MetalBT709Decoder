@@ -945,6 +945,10 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
     // ffmpeg -i in.y4m -c:v libx264 -color_primaries bt709 -colorspace bt709 -color_trc iec61966_2_1 out.m4v
   }
   
+  // FIXME: Convert from input colorspace to float component without gamma, so that the encoding
+  // logic need only support 1 input type, then it need not assume input colorspace which could
+  // end up being wrong. Also, this would support already linear input formats.
+  
   CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage
                                                                        isLinear:isLinearGamma
                                                                     asSRGBGamma:isSRGBGamma];

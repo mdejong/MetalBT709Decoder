@@ -529,7 +529,8 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 
 + (BOOL) convertIntoCoreVideoBuffer:(CGImageRef)inputImageRef
                       cvPixelBuffer:(CVPixelBufferRef)cvPixelBuffer
-                       useSRGBGamma:(BOOL)useSRGBGamma
+                         inputGamma:(BT709Gamma)inputGamma
+                         outputGamma:(BT709Gamma)outputGamma
 {
   int width = (int) CGImageGetWidth(inputImageRef);
   int height = (int) CGImageGetHeight(inputImageRef);
@@ -538,9 +539,15 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   NSAssert((height % 2) == 0, @"height must be even : got %d", height);
   
   CGFrameBuffer *frameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
-  uint32_t *pixelsPtr = (uint32_t *) frameBuffer.pixels;
+  
+  // Does this render implicitly treat input pixels as sRGB or does it leave linear value as linear?
+  
+  // FIXME: When input is sRGB and default is sRGB, this works just fine, but what about Apple gamma
+  // and Linear values which are copied explicitly as int values.
   
   [frameBuffer renderCGImage:inputImageRef];
+  
+  uint32_t *pixelsPtr = (uint32_t *) frameBuffer.pixels;
   
   //CVPixelBufferRef dst = [self createCoreVideoYCbCrBuffer:CGSizeMake(width, height)];
   
@@ -549,7 +556,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     //*pixelsPtr++ = pixel;
   //}
   
-  cvpbu_ycbcr_subsample(pixelsPtr, width, height, cvPixelBuffer, useSRGBGamma);
+  cvpbu_ycbcr_subsample(pixelsPtr, width, height, cvPixelBuffer, inputGamma, outputGamma);
   
   return TRUE;
   
@@ -900,11 +907,27 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   }
   
   NSAssert(worked, @"worked");
-
-  //vImage_Buffer sourceBuffer;
   
-  //worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer bufferPtr:&sourceBuffer];
-  worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer useSRGBGamma:useSRGBGamma];
+  BT709Gamma inputGamma;
+  BT709Gamma outputGamma;
+  
+  if (isLinear) {
+    inputGamma = BT709GammaLinear;
+    outputGamma = BT709GammaLinear;
+    
+    worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer inputGamma:inputGamma outputGamma:outputGamma];
+  } else if (asSRGBGamma) {
+    inputGamma = BT709GammaSrgb;
+    outputGamma = BT709GammaSrgb;
+    
+    worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer inputGamma:inputGamma outputGamma:outputGamma];
+  } else {
+    inputGamma = BT709GammaSrgb;
+    outputGamma = BT709GammaApple;
+    
+    worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer inputGamma:inputGamma outputGamma:outputGamma];
+  }
+  
   NSAssert(worked, @"worked");
 
   /*
