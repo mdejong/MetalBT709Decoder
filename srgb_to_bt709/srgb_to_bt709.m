@@ -153,6 +153,8 @@ int dump_image_meta(CGImageRef inImage,
   uint8_t *cbPtr = (uint8_t *) Cb.bytes;
   uint8_t *crPtr = (uint8_t *) Cr.bytes;
   
+  const BOOL dumpAllPixels = FALSE;
+  
   if (dump) {
     // Render into sRGB buffer in order to dump the first input pixel in terms of sRGB
     
@@ -160,18 +162,47 @@ int dump_image_meta(CGImageRef inImage,
     
     [inFB renderCGImage:inImage];
     
-    uint32_t pixel = ((uint32_t*) inFB.pixels)[0];
-    int B = pixel & 0xFF;
-    int G = (pixel >> 8) & 0xFF;
-    int R = (pixel >> 16) & 0xFF;
-    printf("first pixel sRGB (R G B) (%d %d %d)", R, G, B);
-  }
-  
-  if (dump) {
-    int Y = yPtr[0];
-    int Cb = cbPtr[0];
-    int Cr = crPtr[0];
-    printf(" -> (Y Cb Cr) (%d %d %d)\n", Y, Cb, Cr);
+    uint32_t *pixelsPtr = ((uint32_t*) inFB.pixels);
+    
+    if (dumpAllPixels) {
+      
+      for (int row = 0; row < height; row++) {
+        for (int col = 0; col < width; col++) {
+          int offset = (row * width) + col;
+          
+          uint32_t pixel = pixelsPtr[offset];
+          int B = pixel & 0xFF;
+          int G = (pixel >> 8) & 0xFF;
+          int R = (pixel >> 16) & 0xFF;
+          printf("pixel sRGB (R G B) (%3d %3d %3d)", R, G, B);
+          
+          int cbcrOffset = (row/2 * width/2) + col/2;
+          
+          int Y = yPtr[offset];
+          int Cb = cbPtr[cbcrOffset];
+          int Cr = crPtr[cbcrOffset];
+          printf(" -> (Y Cb Cr) (%3d %3d %3d)\n", Y, Cb, Cr);
+        }
+      }
+    } else {
+      // Dump just the first pixel
+      
+      int offset = 0;
+      
+      uint32_t pixel = pixelsPtr[offset];
+      int B = pixel & 0xFF;
+      int G = (pixel >> 8) & 0xFF;
+      int R = (pixel >> 16) & 0xFF;
+      printf("first pixel sRGB (R G B) (%3d %3d %3d)", R, G, B);
+      
+      int cbcrOffset = 0;
+      
+      int Y = yPtr[offset];
+      int Cb = cbPtr[cbcrOffset];
+      int Cr = crPtr[cbcrOffset];
+      printf(" -> (Y Cb Cr) (%3d %3d %3d)\n", Y, Cb, Cr);
+    }
+
   }
   
   if (dump) {
