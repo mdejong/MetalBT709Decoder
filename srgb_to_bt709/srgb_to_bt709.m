@@ -934,7 +934,7 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
     
     CGColorSpaceRelease(colorspace);
     
-    // Copy pixel data
+    // Copy pixel data, this treats pixels in the original gamma encoding as linear (not gamma encoded)
     
     memcpy(linearFB.pixels, inputFB.pixels, inputFB.numBytes);
     

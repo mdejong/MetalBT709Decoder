@@ -240,7 +240,7 @@ NSMutableData* cvpbu_get_uv_plane_as_data(CVPixelBufferRef cvPixelBuffer, int pl
 
 static inline
 void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixelBufferRef dst, const BT709Gamma inputGamma, const BT709Gamma outputGamma) {
-  const int debug = 0;
+  const int debug = 1;
   
 //  int width = (int) CVPixelBufferGetWidth(dst);
 //  int height = (int) CVPixelBufferGetHeight(dst);

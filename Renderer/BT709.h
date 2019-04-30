@@ -1472,7 +1472,7 @@ void BT709_average_pixel_values(
     sRGB_from_sRGB_convertRGBToYCbCr(origRGammaEncoded, origGGammaEncoded, origBGammaEncoded, &origY, &origCb, &origCr);
     
     if (debug) {
-      printf("original corner pixel R G B : %d %d %d -> -> Y Cb Cr %d %d %d\n", origR, origG, origB, origY, origCb, origCr);
+      printf("original corner pixel R G B : %3d %3d %3d : per %.2f %.2f %.2f -> -> Y Cb Cr %3d %3d %3d\n", origR, origG, origB, origRn, origGn, origBn, origY, origCb, origCr);
     }
     
     int minY = origY;
