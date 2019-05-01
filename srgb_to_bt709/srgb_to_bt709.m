@@ -882,6 +882,8 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
           //NSLog(@"in A = %d : AN %.4f : AStep %.4f : numSteps %3d : percentOfTotal %.2f : AOut %d", A, AN, AStep, numSteps, percentOfTotal, AOut);
           
           A = AOut;
+        } else {
+          //NSLog(@"in A = %d : percent %.2f", A, A/255.0f);
         }
         
         assert(A >= 0 && A <= 255);

@@ -540,10 +540,12 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   CGFrameBuffer *frameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
   
-  // Does this render implicitly treat input pixels as sRGB or does it leave linear value as linear?
-  
-  // FIXME: When input is sRGB and default is sRGB, this works just fine, but what about Apple gamma
-  // and Linear values which are copied explicitly as int values.
+  if (inputGamma == BT709GammaLinear) {
+    // Explicitly mark framebuffer as linear so that values are rendered without gamma adjustment
+    frameBuffer.colorspace = CGImageGetColorSpace(inputImageRef);
+  } else {
+    // !BT709GammaLinear means render input and treat as sRGB
+  }
   
   [frameBuffer renderCGImage:inputImageRef];
   
