@@ -17,6 +17,13 @@
 #if !defined(_BT709_H)
 #define _BT709_H
 
+typedef enum
+{
+  BT709GammaSrgb = 1,
+  BT709GammaApple = 2,
+  BT709GammaLinear = 3
+} BT709Gamma;
+
 // BT.601 constants
 
 // Kr, Kg, Kb (601)
@@ -198,7 +205,7 @@ int BT709_convertNonLinearRGBToYCbCr(
                                   int *CbPtr,
                                   int *CrPtr)
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(YPtr);
@@ -276,7 +283,7 @@ int BT709_convertLinearRGBToYCbCr(
                             int *CrPtr,
                             int applyGammaMap)
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(YPtr);
@@ -333,55 +340,22 @@ int BT709_convertRGBToYCbCr(
   return BT709_convertLinearRGBToYCbCr(Rn, Gn, Bn, YPtr, CbPtr, CrPtr, applyGammaMap);
 }
 
-// Given a YCbCr input stored as an integer, apply the
-// BT.709 matrix conversion step and return a non-linear
-// result (result is still gamma adjusted) as a normalzied value.
+// Given YCbCr values (Can be non-linear or linear), convert to RGB, note
+// that this method assumes the caller will deal with converting non-linear
+// output back to linear values (if non-linear). The returned R,G,B vlaues
+// are normalized.
 
 static inline
-int BT709_convertYCbCrToNonLinearRGB(
-                                  int Y,
-                                  int Cb,
-                                  int Cr,
-                                  float *RPtr,
-                                  float *GPtr,
-                                  float *BPtr)
+int BT709_convertNormalizedYCbCrToRGB(
+                                      float Yn,
+                                      float Cbn,
+                                      float Crn,
+                                      float *RPtr,
+                                      float *GPtr,
+                                      float *BPtr,
+                                      const int unscale)
 {
-  const int debug = 1;
-  
-#if defined(DEBUG)
-  assert(RPtr);
-  assert(GPtr);
-  assert(BPtr);
-  
-  assert(BT709_YMin <= Y && Y <= BT709_YMax);
-#endif // DEBUG
-  
-  // https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.709_conversion
-  // http://www.niwa.nu/2013/05/understanding-yuv-values/
-  
-  // Normalize Y to range [0 255]
-  //
-  // Note that the matrix multiply will adjust
-  // this byte normalized range to account for
-  // the limited range [16 235]
-  
-  float Yn = (Y - 16) * (1.0f / 255.0f);
-  
-  // Normalize Cb and CR with zero at 128 and range [0 255]
-  // Note that matrix will adjust to limited range [16 240]
-  
-  float Cbn = (Cb - 128) * (1.0f / 255.0f);
-  float Crn = (Cr - 128) * (1.0f / 255.0f);
-  
-  if (debug) {
-    printf("zerod normalized Yn Cbn Crn : %.8f %.8f %.8f\n", Yn, Cbn, Crn);
-    
-    int Yint = round(Yn * 255.0f);
-    int Cbint = round(Cbn * 255.0f);
-    int Crint = round(Crn * 255.0f);
-    
-    printf("as byte range Y Cb Cr : %3d %3d %3d\n", Yint, Cbint, Crint);
-  }
+  const int debug = 0;
   
   // BT.601
   //
@@ -412,8 +386,8 @@ int BT709_convertYCbCrToNonLinearRGB(
   // [1] : -1 * UVScale * Er_minus_Ey_Range * Kr_over_Kg
   // [2] : 0.0
   
-  const float YScale = 255.0f / (BT709_YMax-BT709_YMin);
-  const float UVScale = 255.0f / (BT709_UVMax-BT709_UVMin);
+  const float YScale = 255.0f / (unscale ? (BT709_YMax-BT709_YMin) : 255.0f);
+  const float UVScale = 255.0f / (unscale ? (BT709_UVMax-BT709_UVMin) : 255.0f);
   
   const
   float BT709Mat[] = {
@@ -485,6 +459,59 @@ int BT709_convertYCbCrToNonLinearRGB(
   return 0;
 }
 
+// Given a YCbCr input stored as an integer, apply the
+// BT.709 matrix conversion step and return a non-linear
+// result (result is still gamma adjusted) as a normalzied value.
+
+static inline
+int BT709_convertYCbCrToNonLinearRGB(
+                                  int Y,
+                                  int Cb,
+                                  int Cr,
+                                  float *RPtr,
+                                  float *GPtr,
+                                  float *BPtr)
+{
+  const int debug = 0;
+  
+#if defined(DEBUG)
+  assert(RPtr);
+  assert(GPtr);
+  assert(BPtr);
+  
+  assert(BT709_YMin <= Y && Y <= BT709_YMax);
+#endif // DEBUG
+  
+  // https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.709_conversion
+  // http://www.niwa.nu/2013/05/understanding-yuv-values/
+  
+  // Normalize Y to range [0 255]
+  //
+  // Note that the matrix multiply will adjust
+  // this byte normalized range to account for
+  // the limited range [16 235]
+  
+  float Yn = (Y - 16) * (1.0f / 255.0f);
+  
+  // Normalize Cb and CR with zero at 128 and range [0 255]
+  // Note that matrix will adjust to limited range [16 240]
+  
+  float Cbn = (Cb - 128) * (1.0f / 255.0f);
+  float Crn = (Cr - 128) * (1.0f / 255.0f);
+  
+  if (debug) {
+    printf("zerod normalized Yn Cbn Crn : %.8f %.8f %.8f\n", Yn, Cbn, Crn);
+    
+    int Yint = round(Yn * 255.0f);
+    int Cbint = round(Cbn * 255.0f);
+    int Crint = round(Crn * 255.0f);
+    
+    printf("as byte range Y Cb Cr : %3d %3d %3d\n", Yint, Cbint, Crint);
+  }
+
+  return BT709_convertNormalizedYCbCrToRGB(Yn, Cbn, Crn, RPtr, GPtr, BPtr, 1);
+}
+
 // Convert from BT.709 YCbCr to linear RGB as a normalized float
 
 static inline
@@ -497,7 +524,7 @@ int BT709_convertYCbCrToLinearRGB(
                              float *BPtr,
                              int applyGammaMap)
 {
-  const int debug = 1;
+  const int debug = 0;
   
   BT709_convertYCbCrToNonLinearRGB(Y, Cb, Cr, RPtr, GPtr, BPtr);
   
@@ -538,7 +565,7 @@ int BT709_convertYCbCrToRGB(
                             int *BIntPtr,
                             int applyGammaMap)
 {
-  const int debug = 1;
+  const int debug = 0;
   
   float Rn;
   float Gn;
@@ -590,7 +617,7 @@ int BT709_from_sRGB_convertRGBToYCbCr(
                                     int *CrPtr,
                                     int applyGammaMap)
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(YPtr);
@@ -648,7 +675,7 @@ int BT709_to_sRGB_convertYCbCrToRGB(
                                     int *BPtr,
                                     int applyGammaMap)
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(RPtr);
@@ -722,7 +749,7 @@ int Apple196_from_sRGB_convertRGBToYCbCr(
                                       int *CbPtr,
                                       int *CrPtr)
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(YPtr);
@@ -801,7 +828,7 @@ int Apple196_to_sRGB_convertYCbCrToRGB(
                                     int *BPtr,
                                     int applyGammaMap)
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(RPtr);
@@ -893,7 +920,7 @@ int sRGB_from_sRGB_convertRGBToYCbCr(
                                          int *CbPtr,
                                          int *CrPtr)
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(YPtr);
@@ -928,7 +955,7 @@ int sRGB_to_sRGB_convertYCbCrToRGB(
                                        int *BPtr,
                                        int applyGammaMap)
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(RPtr);
@@ -973,6 +1000,508 @@ int sRGB_to_sRGB_convertYCbCrToRGB(
   *BPtr = B;
   
   return 0;
+}
+
+// Average 4 linear component values (R G B)
+// encoded with sRGB gamma curve.
+
+static inline
+int sRGB_Component_average_linear(
+                               int C1,
+                               int C2,
+                               int C3,
+                               int C4
+                               )
+{
+#if defined(DEBUG)
+  assert(C1 >= 0 && C1 <= 255);
+  assert(C2 >= 0 && C2 <= 255);
+  assert(C3 >= 0 && C3 <= 255);
+  assert(C4 >= 0 && C4 <= 255);
+#endif // DEBUG
+  
+  float C1n = byteNorm(C1);
+  float C2n = byteNorm(C2);
+  float C3n = byteNorm(C3);
+  float C4n = byteNorm(C4);
+  
+  C1n = sRGB_nonLinearNormToLinear(C1n);
+  C2n = sRGB_nonLinearNormToLinear(C2n);
+  C3n = sRGB_nonLinearNormToLinear(C3n);
+  C4n = sRGB_nonLinearNormToLinear(C4n);
+  
+  return (int) round((C1n + C2n + C3n + C4n) / 4.0f);
+}
+
+// Given a pixel component (R G B), map the pixel value
+// into a linear normalized float component and then
+// generate YCbCr component portions based on linear
+// values as opposed to non-linear (gamma encoded) values.
+
+static inline
+void sRGB_ycbcr_tolinearNorm(
+                              int R,
+                              int G,
+                              int B,
+                              float *YPtr,
+                              float *CbPtr,
+                              float *CrPtr
+                              )
+{
+  const BOOL debug = FALSE;
+  
+#if defined(DEBUG)
+  assert(R >= 0 && R <= 255);
+  assert(G >= 0 && G <= 255);
+  assert(B >= 0 && B <= 255);
+#endif // DEBUG
+  
+  if (debug) {
+    printf("R G B : %3d %3d %3d\n", R, G, B);
+  }
+  
+  float Rn = byteNorm(R);
+  float Gn = byteNorm(G);
+  float Bn = byteNorm(B);
+  
+  Rn = sRGB_nonLinearNormToLinear(Rn);
+  Gn = sRGB_nonLinearNormToLinear(Gn);
+  Bn = sRGB_nonLinearNormToLinear(Bn);
+  
+  if (debug) {
+    printf("Rn Gn Bn (linear) : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+  }
+  
+  // Generate YCbCr from linear values, this split generates
+  // a Cb and Cr pair that is linear and can be averaged.
+  
+  float Yn = (BT709_Kr * Rn) + (BT709_Kg * Gn) + (BT709_Kb * Bn);
+  float Cbn = (Bn - Yn) / BT709_Eb_minus_Ey_Range;
+  float Crn = (Rn - Yn) / BT709_Er_minus_Ey_Range;
+  
+  if (debug) {
+    printf("Y Cb Cr : %.4f %.4f %.4f\n", Yn, Cbn, Crn);
+    printf("Y Cb Cr percentages : %.4f %.4f %.4f\n", Yn*100.0f, Cbn*100.0f, Crn*100.0f);
+    printf("Y Cb Cr byte : %.4f %.4f %.4f\n", Yn*255.0f, Cbn*255.0f, Crn*255.0f);
+  }
+  
+  *YPtr = Yn;
+  *CbPtr = Cbn;
+  *CrPtr = Crn;
+  
+  return;
+}
+
+// Convert sRGB gamma encoded value to linear normalized float value.
+// the inputGamma argument indicates the gamma encoding.
+
+static inline
+void BT709_tolinearNorm(
+                             int R,
+                             int G,
+                             int B,
+                             float *RnPtr,
+                             float *GnPtr,
+                             float *BnPtr,
+                             BT709Gamma inputGamma
+                             )
+{
+  const int debug = 0;
+  
+#if defined(DEBUG)
+  assert(R >= 0 && R <= 255);
+  assert(G >= 0 && G <= 255);
+  assert(B >= 0 && B <= 255);
+#endif // DEBUG
+  
+  if (debug) {
+    printf("R G B : %3d %3d %3d\n", R, G, B);
+  }
+  
+  float Rn = byteNorm(R);
+  float Gn = byteNorm(G);
+  float Bn = byteNorm(B);
+  
+  if (inputGamma == BT709GammaSrgb) {
+    Rn = sRGB_nonLinearNormToLinear(Rn);
+    Gn = sRGB_nonLinearNormToLinear(Gn);
+    Bn = sRGB_nonLinearNormToLinear(Bn);
+  } else if (inputGamma == BT709GammaApple) {
+    Rn = Apple196_nonLinearNormToLinear(Rn);
+    Gn = Apple196_nonLinearNormToLinear(Gn);
+    Bn = Apple196_nonLinearNormToLinear(Bn);
+  } else if (inputGamma == BT709GammaLinear) {
+    // nop
+  } else {
+    assert(0);
+  }
+
+  if (debug) {
+    printf("Rn Gn Bn (linear) : %.4f %.4f %.4f\n", Rn, Gn, Bn);
+  }
+
+  *RnPtr = Rn;
+  *GnPtr = Gn;
+  *BnPtr = Bn;
+  
+  return;
+}
+
+static inline
+int BT709_from_linear(float Cn,
+                      const BT709Gamma outputGamma)
+{
+  float nonLinear;
+  
+  if (outputGamma == BT709GammaSrgb) {
+    nonLinear = sRGB_linearNormToNonLinear(Cn);
+  } else if (outputGamma == BT709GammaApple) {
+    nonLinear = Apple196_linearNormToNonLinear(Cn);
+  } else if (outputGamma == BT709GammaLinear) {
+    nonLinear = Cn;
+  } else {
+    assert(0);
+  }
+
+  return (int) round(nonLinear * 255.0f);
+}
+
+// Generate average values for 4 linear normalized float
+// Cb or Cr values.
+
+static inline
+float BT709_average_cbcr_linear(
+                              float C1n,
+                              float C2n,
+                              float C3n,
+                              float C4n
+                              )
+{
+  const BOOL debug = FALSE;
+  
+  float sum = (C1n + C2n + C3n + C4n);
+  float ave = sum / 4.0f;
+  
+  if (debug) {
+    printf("AVE = %.4f %.4f %.4f %.4f = %.4f\n", C1n, C2n, C3n, C4n, ave);
+  }
+
+  return ave;
+}
+
+// Given an input sRGB set of 4 pixels, calculate an average
+// for each component by converting to linear float values
+// and then convert to YCbCr for each pixel. This logic must
+// convert to linear before calculating an average so that
+// the gamma encoding implicit in sRGB is removed. The
+// average operation cannot operate directly on a non-linear
+// gamma encoded pixel value.
+
+static inline
+void sRGB_from_sRGB_average_cbcr(
+                                int *R1,
+                                int *G1,
+                                int *B1,
+                                int *R2,
+                                int *G2,
+                                int *B2,
+                                int *R3,
+                                int *G3,
+                                int *B3,
+                                int *R4,
+                                int *G4,
+                                int *B4
+                                )
+{
+  const int debug = 0;
+  
+#if defined(DEBUG)
+  assert(*R1 >= 0 && *R1 <= 255);
+  assert(*G1 >= 0 && *G1 <= 255);
+  assert(*B1 >= 0 && *B1 <= 255);
+  
+  assert(*R2 >= 0 && *R2 <= 255);
+  assert(*G2 >= 0 && *G2 <= 255);
+  assert(*B2 >= 0 && *B2 <= 255);
+  
+  assert(*R3 >= 0 && *R3 <= 255);
+  assert(*G3 >= 0 && *G3 <= 255);
+  assert(*B3 >= 0 && *B3 <= 255);
+  
+  assert(*R4 >= 0 && *R4 <= 255);
+  assert(*G4 >= 0 && *G4 <= 255);
+  assert(*B4 >= 0 && *B4 <= 255);
+#endif // DEBUG
+  
+  // Generate YCbCr from linear average of the 4 pixels
+  
+  // Y Y
+  // Y Y
+  //
+  // Y+Y+Y+Y / 4 = ave
+  
+  float Y1, Cb1, Cr1;
+  float Y2, Cb2, Cr2;
+  float Y3, Cb3, Cr3;
+  float Y4, Cb4, Cr4;
+  
+  sRGB_ycbcr_tolinearNorm(*R1, *G1, *B1, &Y1, &Cb1, &Cr1);
+  sRGB_ycbcr_tolinearNorm(*R2, *G2, *B2, &Y2, &Cb2, &Cr2);
+  sRGB_ycbcr_tolinearNorm(*R3, *G3, *B3, &Y3, &Cb3, &Cr3);
+  sRGB_ycbcr_tolinearNorm(*R4, *G4, *B4, &Y4, &Cb4, &Cr4);
+  
+  // Generate average for Cb and Cr for the 4 pixels
+  
+  float CbAve, CrAve;
+  
+  CbAve = BT709_average_cbcr_linear(Cb1, Cb2, Cb3, Cb4);
+  CrAve = BT709_average_cbcr_linear(Cr1, Cr2, Cr3, Cr4);
+  
+  if (debug) {
+    printf("CbAve %.4f\n", CbAve);
+    printf("CrAve %.4f\n", CrAve);
+  }
+  
+  // Map Y Cb Cr back to sRGB values
+  
+  float Rn1, Gn1, Bn1;
+  float Rn2, Gn2, Bn2;
+  float Rn3, Gn3, Bn3;
+  float Rn4, Gn4, Bn4;
+  
+  int result;
+  
+  result = BT709_convertNormalizedYCbCrToRGB(Y1, CbAve, CrAve, &Rn1, &Gn1, &Bn1, 0);
+  assert(result == 0);
+  result = BT709_convertNormalizedYCbCrToRGB(Y2, CbAve, CrAve, &Rn2, &Gn2, &Bn2, 0);
+  assert(result == 0);
+  result = BT709_convertNormalizedYCbCrToRGB(Y3, CbAve, CrAve, &Rn3, &Gn3, &Bn3, 0);
+  assert(result == 0);
+  result = BT709_convertNormalizedYCbCrToRGB(Y4, CbAve, CrAve, &Rn4, &Gn4, &Bn4, 0);
+  assert(result == 0);
+  
+  // Convert linear RGB values to sRGB and return
+  
+  *R1 = BT709_from_linear(Rn1, BT709GammaSrgb);
+  *G1 = BT709_from_linear(Gn1, BT709GammaSrgb);
+  *B1 = BT709_from_linear(Bn1, BT709GammaSrgb);
+  
+  if (debug) {
+    printf("R1 G1 B1 : %3d %3d %3d\n", *R1, *G1, *B1);
+  }
+  
+  *R2 = BT709_from_linear(Rn2, BT709GammaSrgb);
+  *G2 = BT709_from_linear(Gn2, BT709GammaSrgb);
+  *B2 = BT709_from_linear(Bn2, BT709GammaSrgb);
+  
+  if (debug) {
+    printf("R2 G2 B2 : %3d %3d %3d\n", *R2, *G2, *B2);
+  }
+  
+  *R3 = BT709_from_linear(Rn3, BT709GammaSrgb);
+  *G3 = BT709_from_linear(Gn3, BT709GammaSrgb);
+  *B3 = BT709_from_linear(Bn3, BT709GammaSrgb);
+  
+  if (debug) {
+    printf("R3 G3 B3 : %3d %3d %3d\n", *R3, *G3, *B3);
+  }
+  
+  *R4 = BT709_from_linear(Rn4, BT709GammaSrgb);
+  *G4 = BT709_from_linear(Gn4, BT709GammaSrgb);
+  *B4 = BT709_from_linear(Bn4, BT709GammaSrgb);
+  
+  if (debug) {
+    printf("R4 G4 B4 : %3d %3d %3d\n", *R4, *G4, *B4);
+  }
+  
+  return;
+}
+
+// Calc pixel delta in 3 Dimensions
+
+typedef struct {
+  float R;
+  float G;
+  float B;
+} sRGB_FPix3;
+
+static inline
+float fpix3_delta(sRGB_FPix3 origP3, sRGB_FPix3 p3)
+{
+  const int debug = 0;
+  
+  float delta = 0.0f;
+  
+  delta += fabs(p3.R - origP3.R);
+  delta += fabs(p3.G - origP3.G);
+  delta += fabs(p3.B - origP3.B);
+  
+  if (debug) {
+    printf("RGBForY %.3f %.3f %.3f : %.3f %.3f %.3f\n", p3.R, p3.G, p3.B, origP3.R, origP3.G, origP3.B);
+  }
+  
+  return delta;
+}
+
+// Generate an average of 4 RGB pixel values, this logic
+// creates an average of sRGB pixel values as linear values.
+
+static inline
+void BT709_average_pixel_values(
+                               int R1,
+                               int G1,
+                               int B1,
+                               int R2,
+                               int G2,
+                               int B2,
+                               int R3,
+                               int G3,
+                               int B3,
+                               int R4,
+                               int G4,
+                               int B4,
+                               int *Y1,
+                               int *Y2,
+                               int *Y3,
+                               int *Y4,
+                               int *Cb,
+                               int *Cr,
+                                const BT709Gamma inputGamma,
+                                const BT709Gamma outputGamma
+                               )
+{
+  const int debug = 0;
+  
+#if defined(DEBUG)
+  assert(R1 >= 0 && R1 <= 255);
+  assert(G1 >= 0 && G1 <= 255);
+  assert(B1 >= 0 && B1 <= 255);
+  
+  assert(R2 >= 0 && R2 <= 255);
+  assert(G2 >= 0 && G2 <= 255);
+  assert(B2 >= 0 && B2 <= 255);
+  
+  assert(R3 >= 0 && R3 <= 255);
+  assert(G3 >= 0 && G3 <= 255);
+  assert(B3 >= 0 && B3 <= 255);
+  
+  assert(R4 >= 0 && R4 <= 255);
+  assert(G4 >= 0 && G4 <= 255);
+  assert(B4 >= 0 && B4 <= 255);
+#endif // DEBUG
+
+  float Rn1, Gn1, Bn1;
+  float Rn2, Gn2, Bn2;
+  float Rn3, Gn3, Bn3;
+  float Rn4, Gn4, Bn4;
+  
+  // Input can be in sRGB, BT.709, or linear gamma encoding
+  
+  BT709_tolinearNorm(R1, G1, B1, &Rn1, &Gn1, &Bn1, inputGamma);
+  BT709_tolinearNorm(R2, G2, B2, &Rn2, &Gn2, &Bn2, inputGamma);
+  BT709_tolinearNorm(R3, G3, B3, &Rn3, &Gn3, &Bn3, inputGamma);
+  BT709_tolinearNorm(R4, G4, B4, &Rn4, &Gn4, &Bn4, inputGamma);
+
+  // Average (R G B) as 4 linear values
+  
+  float Rave = BT709_average_cbcr_linear(Rn1, Rn2, Rn3, Rn4);
+  float Gave = BT709_average_cbcr_linear(Gn1, Gn2, Gn3, Gn4);
+  float Bave = BT709_average_cbcr_linear(Bn1, Bn2, Bn3, Bn4);
+  
+  // Map linear RGB values into sRGB so that gamma encoded values
+  // are passed through YCbCr matrix to generate average Cb and Cr.
+  
+  int RAveGammaEncoded = BT709_from_linear(Rave, outputGamma);
+  int GaveGammaEncoded = BT709_from_linear(Gave, outputGamma);
+  int BaveGammaEncoded = BT709_from_linear(Bave, outputGamma);
+  
+  int Yave, CbAve, CrAve;
+  
+  // Note that this YCbCr encoding method works for either gamma encoding
+  
+  sRGB_from_sRGB_convertRGBToYCbCr(RAveGammaEncoded, GaveGammaEncoded, BaveGammaEncoded, &Yave, &CbAve, &CrAve);
+  
+  int Y1ForCorners[4] = { -1, -1, -1, -1 };
+  
+  for (int i = 0; i < 4; i++) {
+    int origR, origG, origB;
+    float origRn, origGn, origBn;
+
+    int origY, origCb, origCr;
+    
+    if (i == 0) {
+      origR = R1;
+      origG = G1;
+      origB = B1;
+      origRn = Rn1;
+      origGn = Gn1;
+      origBn = Bn1;
+    } else if (i == 1) {
+      origR = R2;
+      origG = G2;
+      origB = B2;
+      origRn = Rn2;
+      origGn = Gn2;
+      origBn = Bn2;
+    } else if (i == 2) {
+      origR = R3;
+      origG = G3;
+      origB = B3;
+      origRn = Rn3;
+      origGn = Gn3;
+      origBn = Bn3;
+    } else if (i == 3) {
+      origR = R4;
+      origG = G4;
+      origB = B4;
+      origRn = Rn4;
+      origGn = Gn4;
+      origBn = Bn4;
+    } else {
+#if defined(DEBUG)
+      assert(0);
+#endif
+    }
+    
+    // Encode to output gamma curve and pass through BT.709 matrix transform
+    
+    int origRGammaEncoded = BT709_from_linear(origRn, outputGamma);
+    int origGGammaEncoded = BT709_from_linear(origGn, outputGamma);
+    int origBGammaEncoded = BT709_from_linear(origBn, outputGamma);
+    
+    sRGB_from_sRGB_convertRGBToYCbCr(origRGammaEncoded, origGGammaEncoded, origBGammaEncoded, &origY, &origCb, &origCr);
+    
+    if (debug) {
+      printf("original corner pixel R G B : %3d %3d %3d : per %.2f %.2f %.2f -> -> Y Cb Cr %3d %3d %3d\n", origR, origG, origB, origRn, origGn, origBn, origY, origCb, origCr);
+    }
+    
+    int minY = origY;
+
+    Y1ForCorners[i] = minY;
+  }
+  
+  if (debug) {
+  printf("Y1 Y2 Y3 Y4 : %3d %3d %3d %3d\n", Y1ForCorners[0], Y1ForCorners[1], Y1ForCorners[2], Y1ForCorners[3]);
+  }
+  
+  assert(Y1ForCorners[0] != -1);
+  assert(Y1ForCorners[1] != -1);
+  assert(Y1ForCorners[2] != -1);
+  assert(Y1ForCorners[3] != -1);
+  
+  // Write sRGB encoded Y Cb Cr back to callers
+  
+  *Y1 = Y1ForCorners[0];
+  *Y2 = Y1ForCorners[1];
+  *Y3 = Y1ForCorners[2];
+  *Y4 = Y1ForCorners[3];
+  
+  if (debug) {
+    printf("Cb Cr : %3d %3d\n", CbAve, CrAve);
+  }
+  
+  *Cb = CbAve;
+  *Cr = CrAve;
 }
 
 #endif // _BT709_H

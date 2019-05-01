@@ -813,7 +813,7 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
     // Dump
     
 #if defined(DEBUG)
-    if ((1)) {
+    if ((0)) {
       // Emit png with sRGB colorspace
       
       NSString *filename = [NSString stringWithFormat:@"Premultiplied.png"];
@@ -918,6 +918,8 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
           //NSLog(@"in A = %d : AN %.4f : AStep %.4f : numSteps %3d : percentOfTotal %.2f : AOut %d", A, AN, AStep, numSteps, percentOfTotal, AOut);
           
           A = AOut;
+        } else {
+          //NSLog(@"in A = %d : percent %.2f", A, A/255.0f);
         }
         
         assert(A >= 0 && A <= 255);
@@ -930,7 +932,7 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
 #if defined(DEBUG)
     // Dump linear output as PNG
     
-    if ((1)) {
+    if ((0)) {
       NSString *filename = [NSString stringWithFormat:@"Premultiplied_alpha_as_linear.png"];
       //NSString *tmpDir = NSTemporaryDirectory();
       NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
@@ -970,7 +972,7 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
     
     CGColorSpaceRelease(colorspace);
     
-    // Copy pixel data
+    // Copy pixel data, this treats pixels in the original gamma encoding as linear (not gamma encoded)
     
     memcpy(linearFB.pixels, inputFB.pixels, inputFB.numBytes);
     
@@ -980,6 +982,10 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
   } else if (isSRGBGamma) {
     // ffmpeg -i in.y4m -c:v libx264 -color_primaries bt709 -colorspace bt709 -color_trc iec61966_2_1 out.m4v
   }
+  
+  // FIXME: Convert from input colorspace to float component without gamma, so that the encoding
+  // logic need only support 1 input type, then it need not assume input colorspace which could
+  // end up being wrong. Also, this would support already linear input formats.
   
   CVPixelBufferRef cvPixelBuffer = [BGRAToBT709Converter createYCbCrFromCGImage:inImage
                                                                        isLinear:isLinearGamma

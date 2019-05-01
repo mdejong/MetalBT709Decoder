@@ -10,6 +10,8 @@
 #if !defined(_CVPixelBufferUtils_H)
 #define _CVPixelBufferUtils_H
 
+#import "BT709.h"
+
 // Copy the contents of a specific plane from src to dst, this
 // method is optimized so that memcpy() operations will copy
 // either the whole buffer if possible otherwise or a row at a time.
@@ -232,5 +234,169 @@ NSMutableData* cvpbu_get_uv_plane_as_data(CVPixelBufferRef cvPixelBuffer, int pl
   
   return mData;
 }
+
+// Subsample RGB pixels as YCbCr with linear gamma logic that
+// best represents the resized color planes via iterative approach.
+
+static inline
+void cvpbu_ycbcr_subsample(uint32_t *inPixelsPtr, int width, int height, CVPixelBufferRef dst, const BT709Gamma inputGamma, const BT709Gamma outputGamma) {
+  const int debug = 0;
+  
+//  int width = (int) CVPixelBufferGetWidth(dst);
+//  int height = (int) CVPixelBufferGetHeight(dst);
+  
+  // Copy Y values from cvPixelBufferAlphaIn to cvPixelBufferAlphaOut
+  
+//  {
+//    int status = CVPixelBufferLockBaseAddress(src, kCVPixelBufferLock_ReadOnly);
+//    assert(status == kCVReturnSuccess);
+//  }
+  
+  {
+    int status = CVPixelBufferLockBaseAddress(dst, 0);
+    assert(status == kCVReturnSuccess);
+  }
+  
+  const int yPlane = 0;
+  const int cbcrPlane = 1;
+  
+  //uint32_t *inPixelsPtr = (uint32_t *) CVPixelBufferGetBaseAddress(src);
+  //assert(inPixelsPtr);
+  //const size_t inPixelsBytesPerRow = CVPixelBufferGetBytesPerRow(src);
+  
+  uint8_t *outYPlanePtr = (uint8_t *) CVPixelBufferGetBaseAddressOfPlane(dst, yPlane);
+  assert(outYPlanePtr);
+  const size_t yOutBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(dst, yPlane);
+  
+  uint16_t *outCbCrPlanePtr = (uint16_t *) CVPixelBufferGetBaseAddressOfPlane(dst, cbcrPlane);
+  assert(outCbCrPlanePtr);
+  const size_t cbcrOutBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(dst, cbcrPlane);
+  
+  assert((width % 2) == 0);
+  assert((height % 2) == 0);
+
+  const int numCbCrPerRow = (int) (cbcrOutBytesPerRow / sizeof(uint16_t));
+  
+  {
+    uint8_t *outYRowPtr;
+    uint16_t *outCbCrRowPtr;
+    
+    for (int row = 0; row < height; row++) {
+      if ((row % 2) != 0) {
+        // Skip odd rows
+        continue;
+      }
+      
+      //assert((inPixelsBytesPerRow % sizeof(uint32_t)) == 0);
+      //int numPixelsPerRow = (int) (row * (inPixelsBytesPerRow / sizeof(uint32_t)));
+      //uint32_t *inPixelsRowPtr = inPixelsPtr + width;
+      
+      //outYRowPtr = outYPlanePtr + (row * yOutBytesPerRow);
+      //outCbCrRowPtr = outCbCrPlanePtr + (row * numCbCrPerRow);
+      
+      for (int col = 0; col < width; col += 2) {
+        uint32_t p1 = inPixelsPtr[(row * width) + col];
+        uint32_t p2 = inPixelsPtr[(row * width) + col+1];
+
+        uint32_t p3 = inPixelsPtr[((row+1) * width) + col];
+        uint32_t p4 = inPixelsPtr[((row+1) * width) + col+1];
+        
+        int R1 = (p1 >> 16) & 0xFF;
+        int G1 = (p1 >> 8) & 0xFF;
+        int B1 = p1 & 0xFF;
+        
+        int R2 = (p2 >> 16) & 0xFF;
+        int G2 = (p2 >> 8) & 0xFF;
+        int B2 = p2 & 0xFF;
+        
+        int R3 = (p3 >> 16) & 0xFF;
+        int G3 = (p3 >> 8) & 0xFF;
+        int B3 = p3 & 0xFF;
+        
+        int R4 = (p4 >> 16) & 0xFF;
+        int G4 = (p4 >> 8) & 0xFF;
+        int B4 = p4 & 0xFF;
+        
+        if (debug) {
+        printf("R1 G1 B1 %3d %3d %3d : R2 G2 B2 %3d %3d %3d\n", R1, G1, B1, R2, G2, B2);
+        printf("R3 G3 B3 %3d %3d %3d : R4 G4 B4 %3d %3d %3d\n", R3, G3, B3, R4, G4, B4);
+        }
+
+        int Y1, Y2, Y3, Y4;
+        int Cb, Cr;
+        
+        BT709_average_pixel_values(
+                                   R1, G1, B1,
+                                   R2, G2, B2,
+                                   R3, G3, B3,
+                                   R4, G4, B4,
+                                   &Y1, &Y2, &Y3, &Y4,
+                                   &Cb, &Cr,
+                                   inputGamma,
+                                   outputGamma
+                                   );
+
+        if (debug) {
+          printf("Y1 Y2 Y3 Y4 %3d %3d %3d %3d : Cb Cr %3d %3d\n", Y1, Y2, Y3, Y4, Cb, Cr);
+        }
+        
+        // Write 4 Y values to plane 0
+        
+        outYRowPtr = outYPlanePtr + (row * yOutBytesPerRow);
+        
+        outYRowPtr[col] = Y1;
+        outYRowPtr[col+1] = Y2;
+        
+        outYRowPtr = outYPlanePtr + ((row+1) * yOutBytesPerRow);
+        
+        outYRowPtr[col] = Y3;
+        outYRowPtr[col+1] = Y4;
+        
+        // Write CbCr value to plane 1
+        
+        outCbCrRowPtr = outCbCrPlanePtr + (row/2 * numCbCrPerRow);
+        uint16_t cbcrPixel = 0;
+        cbcrPixel = (uint16_t) Cb;
+        cbcrPixel |= (((uint16_t) Cr) << 8);
+        outCbCrRowPtr[col/2] = cbcrPixel;
+      }
+    }
+  }
+  
+  if ((0)) {
+    printf("Y:\n");
+    for (int row = 0; row < height; row++) {
+      uint8_t *rowOutPtr = outYPlanePtr + (row * yOutBytesPerRow);
+      for (int col = 0; col < width; col++) {
+        uint8_t bVal = rowOutPtr[col];
+        printf("%3d ", bVal);
+      }
+      printf("\n");
+    }
+    
+    printf("CbCr:\n");
+    for (int row = 0; row < (height/2); row++) {
+      uint16_t *rowOutPtr = outCbCrPlanePtr + (row * numCbCrPerRow);
+      for (int col = 0; col < (width/2); col++) {
+        uint16_t pVal = rowOutPtr[col];
+        uint8_t Cb = (pVal >> 0) & 0xFF;
+        uint8_t Cr = (pVal >> 8) & 0xFF;
+        printf("%3d %3d ", Cb, Cr);
+      }
+      printf("\n");
+    }
+  }
+  
+//  {
+//    int status = CVPixelBufferUnlockBaseAddress(src, kCVPixelBufferLock_ReadOnly);
+//    assert(status == kCVReturnSuccess);
+//  }
+  
+  {
+    int status = CVPixelBufferUnlockBaseAddress(dst, 0);
+    assert(status == kCVReturnSuccess);
+  }
+}
+
 
 #endif // _CVPixelBufferUtils_H

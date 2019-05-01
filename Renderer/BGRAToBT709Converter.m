@@ -12,6 +12,8 @@
 
 #import "H264Encoder.h"
 
+#import "CVPixelBufferUtils.h"
+
 @import Accelerate;
 @import CoreImage;
 
@@ -529,8 +531,40 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
 
 + (BOOL) convertIntoCoreVideoBuffer:(CGImageRef)inputImageRef
                       cvPixelBuffer:(CVPixelBufferRef)cvPixelBuffer
-                          bufferPtr:(vImage_Buffer*)bufferPtr
+                         inputGamma:(BT709Gamma)inputGamma
+                         outputGamma:(BT709Gamma)outputGamma
 {
+  int width = (int) CGImageGetWidth(inputImageRef);
+  int height = (int) CGImageGetHeight(inputImageRef);
+  
+  NSAssert((width % 2) == 0, @"width must be even : got %d", width);
+  NSAssert((height % 2) == 0, @"height must be even : got %d", height);
+  
+  CGFrameBuffer *frameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+  
+  if (inputGamma == BT709GammaLinear) {
+    // Explicitly mark framebuffer as linear so that values are rendered without gamma adjustment
+    frameBuffer.colorspace = CGImageGetColorSpace(inputImageRef);
+  } else {
+    // !BT709GammaLinear means render input and treat as sRGB
+  }
+  
+  [frameBuffer renderCGImage:inputImageRef];
+  
+  uint32_t *pixelsPtr = (uint32_t *) frameBuffer.pixels;
+  
+  //CVPixelBufferRef dst = [self createCoreVideoYCbCrBuffer:CGSizeMake(width, height)];
+  
+  //for ( int i = 0; i < (width*height); i++) {
+    //uint32_t pixel = pixelsPtr[i];
+    //*pixelsPtr++ = pixel;
+  //}
+  
+  cvpbu_ycbcr_subsample(pixelsPtr, width, height, cvPixelBuffer, inputGamma, outputGamma);
+  
+  return TRUE;
+  
+  /*
   // Default to sRGB on both MacOSX and iOS
   //CGColorSpaceRef inputColorspaceRef = NULL;
   CGColorSpaceRef inputColorspaceRef = CGImageGetColorSpace(inputImageRef);
@@ -582,6 +616,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   vImageCVImageFormat_Release(cvImgFormatRef);
   
   return TRUE;
+  */
 }
 
 // Convert the contents of a CoreVideo pixel buffer and write the results
@@ -861,6 +896,8 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   // same color primaries so typically only the gamma is adjusted
   // in this type of conversion.
   
+  BOOL useSRGBGamma = FALSE;
+  
   if (isLinear) {
     CGColorSpaceRef inputCS = CGImageGetColorSpace(inputImageRef);
     worked = [self setColorspace:cvPixelBuffer colorSpace:inputCS];
@@ -868,17 +905,37 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     CGColorSpaceRef sRGBcs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
     worked = [self setColorspace:cvPixelBuffer colorSpace:sRGBcs];
     CGColorSpaceRelease(sRGBcs);
+    useSRGBGamma = TRUE;
   } else {
     worked = [self setBT709Colorspace:cvPixelBuffer];
   }
   
   NSAssert(worked, @"worked");
-
-  vImage_Buffer sourceBuffer;
   
-  worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer bufferPtr:&sourceBuffer];
+  BT709Gamma inputGamma;
+  BT709Gamma outputGamma;
+  
+  if (isLinear) {
+    inputGamma = BT709GammaLinear;
+    outputGamma = BT709GammaLinear;
+    
+    worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer inputGamma:inputGamma outputGamma:outputGamma];
+  } else if (asSRGBGamma) {
+    inputGamma = BT709GammaSrgb;
+    outputGamma = BT709GammaSrgb;
+    
+    worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer inputGamma:inputGamma outputGamma:outputGamma];
+  } else {
+    inputGamma = BT709GammaSrgb;
+    outputGamma = BT709GammaApple;
+    
+    worked = [self convertIntoCoreVideoBuffer:inputImageRef cvPixelBuffer:cvPixelBuffer inputGamma:inputGamma outputGamma:outputGamma];
+  }
+  
   NSAssert(worked, @"worked");
 
+  /*
+  
   if ((0)) {
     uint32_t *pixelPtr = (uint32_t *) sourceBuffer.data;
     uint32_t pixel = pixelPtr[0];
@@ -914,6 +971,8 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
   
   free(sourceBuffer.data);
   
+  */
+  
   // Copy data from CoreVideo pixel buffer planes into flat buffers
   
   if ((0)) {
@@ -921,7 +980,7 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     NSMutableData *Cb = [NSMutableData data];
     NSMutableData *Cr = [NSMutableData data];
     
-    const BOOL dump = FALSE;
+    const BOOL dump = TRUE;
     
     [self copyYCBCr:cvPixelBuffer Y:Y Cb:Cb Cr:Cr dump:dump];
     
