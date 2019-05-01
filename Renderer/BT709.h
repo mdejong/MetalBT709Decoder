@@ -1370,7 +1370,7 @@ void BT709_average_pixel_values(
                                 const BT709Gamma outputGamma
                                )
 {
-  const int debug = 1;
+  const int debug = 0;
   
 #if defined(DEBUG)
   assert(R1 >= 0 && R1 <= 255);

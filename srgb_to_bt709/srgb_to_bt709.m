@@ -896,7 +896,7 @@ CVPixelBufferRef loadFrameIntoCVPixelBuffer(
 #if defined(DEBUG)
     // Dump linear output as PNG
     
-    if ((1)) {
+    if ((0)) {
       NSString *filename = [NSString stringWithFormat:@"Premultiplied_alpha_as_linear.png"];
       //NSString *tmpDir = NSTemporaryDirectory();
       NSString *dirName = [[NSFileManager defaultManager] currentDirectoryPath];
