@@ -1370,7 +1370,7 @@ void BT709_average_pixel_values(
                                 const BT709Gamma outputGamma
                                )
 {
-  const int debug = 0;
+  const int debug = 1;
   
 #if defined(DEBUG)
   assert(R1 >= 0 && R1 <= 255);
@@ -1407,6 +1407,10 @@ void BT709_average_pixel_values(
   float Rave = BT709_average_cbcr_linear(Rn1, Rn2, Rn3, Rn4);
   float Gave = BT709_average_cbcr_linear(Gn1, Gn2, Gn3, Gn4);
   float Bave = BT709_average_cbcr_linear(Bn1, Bn2, Bn3, Bn4);
+  
+  if (debug) {
+    printf("lin ave pixel R G B per : %.4f %.4f %.4f\n", Rave, Gave, Bave);
+  }
   
   // Map linear RGB values into sRGB so that gamma encoded values
   // are passed through YCbCr matrix to generate average Cb and Cr.
