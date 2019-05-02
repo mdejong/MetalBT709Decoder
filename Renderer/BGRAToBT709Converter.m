@@ -547,6 +547,10 @@ static inline uint32_t byte_to_grayscale24(uint32_t byteVal)
     frameBuffer.colorspace = CGImageGetColorSpace(inputImageRef);
   } else {
     // !BT709GammaLinear means render input and treat as sRGB
+    
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    frameBuffer.colorspace = cs;
+    CGColorSpaceRelease(cs);
   }
   
   [frameBuffer renderCGImage:inputImageRef];
