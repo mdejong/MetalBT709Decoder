@@ -77,7 +77,7 @@ void usage() {
   printf("-frame F.png (input is a single frame)\n");
   printf("-frames F0001.png (first frame of N input frames)\n");
   printf("-gamma apple|srgb|linear (default is apple)\n");
-  printf("-fps 1|15|24|2997|30|60 (default to 30 with -frames)\n");
+  printf("-fps 1|15|24|25|2997|30|60 (default to 30 with -frames)\n");
   fflush(stdout);
 }
 
@@ -1263,6 +1263,8 @@ int main(int argc, const char * argv[]) {
             args[@"-fps"] = @(Y4MHeaderFPS_15);
           } else if (strcmp(arg, "24") == 0) {
             args[@"-fps"] = @(Y4MHeaderFPS_24);
+          } else if (strcmp(arg, "25") == 0) {
+            args[@"-fps"] = @(Y4MHeaderFPS_25);
           } else if (strcmp(arg, "2997") == 0) {
             args[@"-fps"] = @(Y4MHeaderFPS_29_97);
           } else if (strcmp(arg, "30") == 0) {
